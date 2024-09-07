@@ -27,6 +27,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env*
 
 # vercel
 .vercel
@@ -37,3 +38,8 @@ next-env.d.ts
 
 # ignore specifications
 pdf-made-easy-specifications/
+
+#ignore notes and tasks
+
+
+client_secret_*.json
