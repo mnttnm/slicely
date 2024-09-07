@@ -37,9 +37,14 @@ const PDFViewerPage = () => {
     setExtractedTexts(prev => [...prev, newExtractedText]);
   };
 
-  const handleDeleteText = (id: string) => {
-    setExtractedTexts(prev => prev.filter(text => text.id !== id));
+  const handleDeleteText = (id?: string, deleteAll?: boolean) => {
+    if (deleteAll) {
+      setExtractedTexts([]);
+    } else {
+      setExtractedTexts(prev => prev.filter(text => text.id !== id));
+    }
   };
+
 
   if (!pdf) {
     return <div>Loading...</div>;

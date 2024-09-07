@@ -44,12 +44,12 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
       <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-50">
         <div className="flex flex-col gap-2 p-3 bg-gray-800/70 backdrop-blur-sm rounded-xl shadow-lg">
           {/* Drawing Tool */}
-          <ToolbarButton
+          {/* <ToolbarButton
             icon={<Pencil className="h-5 w-5" />}
             tooltip={`${isDrawingMode ? 'Disable' : 'Enable'} Drawing`}
             onClick={toggleDrawingMode}
             active={isDrawingMode}
-          />
+          /> */}
 
           {/* Rectangle Tool */}
           <ToolbarButton

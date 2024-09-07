@@ -25,7 +25,7 @@ interface RectangleText {
 interface PDFViewerProps {
   url: string;
   onExtractText: (extractedText: RectangleText) => void;
-  onDeleteText: (id: string) => void;
+  onDeleteText: (id?: string, deleteAll?: boolean) => void;
 }
 
 const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText }) => {
@@ -103,6 +103,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
   const clearAllAnnotations = () => {
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.clear();
+      onDeleteText(undefined, true);
       localStorage.removeItem(`pdfRectangles_${pageNumber}`);
     }
   };
