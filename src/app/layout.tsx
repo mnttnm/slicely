@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/app/components/Header";
 import { PDFProvider } from '@/app/contexts/PDFContext';
 import { CommandMenu } from "@/app/components/CommandMenu";
+import { Toaster } from "@/app/components/ui/toaster";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           {children}
           <CommandMenu />
+          <Toaster />
         </PDFProvider>
       </body>
     </html>

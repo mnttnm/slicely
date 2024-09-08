@@ -5,8 +5,8 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import * as fabric from 'fabric';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
-import samplePdf from '@/../Mohit-Tater-Resume-FE-2024.pdf';
 import PDFToolbar from './PDFToolbar';
+import { getSignedPdfUrl } from '@/server/actions/pdf-lab/actions';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -36,6 +36,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [isRectangleMode, setIsRectangleMode] = useState(false);
   const [pdfDocument, setPdfDocument] = useState<pdfjs.PDFDocumentProxy | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -45,7 +46,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     setPageNumber(1);
-    pdfjs.getDocument(samplePdf).promise.then(setPdfDocument);
+    if (pdfUrl) {
+      pdfjs.getDocument(pdfUrl).promise.then(setPdfDocument);
+    }
   };
 
   const onPageRenderSuccess = (page: any) => {
@@ -160,7 +163,21 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
     }
   };
 
-  // Effects
+  // New function to fetch signed URL for the PDF
+  const fetchSignedPdfUrl = async () => {
+    try {
+      const signedUrl = await getSignedPdfUrl(url);
+      setPdfUrl(signedUrl);
+    } catch (error) {
+      console.error('Error fetching signed PDF URL:', error);
+    }
+  };
+
+  // Effect to fetch signed PDF URL when url changes
+  useEffect(() => {
+    fetchSignedPdfUrl();
+  }, [url]);
+
   useEffect(() => {
     if (canvasRef.current && pageDimensions) {
       const fabricCanvas = new fabric.Canvas(canvasRef.current, {
@@ -258,14 +275,14 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
     }
   }, [isRectangleMode, pageNumber, extractTextFromRectangle]);
 
-  if (!url) {
-    return <div>No PDF selected</div>;
+  if (!pdfUrl) {
+    return <div>Loading PDF...</div>;
   }
 
   return (
     <div className="relative flex-1 w-full h-full flex">
       <div className="relative flex-grow">
-        <Document file={samplePdf} onLoadSuccess={onDocumentLoadSuccess}>
+        <Document file={pdfUrl} onLoadSuccess={onDocumentLoadSuccess}>
           <Page
             pageNumber={pageNumber}
             onRenderSuccess={onPageRenderSuccess}

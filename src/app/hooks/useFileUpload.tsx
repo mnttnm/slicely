@@ -1,33 +1,48 @@
 import { useState } from "react";
 import { usePDFContext } from "@/app/contexts/PDFContext";
-import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
+import { uploadPdf } from '@/server/actions/pdf-lab/actions';
+import { useRouter } from "next/navigation";
+import { useToast } from "@/app/hooks/use-toast";
 
 export const useFileUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const { addPDF } = usePDFContext();
   const router = useRouter();
-
+  const { toast } = useToast();
   const uploadFile = async (file: File) => {
     if (!file) return;
 
     setIsUploading(true);
-    // TODO: Implement actual file upload logic here
-    console.log("Uploading file:", file.name);
-    // Simulating upload delay and getting a URL
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const fakeUrl = URL.createObjectURL(file);
 
-    const pdfMetadata = {
-      id: uuidv4(),
-      name: file.name,
-      url: fakeUrl,
-      uploadDate: new Date(),
-    };
+    try {
+      const formData = new FormData();
+      formData.append('pdf', file);
+      formData.append('slicer_id', ''); // Add slicer_id if needed
+      formData.append('is_template', 'false'); // Set is_template as needed
 
-    addPDF(pdfMetadata);
-    setIsUploading(false);
-    router.push('/document-lab');
+      console.log("Uploading file:", file);
+
+      const result = await uploadPdf(formData);
+
+      const pdfMetadata = {
+        id: result.id || uuidv4(),
+        name: result.file_name,
+        url: result.file_path || URL.createObjectURL(file),
+        uploadDate: new Date(),
+      };
+
+      addPDF(pdfMetadata);
+      toast({
+        title: "File uploaded",
+        description: "Your file has been uploaded",
+      });
+      router.push('/document-lab');
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return { isUploading, uploadFile };

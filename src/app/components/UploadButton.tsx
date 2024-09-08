@@ -4,10 +4,20 @@ import { useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Upload } from "lucide-react";
 import { useFileUpload } from "@/app/hooks/useFileUpload";
+import { useUser } from "../hooks/useUser";
 
 const UploadButton = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isUploading, uploadFile } = useFileUpload();
+  const { user, loading } = useUser();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    throw new Error("User not found");
+  }
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

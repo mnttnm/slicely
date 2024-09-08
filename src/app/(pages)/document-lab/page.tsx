@@ -1,11 +1,10 @@
-'use client';
-
 import { Card, CardContent } from "@/app/components/ui/card";
-import { usePDFContext } from '@/app/contexts/PDFContext';
 import Link from 'next/link';
 import UploadButton from '@/app/components/UploadButton';
-const DocumentLabPage = () => {
-  const { pdfs } = usePDFContext();
+import { getUserPDFs } from '@/server/actions/pdf-lab/actions';
+
+const DocumentLabPage = async () => {
+  const pdfs = await getUserPDFs();
 
   return (
     <div className="container mx-auto p-4">
@@ -19,8 +18,8 @@ const DocumentLabPage = () => {
             <Link href={`/document-lab/${pdf.id}`} key={pdf.id}>
               <Card>
                 <CardContent className="p-4">
-                  <h3 className="font-bold mb-2">{pdf.name}</h3>
-                  <p className="text-sm mb-2">Uploaded: {pdf.uploadDate.toLocaleString()}</p>
+                  <h3 className="font-bold mb-2">{pdf.file_name}</h3>
+                  <p className="text-sm mb-2">Uploaded: {pdf.created_at ? pdf.created_at.toLocaleString() : 'N/A'}</p>
                   <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
                     <span className="text-gray-500">Click to view PDF</span>
                   </div>

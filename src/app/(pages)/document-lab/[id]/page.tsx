@@ -51,14 +51,12 @@ const PDFViewerPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen px-4">
+    <div className="flex flex-col h-screen p-4">
       <h2 className="text-2xl font-bold mb-4">{pdf.name}</h2>
       <div className="flex h-full">
         <PDFViewer url={pdf.url} onExtractText={handleExtractedText} onDeleteText={handleDeleteText} />
         <ExtractedTextList extractedTexts={extractedTexts} />
       </div>
-      {/* <div className="flex-1 h-full p-4 overflow-y-auto">
-      </div> */}
     </div>
   );
 };

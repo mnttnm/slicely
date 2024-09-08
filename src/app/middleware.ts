@@ -1,5 +1,5 @@
 import { type NextRequest } from 'next/server'
-import { updateSession } from '@/utils/supabase/middleware'
+import { updateSession } from '@/server/services/supabase/middleware'
 
 // Since Server Components can't write cookies, you need middleware to refresh expired Auth tokens and store them.
 
