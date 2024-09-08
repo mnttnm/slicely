@@ -1,39 +1,19 @@
 'use client';
 
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Upload } from "lucide-react";
-import { usePDFContext } from "@/app/contexts/PDFContext";
-import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
+import { useFileUpload } from "@/app/hooks/useFileUpload";
 
 const UploadButton = () => {
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { addPDF } = usePDFContext();
-  const router = useRouter();
+  const { isUploading, uploadFile } = useFileUpload();
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    // TODO: Implement actual file upload logic here
-    console.log("Uploading file:", file.name);
-    // Simulating upload delay and getting a URL
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const fakeUrl = URL.createObjectURL(file);
-
-    const pdfMetadata = {
-      id: uuidv4(),
-      name: file.name,
-      url: fakeUrl,
-      uploadDate: new Date(),
-    };
-
-    addPDF(pdfMetadata);
-    setIsUploading(false);
-    router.push('/your-pdfs');
+    if (file) {
+      await uploadFile(file);
+    }
   };
 
   return (

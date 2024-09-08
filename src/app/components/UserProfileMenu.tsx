@@ -5,9 +5,9 @@ import { Button } from "@/app/components/ui/button";
 import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu";
 import { useUser } from "@/app/hooks/useUser";
-import { logout } from "@/app/login/actions";
+import { logout } from "@/server/actions/login/actions";
 
-export function UserButton() {
+export function UserProfileMenu() {
   const router = useRouter();
   const { user, loading } = useUser();
 

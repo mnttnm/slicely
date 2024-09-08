@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { usePDFContext } from '@/app/contexts/PDFContext';
-import { PDF } from '@/app/types';
+import { PDFMetadata } from '@/app/types';
 import PDFViewer from '@/app/components/PDFViewer';
 import ExtractedTextList from '@/app/components/ExtractedTextList';
 
@@ -22,7 +22,7 @@ interface ExtractedText {
 const PDFViewerPage = () => {
   const { id } = useParams();
   const { pdfs, setCurrentPDF } = usePDFContext();
-  const [pdf, setPdf] = useState<PDF | null>(null);
+  const [pdf, setPdf] = useState<PDFMetadata | null>(null);
   const [extractedTexts, setExtractedTexts] = useState<ExtractedText[]>([]);
 
   useEffect(() => {

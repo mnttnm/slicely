@@ -3,17 +3,20 @@
 import { Card, CardContent } from "@/app/components/ui/card";
 import { usePDFContext } from '@/app/contexts/PDFContext';
 import Link from 'next/link';
-
-const YourPDFsPage = () => {
+import UploadButton from '@/app/components/UploadButton';
+const DocumentLabPage = () => {
   const { pdfs } = usePDFContext();
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Your PDFs</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold mb-4">Document Lab</h1>
+        <UploadButton />
+      </div>
       {pdfs.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {pdfs.map((pdf) => (
-            <Link href={`/your-pdfs/${pdf.id}`} key={pdf.id}>
+            <Link href={`/document-lab/${pdf.id}`} key={pdf.id}>
               <Card>
                 <CardContent className="p-4">
                   <h3 className="font-bold mb-2">{pdf.name}</h3>
@@ -33,4 +36,4 @@ const YourPDFsPage = () => {
   );
 };
 
-export default YourPDFsPage;
+export default DocumentLabPage;

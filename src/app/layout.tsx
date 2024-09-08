@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/app/components/Header";
 import { PDFProvider } from '@/app/contexts/PDFContext';
+import { CommandMenu } from "@/app/components/CommandMenu";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -24,10 +25,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans overflow-hidden`}>
         <PDFProvider>
           <Header />
           {children}
+          <CommandMenu />
         </PDFProvider>
       </body>
     </html>
