@@ -10,6 +10,7 @@ export const useFileUpload = () => {
   const { addPDF } = usePDFContext();
   const router = useRouter();
   const { toast } = useToast();
+
   const uploadFile = async (file: File) => {
     if (!file) return;
 
@@ -40,6 +41,11 @@ export const useFileUpload = () => {
       router.push('/document-lab');
     } catch (error) {
       console.error("Error uploading file:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your file",
+        variant: "destructive",
+      });
     } finally {
       setIsUploading(false);
     }

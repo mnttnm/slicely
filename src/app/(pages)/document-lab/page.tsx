@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { Card, CardContent } from "@/app/components/ui/card";
 import Link from 'next/link';
 import UploadButton from '@/app/components/UploadButton';
