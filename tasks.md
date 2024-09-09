@@ -1,10 +1,11 @@
 - [Done] Supabase project init
 - [Done] Auth using supabase-ssr package, Google OAuth as well
-- [ ] Ability to store pdf, associated metadata and text in db
+- [Done] Ability to store pdf, associated metadata and text in db
+- [Done] Open pdf in studio mode
+- [Done] In studio mode, user should be able select the sections to be excluded or included while extracting text
+- [Done] Allow users to skip a page while extracting text or while chatting
+- [ ] Breadcrumbs in studio mode
 - [ ] PDF chat support using Claude or GPT-4o
-- [ ] Allow users to skip a page while extracting text or while chatting
-- [ ] Open pdf in studio mode
-- [ ] In studio mode, user should be able select the sections to be excluded or included while extracting text
 - [ ] They will also define the output format
 - [ ] Search page to search across multiple pdfs or entire documents
 - [ ] User should be able to assign pdf processing template to pdf or multiple pdfs or folder, all

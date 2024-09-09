@@ -40,6 +40,6 @@ next-env.d.ts
 pdf-made-easy-specifications/
 
 #ignore notes and tasks
-
+notes.text
 
 client_secret_*.json

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePDFContext } from "@/app/contexts/PDFContext";
 import { v4 as uuidv4 } from 'uuid';
-import { uploadPdf } from '@/server/actions/pdf-lab/actions';
+import { uploadPdf } from '@/server/actions/studio/actions';
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/hooks/use-toast";
 
@@ -34,11 +34,12 @@ export const useFileUpload = () => {
       };
 
       addPDF(pdfMetadata);
+      router.push('/studio');
+      router.refresh();
       toast({
         title: "File uploaded",
         description: "Your file has been uploaded",
       });
-      router.push('/document-lab');
     } catch (error) {
       console.error("Error uploading file:", error);
       toast({

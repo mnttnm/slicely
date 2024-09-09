@@ -1,26 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
+import { useRef, useEffect } from 'react';
 import * as fabric from 'fabric';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import PDFToolbar from './PDFToolbar';
-import { getSignedPdfUrl } from '@/server/actions/pdf-lab/actions';
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
-interface RectangleText {
-  id: string;
-  pageNumber: number;
-  text: string;
-  rectangleInfo: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  };
-}
+import PDFRenderer from './PDFRenderer';
+import AnnotationCanvas from './AnnotationCanvas';
+import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
+import { RectangleText } from '@/app/types';
+import { FileIcon } from 'lucide-react';
 
 interface PDFViewerProps {
   url: string;
@@ -29,63 +18,44 @@ interface PDFViewerProps {
 }
 
 const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText }) => {
-  // State declarations
-  const [numPages, setNumPages] = useState<number | null>(null);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number } | null>(null);
-  const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [isRectangleMode, setIsRectangleMode] = useState(false);
-  const [pdfDocument, setPdfDocument] = useState<pdfjs.PDFDocumentProxy | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const {
+    numPages,
+    pageNumber,
+    pageDimensions,
+    isRectangleMode,
+    pdfDocument,
+    pdfUrl,
+    skippedPages,
+    togglePageSkip,
+    onDocumentLoadSuccess,
+    onPageRenderSuccess,
+    previousPage,
+    nextPage,
+    toggleRectangleMode,
+    fetchSignedPdfUrl,
+    updatePageAnnotations,
+  } = usePDFViewer();
 
-  // Refs
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (url) {
+      fetchSignedPdfUrl(url);
+    }
+  }, [url, fetchSignedPdfUrl]);
+
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
 
-  // PDF handling functions
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-    setPageNumber(1);
-    if (pdfUrl) {
-      pdfjs.getDocument(pdfUrl).promise.then(setPdfDocument);
-    }
-  };
-
-  const onPageRenderSuccess = (page: any) => {
-    const { width, height } = page.getViewport({ scale: 1 });
-    setPageDimensions({ width, height });
-  };
-
-  const changePage = (offset: number) => {
-    setPageNumber((prevPageNumber) => prevPageNumber + offset);
-  };
-
-  const previousPage = () => changePage(-1);
-  const nextPage = () => changePage(1);
-
-  // Canvas and annotation functions
   const saveRectangles = () => {
     if (fabricCanvasRef.current) {
       const rectangles = fabricCanvasRef.current.getObjects('rect').map(obj => obj.toObject());
+      console.log('save rectangles', rectangles);
+      const transformedRectangles = rectangles.map((rect: any) => ({
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+      }));
+      updatePageAnnotations(transformedRectangles);
       localStorage.setItem(`pdfRectangles_${pageNumber}`, JSON.stringify(rectangles));
-    }
-  };
-
-  const toggleDrawingMode = () => {
-    setIsDrawingMode((prevMode) => {
-      const newMode = !prevMode;
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.isDrawingMode = newMode;
-      }
-      return newMode;
-    });
-  };
-
-  const toggleRectangleMode = () => {
-    setIsRectangleMode(!isRectangleMode);
-    if (fabricCanvasRef.current) {
-      fabricCanvasRef.current.isDrawingMode = false;
-      setIsDrawingMode(false);
     }
   };
 
@@ -108,6 +78,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
       fabricCanvasRef.current.clear();
       onDeleteText(undefined, true);
       localStorage.removeItem(`pdfRectangles_${pageNumber}`);
+      saveRectangles();
     }
   };
 
@@ -163,163 +134,64 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
     }
   };
 
-  // New function to fetch signed URL for the PDF
-  const fetchSignedPdfUrl = async () => {
-    try {
-      const signedUrl = await getSignedPdfUrl(url);
-      setPdfUrl(signedUrl);
-    } catch (error) {
-      console.error('Error fetching signed PDF URL:', error);
-    }
+  const handleRectangleCreated = (rect: fabric.Rect) => {
+    saveRectangles();
+    extractTextFromRectangle(rect);
   };
 
-  // Effect to fetch signed PDF URL when url changes
-  useEffect(() => {
-    fetchSignedPdfUrl();
-  }, [url]);
-
-  useEffect(() => {
-    if (canvasRef.current && pageDimensions) {
-      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-        isDrawingMode: isDrawingMode,
-      });
-      fabricCanvas.setDimensions(pageDimensions);
-
-      const savedRectangles = JSON.parse(localStorage.getItem(`pdfRectangles_${pageNumber}`) || '[]');
-      savedRectangles.forEach((rect: any) => {
-        fabricCanvas.add(new fabric.Rect(rect));
-      });
-
-      fabricCanvas.on('object:added', saveRectangles);
-
-      fabricCanvasRef.current = fabricCanvas;
-    }
-
-    return () => {
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.dispose();
-      }
-    };
-  }, [pageDimensions, isDrawingMode, pageNumber]);
-
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (canvas && isRectangleMode) {
-      let isDown = false;
-      let startX = 0;
-      let startY = 0;
-      let rect: fabric.Rect | null = null;
-
-      const handleMouseDown = (o: fabric.TEvent) => {
-        const pointer = canvas.getPointer(o.e);
-        const clickedObject = canvas.findTarget(o.e);
-        if (clickedObject) {
-          canvas.setActiveObject(clickedObject);
-          return;
-        }
-
-        isDown = true;
-        startX = pointer.x;
-        startY = pointer.y;
-      };
-
-      const handleMouseMove = (o: fabric.TEvent) => {
-        if (!isDown) return;
-        const pointer = canvas.getPointer(o.e);
-        if (!rect) {
-          rect = new fabric.Rect({
-            left: startX,
-            top: startY,
-            width: pointer.x - startX,
-            height: pointer.y - startY,
-            fill: 'transparent',
-            stroke: 'red',
-            strokeWidth: 2,
-            id: `rect_${Date.now()}`,
-          });
-          canvas.add(rect);
-        } else {
-          rect.set({
-            width: Math.abs(pointer.x - startX),
-            height: Math.abs(pointer.y - startY),
-            left: Math.min(startX, pointer.x),
-            top: Math.min(startY, pointer.y),
-          });
-        }
-        canvas.renderAll();
-      };
-
-      const handleMouseUp = () => {
-        isDown = false;
-        if (rect) {
-          if (rect.width < 10 || rect.height < 10) {
-            canvas.remove(rect);
-          } else {
-            canvas.setActiveObject(rect);
-            saveRectangles();
-            extractTextFromRectangle(rect);
-          }
-          rect = null;
-        }
-      };
-
-      canvas.on('mouse:down', handleMouseDown);
-      canvas.on('mouse:move', handleMouseMove);
-      canvas.on('mouse:up', handleMouseUp);
-
-      return () => {
-        canvas.off('mouse:down', handleMouseDown);
-        canvas.off('mouse:move', handleMouseMove);
-        canvas.off('mouse:up', handleMouseUp);
-      };
-    }
-  }, [isRectangleMode, pageNumber, extractTextFromRectangle]);
-
-  if (!pdfUrl) {
-    return <div>Loading PDF...</div>;
-  }
+  const handleCanvasReady = (canvas: fabric.Canvas) => {
+    fabricCanvasRef.current = canvas;
+  };
 
   return (
-    <div className="relative flex-1 w-full h-full flex">
-      <div className="relative flex-grow">
-        <Document file={pdfUrl} onLoadSuccess={onDocumentLoadSuccess}>
-          <Page
-            pageNumber={pageNumber}
-            onRenderSuccess={onPageRenderSuccess}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
-          />
-        </Document>
-        {pageDimensions && (
-          <div
-            className="absolute top-0 left-0 z-10"
-            style={{
-              width: `${pageDimensions.width}px`,
-              height: `${pageDimensions.height}px`,
-            }}
-          >
-            <canvas
-              ref={canvasRef}
-              className="absolute top-0 left-0"
-              width={pageDimensions.width}
-              height={pageDimensions.height}
+    <div className="relative w-1/2 h-full flex">
+      <div className="flex flex-col h-full w-full">
+        <header className="flex items-center space-x-2 border-b p-2 border-gray-300">
+          <FileIcon className="h-4 w-4 flex justify-center items-center" />
+          <h2 className="text-lg font-medium">{`Slicer:some name`}</h2>
+        </header>
+        {pdfUrl ? <div className="relative flex justify-center items-start flex-grow overflow-auto">
+          <div className="relative">
+            <PDFRenderer
+              url={pdfUrl}
+              pageNumber={pageNumber}
+              onDocumentLoadSuccess={onDocumentLoadSuccess}
+              onPageRenderSuccess={onPageRenderSuccess}
+              skippedPages={skippedPages}
             />
+            {pageDimensions && (
+              <div
+                className="absolute inset-0 z-10"
+                style={{
+                  width: `${pageDimensions.width}px`,
+                  height: `${pageDimensions.height}px`,
+                }}
+              >
+                <AnnotationCanvas
+                  pageDimensions={pageDimensions}
+                  isRectangleMode={isRectangleMode}
+                  pageNumber={pageNumber}
+                  onRectangleCreated={handleRectangleCreated}
+                  onCanvasReady={handleCanvasReady}
+                />
+              </div>
+            )}
           </div>
-        )}
+        </div> : <div>Loading PDF...</div>}
       </div>
 
       <PDFToolbar
-        isDrawingMode={isDrawingMode}
         isRectangleMode={isRectangleMode}
         pageNumber={pageNumber}
         numPages={numPages}
-        toggleDrawingMode={toggleDrawingMode}
         toggleRectangleMode={toggleRectangleMode}
         deleteSelectedObject={deleteSelectedObject}
         clearAllAnnotations={clearAllAnnotations}
         extractTextFromRectangle={extractTextFromRectangle}
         previousPage={previousPage}
         nextPage={nextPage}
+        isPageSkipped={skippedPages.includes(pageNumber)}
+        togglePageSkip={togglePageSkip}
       />
     </div>
   );

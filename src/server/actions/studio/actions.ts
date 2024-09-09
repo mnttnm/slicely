@@ -99,3 +99,32 @@ export async function getSignedPdfUrl(filePath: string): Promise<string> {
 
   return data.signedUrl;
 }
+
+export async function getSlicers(): Promise<Tables<'pdfs'>[]> {
+  return getUserPDFs();
+}
+
+export async function createSlicer(slicer: TablesInsert<'slicers'>): Promise<Tables<'slicers'>> {
+  console.log('Creating slicer:', slicer);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Authentication failed');
+  }
+
+  const { data, error } = await supabase
+    .from('slicers')
+    .insert({
+      ...slicer,
+      user_id: user.id,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating slicer:', error);
+    throw new Error('Failed to create slicer');
+  }
+
+  return data;
+}
