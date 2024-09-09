@@ -26,12 +26,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans overflow-hidden`}>
+      <head>
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet" />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans overflow-hidden h-full`}>
         <PDFProvider>
-          <Header />
-          {children}
-          <CommandMenu />
-          <Toaster />
+          <div className="flex flex-col h-screen">
+            <Header />
+            {children}
+            <CommandMenu />
+            <Toaster />
+          </div>
         </PDFProvider>
       </body>
     </html>

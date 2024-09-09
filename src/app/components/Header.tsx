@@ -6,7 +6,7 @@ import { useUser } from "../hooks/useUser";
 import { UserProfileMenu } from "@/app/components/UserProfileMenu";
 
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <Link href={href} className="font-medium text-muted-foreground hover:text-primary transition-colors">
+  <Link href={href} className="text-gray-400 hover:text-gray-200 transition-colors font-medium">
     {children}
   </Link>
 );
@@ -15,21 +15,23 @@ const Header = React.memo(() => {
   const { user } = useUser();
 
   return (
-    <header className="sticky px-4 top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-center">
-        <Link href="/" className="mr-6 flex items-center justify-center space-x-2">
-          <span className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
-            slicely
-          </span>
-        </Link>
+    <header className="px-4 py-2 top-0 z-50 w-full border-b border-gray-700/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex items-center">
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center justify-center space-x-2">
+            <span className="text-3xl font-bold font-orbitron dark:text-neutral-200 text-gray-600 drop-shadow-[0_0_0.3rem_#ffffff70]">
+              Slicely
+            </span>
+          </Link>
+        </div>
         {user && (
-          <nav className="flex items-center justify-center space-x-6 font-medium">
+          <nav className="flex flex-1 items-center justify-center space-x-6 mx-auto font-medium">
             <NavLink href="/dashboard">Dashboard</NavLink>
-            <NavLink href="/document-lab">Document Lab</NavLink>
+            <NavLink href="/studio">Studio</NavLink>
             <NavLink href="/search">Search</NavLink>
           </nav>
         )}
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex items-center space-x-4">
           {user && (
             <>
               {/* <UploadButton /> */}
