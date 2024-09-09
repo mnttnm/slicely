@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { usePDFViewer } from '../contexts/PDFViewerContext';
-import { getPageText } from '@/utils/pdfUtils';
+import { getPageText } from '@/app/utils/pdfUtils';
 
 interface ExtractedText {
   id: string;

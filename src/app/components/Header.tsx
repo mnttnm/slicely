@@ -4,12 +4,7 @@ import React from 'react';
 import Link from "next/link";
 import { useUser } from "../hooks/useUser";
 import { UserProfileMenu } from "@/app/components/UserProfileMenu";
-
-const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <Link href={href} className="text-gray-400 hover:text-gray-200 transition-colors font-medium">
-    {children}
-  </Link>
-);
+import Navbar from "@/app/components/Navbar";
 
 const Header = React.memo(() => {
   const { user } = useUser();
@@ -24,13 +19,7 @@ const Header = React.memo(() => {
             </span>
           </Link>
         </div>
-        {user && (
-          <nav className="flex flex-1 items-center justify-center space-x-6 mx-auto font-medium">
-            <NavLink href="/dashboard">Dashboard</NavLink>
-            <NavLink href="/studio">Studio</NavLink>
-            <NavLink href="/search">Search</NavLink>
-          </nav>
-        )}
+        {user && <Navbar />}
         <div className="flex items-center space-x-4">
           {user && (
             <>
