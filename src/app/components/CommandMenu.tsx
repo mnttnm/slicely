@@ -10,11 +10,13 @@ import {
   CommandList,
 } from "@/app/components/ui/command"
 import { useFileUpload } from "@/app/hooks/useFileUpload"
+import { useTheme } from "next-themes"
 
 export function CommandMenu() {
   const [open, setOpen] = React.useState(false)
   const { uploadFile } = useFileUpload()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const { setTheme, theme } = useTheme()
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -40,6 +42,10 @@ export function CommandMenu() {
     }
   }
 
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
+
   return (
     <>
       <CommandDialog open={open} onOpenChange={setOpen}>
@@ -53,6 +59,9 @@ export function CommandMenu() {
               })}
             >
               Upload PDF
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(toggleTheme)}>
+              Toggle Theme
             </CommandItem>
             {/* Add more command items here */}
           </CommandGroup>
