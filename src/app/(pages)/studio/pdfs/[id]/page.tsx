@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { usePDFContext } from '@/app/contexts/PDFContext';
 import { PDFMetadata } from '@/app/types';
 import PDFViewer from '@/app/components/PDFViewer';
-import ExtractedTextList from '@/app/components/ExtractedTextList';
+import ExtractedTextView from '@/app/components/ExtractedTextView';
 
 interface ExtractedText {
   id: string;
@@ -55,7 +55,7 @@ const PDFViewerPage = () => {
       <h2 className="text-2xl font-bold mb-4">{pdf.name}</h2>
       <div className="flex h-full">
         <PDFViewer url={pdf.url} onExtractText={handleExtractedText} onDeleteText={handleDeleteText} />
-        <ExtractedTextList extractedTexts={extractedTexts} />
+        <ExtractedTextView extractedTexts={extractedTexts} />
       </div>
     </div>
   );

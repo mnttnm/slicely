@@ -87,7 +87,7 @@ const SlicerPage = () => {
 
   return (
     <article className="flex flex-col h-full">
-      <div className="flex h-full overflow-auto">
+      <div className="flex h-full">
         <PDFViewerProvider>
           <PDFViewer url={pdf.url} onExtractText={handleExtractedText} onDeleteText={handleDeleteText} />
           <SlicerSettings

@@ -19,7 +19,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "PDF Made Easy",
+  title: "Slicely: PDF Made Easy",
   description: "Annotate, Process and Parse just the content that you need",
 };
 

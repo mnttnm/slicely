@@ -2,7 +2,7 @@
 
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
-import ExtractedTextList from './ExtractedTextList';
+import ExtractedTextView from './ExtractedTextView';
 import { Slicer, SlicerConfigProps } from '@/app/types';
 import { Button } from './ui/button';
 import { usePDFViewer } from '../contexts/PDFViewerContext';
@@ -82,7 +82,7 @@ const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, onUpdateS
           <TabsTrigger value="config">Page Processing Rules</TabsTrigger>
         </TabsList>
         <TabsContent value="extracted" className="px-2">
-          <ExtractedTextList extractedTexts={extractedTexts} />
+          <ExtractedTextView extractedTexts={extractedTexts} />
         </TabsContent>
         <TabsContent value="config" className="px-2 space-y-4">
           <SlicerRules slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} saveSlicer={saveSlicer} />
