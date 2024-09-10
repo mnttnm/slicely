@@ -27,7 +27,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body suppressHydrationWarning>
+      <head>
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet" />
+      </head>
+      <body suppressHydrationWarning className="flex flex-col min-h-screen overflow-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -36,8 +39,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <PDFProvider>
             <Header />
+            <main className="flex-grow overflow-auto py-1">
+              {children}
+            </main>
             <CommandMenu />
-            {children}
             <Toaster />
           </PDFProvider>
         </ThemeProvider>
