@@ -33,7 +33,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PDFProvider>
           <div className="flex flex-col h-screen">
             <Header />
-            {children}
+            <main className="flex-1 py-2">
+              {children}
+            </main>
+            <CommandMenu />
             <CommandMenu />
             <Toaster />
           </div>

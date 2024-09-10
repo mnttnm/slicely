@@ -149,7 +149,7 @@ export async function createSlicer({ name, description, fileId }: { name: string
   // Update the PDF to link it to the new slicer
   const { error: updateError } = await supabase
     .from('pdfs')
-    .update({ slicer_id: newSlicer.id })
+    .update({ slicer_id: newSlicer.id, is_template: true })
     .eq('id', fileId);
 
   if (updateError) {

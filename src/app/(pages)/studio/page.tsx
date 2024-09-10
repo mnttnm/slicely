@@ -35,20 +35,30 @@ const StudioPage = async () => {
 
         <TabsContent value="pdfs" className="mt-2">
           <Table>
-            <TableHeader>
+            <TableHeader className="hover:bg-transparent">
               <TableRow>
                 <TableHead>File Name</TableHead>
                 <TableHead>Uploaded</TableHead>
+                <TableHead>Slicer</TableHead>
+                <TableHead>Is Template</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pdfs.map((pdf) => (
-                <TableRow key={pdf.id}>
-                  <TableCell>{pdf.file_name}</TableCell>
-                  <TableCell>{pdf.created_at ? pdf.created_at.toLocaleString() : 'N/A'}</TableCell>
-                  <TableCell>
-                    <Link href={`/studio/${pdf.id}`} className="text-blue-600 hover:underline">
+                <TableRow key={pdf.id} className="hover:bg-neutral-600">
+                  <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
+                  <TableCell className="text-gray-500">{pdf.created_at ? pdf.created_at.toLocaleString() : 'N/A'}</TableCell>
+                  <TableCell className="text-gray-500">
+                    {pdf.slicer_id ? (
+                      <Link href={`/studio/slicers/${pdf.slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
+                        {pdf.slicer_id}
+                      </Link>
+                    ) : 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-gray-500">{pdf.is_template ? 'Yes' : 'No'}</TableCell>
+                  <TableCell className="text-gray-500">
+                    <Link href={`/studio/${pdf.id}`}>
                       View
                     </Link>
                   </TableCell>
@@ -57,7 +67,6 @@ const StudioPage = async () => {
             </TableBody>
           </Table>
         </TabsContent>
-
         <TabsContent value="slicers" className="mt-4">
           {slicers.length === 0 ? (
             <p className="text-gray-500">No slicers available.</p>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import PDFViewer from '@/app/components/PDFViewer';
-import { PDFViewerProvider, usePDFViewer } from '@/app/contexts/PDFViewerContext';
+import { PDFViewerProvider } from '@/app/contexts/PDFViewerContext';
 import SlicerSettings from '@/app/components/SlicerSettings';
 import { Slicer } from '@/app/types';
 import ExtractedTextView from '@/app/components/ExtractedTextView';
