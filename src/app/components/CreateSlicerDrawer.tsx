@@ -71,8 +71,8 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({ children }) => 
       if (!fileToUse) {
         throw new Error('No valid file selected');
       }
-      const slicerName = name || `slicer:${fileToUse.name || 'Untitled'}`;
-      const slicerDescription = description || `Slicer for ${fileToUse.name || 'Untitled'}`;
+      const slicerName = name ?? uploadedFile?.name ?? userPDFs.find(pdf => pdf.id.toString() === selectedFile)?.file_name ?? `Slicer  ${new Date().toISOString()}`;
+      const slicerDescription = description || `Description for ${slicerName}`;
       const newSlicer = await createSlicer({
         name: slicerName,
         description: slicerDescription,
