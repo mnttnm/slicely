@@ -1,0 +1,22 @@
+# General UI Guidelines
+- Make sure to break the UI into the smallest possible modules for reusability.
+- Use react server components as much as possible
+- Use Shadcn UI components wherever possible, refer to https://ui.shadcn.com/blocks and https://ui.shadcn.com/docs/components
+  to decide on the components to use and the best practices for them.
+- Use npm run shadcn@latest to generate shadcn UI components.
+- Use functional components and hooks from React.
+- Ensure components are typed with TypeScript for better type safety.
+- Follow the Tailwind CSS conventions for styling, for all the components define both light and dark mode variants.
+- Use semantic HTML for better accessibility.
+
+# Backend Guidelines
+- Put the code in src/server/services, define actions in src/server/actions and use them in client and server componets
+
+# File and Folder Structure
+- The root folder of the app is src and all the application code should go in src/app, look for existing
+  folders and files before creating new ones.
+- All the new screens should go in (pages) folder and subfolders.
+- All the individual components go to src/app/components
+- use src/app/lib for shared functions
+- use src/app/utils for shared helpers
+- Server side code like actions, services etc goes to src/server/actions and src/server/services
