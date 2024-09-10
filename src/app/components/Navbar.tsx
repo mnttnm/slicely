@@ -18,8 +18,8 @@ const NavLink = ({ href, children }: NavLinkProps) => {
     <Link
       href={href}
       className={cn(
-        "text-gray-400 hover:text-gray-500 transition-colors font-medium",
-        isActive && "text-gray-500 font-semibold"
+        "text-gray-500 hover:text-gray-600 dark:text-white-100 dark:hover:text-gray-300 transition-colors font-medium",
+        isActive && "text-gray-600 dark:text-gray-100"
       )}
     >
       {children}

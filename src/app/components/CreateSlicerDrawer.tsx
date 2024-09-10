@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerTrigger } from "@/app/components/ui/drawer";
+import { Upload } from 'lucide-react'; // Import the Upload icon
 import { Button } from "@/app/components/ui/button";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerTrigger } from "@/app/components/ui/drawer";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { Label } from "@/app/components/ui/label";
 import { createSlicer, getUserPDFs, uploadPdf } from '@/server/actions/studio/actions';
 import { Tables } from '@/types/supabase-types/database.types';
-import { Upload } from 'lucide-react'; // Import the Upload icon
 
 interface CreateSlicerDrawerProps {
   children: React.ReactNode;

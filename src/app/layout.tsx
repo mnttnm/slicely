@@ -5,6 +5,7 @@ import Header from "@/app/components/Header";
 import { PDFProvider } from '@/app/contexts/PDFContext';
 import { CommandMenu } from "@/app/components/CommandMenu";
 import { Toaster } from "@/app/components/ui/toaster";
+import { ThemeProvider } from "@/app/components/ThemeProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -25,22 +26,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet" />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans overflow-hidden h-full`}>
-        <PDFProvider>
-          <div className="flex flex-col h-screen">
+    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body suppressHydrationWarning>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <PDFProvider>
             <Header />
-            <main className="flex-1 py-2">
-              {children}
-            </main>
             <CommandMenu />
-            <CommandMenu />
+            {children}
             <Toaster />
-          </div>
-        </PDFProvider>
+          </PDFProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

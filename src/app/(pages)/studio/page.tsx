@@ -46,7 +46,7 @@ const StudioPage = async () => {
             </TableHeader>
             <TableBody>
               {pdfs.map((pdf) => (
-                <TableRow key={pdf.id} className="hover:bg-neutral-600">
+                <TableRow key={pdf.id} className="hover:bg-neutral-200 dark:hover:bg-neutral-800">
                   <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
                   <TableCell className="text-gray-500">{pdf.created_at ? pdf.created_at.toLocaleString() : 'N/A'}</TableCell>
                   <TableCell className="text-gray-500">
