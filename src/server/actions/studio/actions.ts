@@ -1,7 +1,7 @@
 'use server';
 
 import { SupabaseServerClient as supabase } from '@/server/services/supabase/server';
-import { Tables, TablesInsert } from '@/types/database.types';
+import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 
 export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'>> {
 
@@ -100,22 +100,42 @@ export async function getSignedPdfUrl(filePath: string): Promise<string> {
   return data.signedUrl;
 }
 
-export async function getSlicers(): Promise<Tables<'pdfs'>[]> {
-  return getUserPDFs();
-}
-
-export async function createSlicer(slicer: TablesInsert<'slicers'>): Promise<Tables<'slicers'>> {
-  console.log('Creating slicer:', slicer);
+export async function getSlicers(): Promise<Tables<'slicers'>[]> {
+  // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
     throw new Error('Authentication failed');
   }
 
-  const { data, error } = await supabase
+  const { data: slicers, error } = await supabase
+    .from('slicers')
+    .select('*')
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error fetching user slicers:', error);
+    throw new Error('Failed to fetch user slicers');
+  }
+
+  return slicers;
+}
+
+export async function createSlicer({ name, description, fileId }: { name: string; description: string; fileId: string }) {
+  // Get the authenticated user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Authentication failed');
+  }
+
+  // Create the new slicer
+  const { data: newSlicer, error } = await supabase
     .from('slicers')
     .insert({
-      ...slicer,
+      name,
+      description,
+      pdf_id: fileId,
       user_id: user.id,
     })
     .select()
@@ -126,5 +146,47 @@ export async function createSlicer(slicer: TablesInsert<'slicers'>): Promise<Tab
     throw new Error('Failed to create slicer');
   }
 
-  return data;
+  // Update the PDF to link it to the new slicer
+  const { error: updateError } = await supabase
+    .from('pdfs')
+    .update({ slicer_id: newSlicer.id })
+    .eq('id', fileId);
+
+  if (updateError) {
+    console.error('Error updating PDF:', updateError);
+    // You might want to handle this error, possibly by deleting the created slicer
+  }
+
+  return newSlicer;
+}
+
+export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Tables<'slicers'>; pdfUrl: string } | null> {
+  // Get the authenticated user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Authentication failed');
+  }
+
+  // Fetch slicer details
+  const { data: slicerDetails, error } = await supabase
+    .from('slicers')
+    .select('*, pdfs!slicers_pdf_id_fkey(*)')
+    .eq('id', slicerId)
+    .single();
+
+
+  console.log('slicerDetails', slicerDetails);
+
+  if (error) {
+    console.error('Error fetching slicer details:', error);
+    throw new Error('Failed to fetch slicer details');
+  }
+
+  if (!slicerDetails) {
+    throw new Error('Slicer or associated PDF not found');
+  }
+
+
+  return { slicerDetails, pdfUrl: slicerDetails.pdfs.file_path };
 }

@@ -33,7 +33,6 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
   toggleRectangleMode,
   deleteSelectedObject,
   clearAllAnnotations,
-  extractTextFromRectangle,
   previousPage,
   nextPage,
   isPageSkipped,
@@ -41,7 +40,7 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
 }) => {
   return (
     <TooltipProvider>
-      <div className="absolute left-8 top-1/2 transform -translate-y-1/2 z-50">
+      <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-50">
         <div className="flex flex-col gap-2 p-3 bg-gray-800/70 backdrop-blur-sm rounded-xl shadow-lg">
           {/* Include Section */}
           <ToolbarButton

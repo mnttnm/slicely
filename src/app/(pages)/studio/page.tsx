@@ -4,16 +4,27 @@ import Link from 'next/link';
 import UploadButton from '@/app/components/UploadButton';
 import { getUserPDFs, getSlicers } from '@/server/actions/studio/actions';
 import { Slicer } from "@/app/components/Slicer";
+import { Button } from "@/app/components/ui/button";
+import { PlusIcon } from "lucide-react";
+import CreateSlicerDrawer from "@/app/components/CreateSlicerDrawer";
 
 const StudioPage = async () => {
   const pdfs = await getUserPDFs();
   const slicers = await getSlicers(); // Assuming you have this function
 
   return (
-    <div className="p-4">
+    <div className="px-4">
       <div className="flex justify-between items-center py-1">
         <h1 className="text-xl">Studio</h1>
-        <UploadButton />
+        <div className="flex gap-2">
+          <UploadButton />
+          <CreateSlicerDrawer>
+            <Button variant="outline">
+              <PlusIcon className="mr-2 h-4 w-4" />
+              Create Slicer
+            </Button>
+          </CreateSlicerDrawer>
+        </div>
       </div>
 
       <Tabs defaultValue="pdfs" className="w-full">
@@ -48,11 +59,15 @@ const StudioPage = async () => {
         </TabsContent>
 
         <TabsContent value="slicers" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {slicers.map((slicer) => (
-              <Slicer key={slicer.id} id={slicer.id} fileName={slicer.file_name} />
-            ))}
-          </div>
+          {slicers.length === 0 ? (
+            <p className="text-gray-500">No slicers available.</p>
+          ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {slicers.map((slicer) => (
+                  <Slicer key={slicer.id} id={slicer.id} fileName={slicer.name} />
+                ))}
+              </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

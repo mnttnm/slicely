@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { usePDFContext } from '@/app/contexts/PDFContext';
-import { PDFMetadata } from '@/app/types';
 import PDFViewer from '@/app/components/PDFViewer';
-import { PDFViewerProvider } from '@/app/contexts/PDFViewerContext';
+import { PDFViewerProvider, usePDFViewer } from '@/app/contexts/PDFViewerContext';
 import SlicerSettings from '@/app/components/SlicerSettings';
 import { Slicer } from '@/app/types';
-
+import ExtractedTextView from '@/app/components/ExtractedTextView';
+import { getSlicerDetails } from '@/server/actions/studio/actions';
 
 interface ExtractedText {
   id: string;
@@ -22,43 +21,34 @@ interface ExtractedText {
   };
 }
 
-
 const SlicerPage = () => {
   const { id } = useParams();
-  const { pdfs, setCurrentPDF } = usePDFContext();
-  const [pdf, setPdf] = useState<PDFMetadata | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [extractedTexts, setExtractedTexts] = useState<ExtractedText[]>([]);
   const [slicer, setSlicer] = useState<Slicer | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const selectedPdf = pdfs.find(p => p.id === id);
-    if (selectedPdf) {
-      setPdf(selectedPdf);
-      setCurrentPDF(selectedPdf);
-    }
-  }, [id, pdfs, setCurrentPDF]);
-
-  useEffect(() => {
-    // Fetch slicer data from the database using the id
-    // This is a placeholder, replace with actual API call
     const fetchSlicer = async () => {
-      // const response = await fetch(`/api/slicers/${id}`);
-      // const data = await response.json();
-      // setSlicer(data);
+      if (!id || typeof id !== 'string') return;
 
-      // Placeholder data
-      setSlicer({
-        name: 'Sample Slicer',
-        description: 'A sample slicer configuration',
-        user_id: 'user123',
-        llm_prompt: 'Sample prompt',
-        output_mode: 'Sample mode',
-        webhook_url: 'Sample url',
-        processing_rules: {
-          annotations: [],
-          skipped_pages: [],
-        },
-      });
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await getSlicerDetails(id);
+        if (result) {
+          const { slicerDetails, pdfUrl } = result;
+          setSlicer(slicerDetails as Slicer);
+          setPdfUrl(pdfUrl)
+        }
+      } catch (err) {
+        console.error('Error fetching slicer:', err);
+        setError('Failed to fetch slicer details. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchSlicer();
@@ -81,23 +71,34 @@ const SlicerPage = () => {
     // Here you would typically make an API call to update the slicer in the database
   };
 
-  if (!pdf || !slicer) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!pdfUrl || !slicer) {
+    return <div>No data available</div>;
+  }
+
   return (
-    <article className="flex flex-col h-full">
-      <div className="flex h-full">
-        <PDFViewerProvider>
-          <PDFViewer url={pdf.url} onExtractText={handleExtractedText} onDeleteText={handleDeleteText} />
+    <div className="flex flex-col h-screen overflow-hidden">
+      <PDFViewerProvider>
+        <div className="flex-grow overflow-hidden">
+          <ExtractedTextView extractedTexts={extractedTexts} />
+        </div>
+        <div className="flex h-full">
+          <PDFViewer url={pdfUrl} onExtractText={handleExtractedText} onDeleteText={handleDeleteText} />
           <SlicerSettings
             slicer={slicer}
             extractedTexts={extractedTexts}
             onUpdateSlicer={handleUpdateSlicer}
           />
-        </PDFViewerProvider>
-      </div>
-    </article>
+        </div>
+      </PDFViewerProvider>
+    </div>
   );
 };
 
