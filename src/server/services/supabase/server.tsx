@@ -27,5 +27,3 @@ export function createClient() {
     }
   )
 }
-
-export const SupabaseServerClient = createClient()

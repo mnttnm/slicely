@@ -1,12 +1,12 @@
 'use client'
 
 import { Button } from "@/app/components/ui/button"
-import { createClient } from "../../server/services/supabase/client"
+import { createClient } from "@/server/services/supabase/client"
 
 export default function GoogleSignInButton() {
-  const supabase = createClient()
 
   const handleGoogleSignIn = async () => {
+    const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

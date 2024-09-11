@@ -1,5 +1,6 @@
 'use server';
 
+import { ProcessingRules } from '@/app/types';
 import { SupabaseServerClient as supabase } from '@/server/services/supabase/server';
 import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 
@@ -60,6 +61,7 @@ export async function getUserPDFs(): Promise<Tables<'pdfs'>[]> {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
+    console.error('Authentication failed:', authError);
     throw new Error('Authentication failed');
   }
 
@@ -189,4 +191,48 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
 
 
   return { slicerDetails, pdfUrl: slicerDetails.pdfs.file_path };
+}
+
+export async function saveAnnotations(slicerId: string, annotations: ProcessingRules) {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Authentication failed');
+  }
+
+  const { data, error } = await supabase
+    .from('slicers')
+    .update({ processing_rules: annotations })
+    .eq('id', slicerId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error saving annotations:', error);
+    throw new Error('Failed to save annotations');
+  }
+
+  return data;
+}
+
+export async function getAnnotations(slicerId: string): Promise<ProcessingRules | null> {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Authentication failed');
+  }
+
+  const { data, error } = await supabase
+    .from('slicers')
+    .select('processing_rules')
+    .eq('id', slicerId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching annotations:', error);
+    throw new Error('Failed to fetch annotations');
+  }
+
+  return data?.processing_rules || null;
 }
