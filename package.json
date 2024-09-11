@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate:types": "npx supabase gen types --lang=typescript --local > src/types/supabase-types/database.types.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.1",
