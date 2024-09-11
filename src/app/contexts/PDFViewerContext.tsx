@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 import { pdfjs } from 'react-pdf';
-import { createSlicer, getSignedPdfUrl } from '@/server/actions/studio/actions';
-import { PageAnnotation, Rectangle, Slicer } from '../types';
+import { getSignedPdfUrl } from '@/server/actions/studio/actions';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -14,15 +13,12 @@ interface PDFViewerContextType {
   pdfUrl: string | null;
   skippedPages: number[];
   togglePageSkip: (pageNumber: number) => void;
-  updatePageAnnotations: (rectangles: Rectangle[]) => void;
   onDocumentLoadSuccess: (data: { numPages: number }) => void;
   onPageRenderSuccess: (page: any) => void;
   previousPage: () => void;
   nextPage: () => void;
   toggleRectangleMode: () => void;
   fetchSignedPdfUrl: (url: string) => void;
-  saveSlicer: () => void;
-  slicer: Slicer;
 }
 
 const PDFViewerContext = createContext<PDFViewerContextType | null>(null);
@@ -35,7 +31,6 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
   const [pdfDocument, setPdfDocument] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [skippedPages, setSkippedPages] = useState<number[]>([]);
-  const [pageAnnotations, setPageAnnotations] = useState<PageAnnotation[]>([]);
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -44,26 +39,6 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
       pdfjs.getDocument(pdfUrl).promise.then(setPdfDocument);
     }
   }, [pdfUrl]);
-
-  const slicerObject = useMemo(() => ({
-    processing_rules: {
-      annotations: pageAnnotations,
-      skipped_pages: skippedPages
-    },
-    description: "Slicer for PDF",
-    name: `Slicer: ${pdfUrl}`,
-    user_id: "",
-    output_mode: "text",
-    llm_prompt: "Extract all text from the PDF.",
-    webhook_url: "https://example.com/webhook",
-  }), [pageAnnotations, skippedPages, pdfUrl]);
-
-  const saveSlicer = useCallback(() => {
-    console.log('Saving slicer:', slicerObject);
-    createSlicer({
-      ...slicerObject,
-    });
-  }, [slicerObject]);
 
   const togglePageSkip = useCallback((pageNumber: number) => {
     setSkippedPages(prevSkippedPages => {
@@ -100,36 +75,6 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const updatePageAnnotations = useCallback((rectangles: Rectangle[]) => {
-    console.log('rectangles', rectangles);
-    // remove the annotation object if rectangles is empty
-    if (rectangles.length === 0) {
-      setPageAnnotations(prevAnnotations => {
-        return prevAnnotations.filter(annotation => annotation.page !== pageNumber);
-      });
-    } else {
-      setPageAnnotations(prevAnnotations => {
-        const currentAnnotation = prevAnnotations.find(annotation => annotation.page === pageNumber);
-
-        if (currentAnnotation) {
-          return prevAnnotations.map(annotation => {
-            if (annotation.page === pageNumber) {
-              return {
-                ...annotation,
-                rectangles: rectangles
-              };
-            }
-            return annotation;
-          });
-        }
-        return [...prevAnnotations, {
-          page: pageNumber,
-          rectangles: rectangles
-        }];
-      });
-    }
-  }, [pageNumber]);
-
   const contextValue = useMemo(() => ({
     numPages,
     pageNumber,
@@ -145,14 +90,11 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
     nextPage,
     toggleRectangleMode,
     fetchSignedPdfUrl,
-    saveSlicer,
-    updatePageAnnotations,
-    slicer: slicerObject
   }), [
     numPages, pageNumber, pageDimensions, isRectangleMode,
     pdfDocument, pdfUrl, skippedPages, togglePageSkip, onDocumentLoadSuccess,
     onPageRenderSuccess, previousPage, nextPage,
-    toggleRectangleMode, fetchSignedPdfUrl, saveSlicer, updatePageAnnotations, slicerObject
+    toggleRectangleMode, fetchSignedPdfUrl
   ]);
 
   return (

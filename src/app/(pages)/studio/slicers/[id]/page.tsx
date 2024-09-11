@@ -5,9 +5,9 @@ import { useParams } from 'next/navigation';
 import PDFViewer from '@/app/components/PDFViewer';
 import { PDFViewerProvider } from '@/app/contexts/PDFViewerContext';
 import SlicerSettings from '@/app/components/SlicerSettings';
-import { Slicer } from '@/app/types';
+import { Slicer, ProcessingRules } from '@/app/types';
 import ExtractedTextView from '@/app/components/ExtractedTextView';
-import { getSlicerDetails } from '@/server/actions/studio/actions';
+import { getSlicerDetails, saveAnnotations } from '@/server/actions/studio/actions';
 
 interface ExtractedText {
   id: string;
@@ -26,6 +26,7 @@ const SlicerPage = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [extractedTexts, setExtractedTexts] = useState<ExtractedText[]>([]);
   const [slicer, setSlicer] = useState<Slicer | null>(null);
+  const [processingRules, setProcessingRules] = useState<ProcessingRules | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +42,8 @@ const SlicerPage = () => {
         if (result) {
           const { slicerDetails, pdfUrl } = result;
           setSlicer(slicerDetails as Slicer);
-          setPdfUrl(pdfUrl)
+          setProcessingRules(slicerDetails.processing_rules || null);
+          setPdfUrl(pdfUrl);
         }
       } catch (err) {
         console.error('Error fetching slicer:', err);
@@ -71,6 +73,17 @@ const SlicerPage = () => {
     // Here you would typically make an API call to update the slicer in the database
   };
 
+  const handleUpdateAnnotations = async (updatedRules: ProcessingRules) => {
+    if (!slicer || !slicer.id) return;
+
+    try {
+      await saveAnnotations(slicer.id, updatedRules);
+      setProcessingRules(updatedRules);
+    } catch (error) {
+      console.error('Error saving annotations:', error);
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -86,13 +99,17 @@ const SlicerPage = () => {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <PDFViewerProvider>
-        <div className="flex-grow overflow-hidden">
-          <ExtractedTextView extractedTexts={extractedTexts} />
-        </div>
         <div className="flex h-full">
-          <PDFViewer url={pdfUrl} onExtractText={handleExtractedText} onDeleteText={handleDeleteText} />
+          <PDFViewer
+            url={pdfUrl}
+            onExtractText={handleExtractedText}
+            onDeleteText={handleDeleteText}
+            processingRules={processingRules}
+            onUpdateAnnotations={handleUpdateAnnotations}
+            slicerId={slicer.id}
+          />
           <SlicerSettings
-            slicer={slicer}
+            slicerObject={slicer}
             extractedTexts={extractedTexts}
             onUpdateSlicer={handleUpdateSlicer}
           />

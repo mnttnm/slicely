@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { usePDFViewer } from '../contexts/PDFViewerContext';
-import { getPageText } from '@/app/utils/pdfUtils';
+import { ProcessingRules } from '@/app/types';
 
 interface ExtractedText {
   id: string;
@@ -15,25 +15,15 @@ interface ExtractedText {
 }
 
 interface ExtractedTextViewProps {
-  extractedTexts: ExtractedText[];
+  slicedTexts: ExtractedText[];
+  processingRules: ProcessingRules | null;
 }
 
-const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ extractedTexts }) => {
-  const { pageNumber, slicer, pdfDocument } = usePDFViewer();
-  const [currentPageContent, setCurrentPageContent] = React.useState<string | null>(null);
+const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ slicedTexts, processingRules }) => {
+  const { pageNumber } = usePDFViewer();
 
-  useEffect(() => {
-    const fetchPageContent = async () => {
-      if (pdfDocument && pageNumber) {
-        const content = await getPageText(pdfDocument, pageNumber);
-        setCurrentPageContent(content);
-      }
-    };
-    fetchPageContent();
-  }, [pdfDocument, pageNumber]);
-
-  const isPageExcluded = slicer.processing_rules?.skipped_pages?.includes(pageNumber);
-  const hasRectangles = slicer.processing_rules?.annotations.some(
+  const isPageExcluded = processingRules?.skipped_pages?.includes(pageNumber);
+  const pageAnnotations = processingRules?.annotations.find(
     (annotation) => annotation.page === pageNumber
   );
 
@@ -42,8 +32,9 @@ const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ extractedTexts })
       <div className="overflow-y-auto flex-grow">
         {isPageExcluded ? (
           <p className="text-gray-600 dark:text-gray-400">No content for page (Excluded)</p>
-        ) : hasRectangles ? (
-          extractedTexts
+        ) : pageAnnotations ? (
+          
+          slicedTexts
             .filter((item) => item.pageNumber === pageNumber)
             .map((item) => (
               <section key={item.id} className="mb-4 p-4 border border-gray-300 dark:border-gray-700 rounded">
@@ -57,13 +48,8 @@ const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ extractedTexts })
                 <p className="mt-2 dark:text-gray-200">{item.text}</p>
               </section>
             ))
-        ) : currentPageContent ? (
-              <article>
-                <h2>Page: {pageNumber}</h2>
-                <p className="dark:text-gray-200">{currentPageContent}</p>
-              </article>
         ) : (
-                <p className="text-gray-600 dark:text-gray-400">Loading page content...</p>
+              <p className="text-gray-600 dark:text-gray-400">No annotations for this page</p>
         )}
       </div>
     </section>

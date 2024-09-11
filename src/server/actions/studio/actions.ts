@@ -1,11 +1,11 @@
 'use server';
 
 import { ProcessingRules } from '@/app/types';
-import { SupabaseServerClient as supabase } from '@/server/services/supabase/server';
+import { createClient } from '@/server/services/supabase/server';
 import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 
 export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'>> {
-
+  const supabase = createClient()
   // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -56,12 +56,12 @@ export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'
 }
 
 export async function getUserPDFs(): Promise<Tables<'pdfs'>[]> {
-
+  const supabase = createClient()
   // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    console.error('Authentication failed:', authError);
+    console.log('authError', authError);  
     throw new Error('Authentication failed');
   }
 
@@ -80,6 +80,7 @@ export async function getUserPDFs(): Promise<Tables<'pdfs'>[]> {
 
 // fetch PDF from Supabase Storage
 export async function fetchPDF(filePath: string): Promise<Blob | null> {
+  const supabase = createClient()
   const { data, error } = await supabase.storage.from('slicely-pdfs').download(filePath);
   if (error) {
     console.error('Error fetching PDF:', error);
@@ -89,6 +90,7 @@ export async function fetchPDF(filePath: string): Promise<Blob | null> {
 }
 
 export async function getSignedPdfUrl(filePath: string): Promise<string> {
+  const supabase = createClient()
   const { data, error } = await supabase
     .storage
     .from('slicely-pdfs')
@@ -103,6 +105,7 @@ export async function getSignedPdfUrl(filePath: string): Promise<string> {
 }
 
 export async function getSlicers(): Promise<Tables<'slicers'>[]> {
+  const supabase = createClient()
   // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -124,6 +127,7 @@ export async function getSlicers(): Promise<Tables<'slicers'>[]> {
 }
 
 export async function createSlicer({ name, description, fileId }: { name: string; description: string; fileId: string }) {
+  const supabase = createClient()
   // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -163,6 +167,7 @@ export async function createSlicer({ name, description, fileId }: { name: string
 }
 
 export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Tables<'slicers'>; pdfUrl: string } | null> {
+  const supabase = createClient()
   // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -194,6 +199,8 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
 }
 
 export async function saveAnnotations(slicerId: string, annotations: ProcessingRules) {
+  const supabase = createClient()
+  // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
@@ -216,6 +223,8 @@ export async function saveAnnotations(slicerId: string, annotations: ProcessingR
 }
 
 export async function getAnnotations(slicerId: string): Promise<ProcessingRules | null> {
+  const supabase = createClient()
+  // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {

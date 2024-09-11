@@ -54,8 +54,8 @@ const PDFViewerPage = () => {
     <div className="flex flex-col h-screen p-4">
       <h2 className="text-2xl font-bold mb-4">{pdf.name}</h2>
       <div className="flex h-full">
-        <PDFViewer url={pdf.url} onExtractText={handleExtractedText} onDeleteText={handleDeleteText} />
-        <ExtractedTextView extractedTexts={extractedTexts} />
+        <PDFViewer url={pdf.url} onExtractText={handleExtractedText} onDeleteText={handleDeleteText} processingRules={null} onUpdateAnnotations={() => { }} slicerId="" />
+        {extractedTexts && <ExtractedTextView slicedTexts={extractedTexts ?? []} processingRules={null} />}
       </div>
     </div>
   );

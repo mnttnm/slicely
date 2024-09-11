@@ -1,4 +1,3 @@
-
 export interface PDFMetadata {
   id: string;
   name: string;
@@ -18,24 +17,25 @@ export interface RectangleText {
   };
 }
 
-export type Rectangle = {
+export interface Rectangle {
   left: number;     // X-coordinate of the top-left corner
   top: number;      // Y-coordinate of the top-left corner
   width: number;    // Width of the rectangle
   height: number;   // Height of the rectangle
 };
 
-export type PageAnnotation = {
+export interface PageAnnotation {
   page: number;            // Page number the annotation applies to
   rectangles: Rectangle[]; // List of rectangle annotations for the page
 };
 
-export type ProcessingRules = {
+export interface ProcessingRules {
   annotations: PageAnnotation[]; // Array of annotations, grouped by page
   skipped_pages: number[];         // Array of page numbers to skip
 };
 
 export type Slicer = {
+  id: string;
   user_id: string;    // ID of the user who created the slicer
   name: string;       // Name of the slicer
   description?: string; // Description of the slicer (optional)
@@ -56,9 +56,3 @@ export type ExtractedText = {
     height: number;
   };
 };
-
-export interface SlicerConfigProps {
-  slicer: Slicer;
-  extractedTexts: ExtractedText[];
-  onUpdateSlicer: (updatedSlicer: Partial<Slicer>) => void;
-}

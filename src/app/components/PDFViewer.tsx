@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as fabric from 'fabric';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -8,16 +8,29 @@ import PDFToolbar from './PDFToolbar';
 import PDFRenderer from './PDFRenderer';
 import AnnotationCanvas from './AnnotationCanvas';
 import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
-import { RectangleText } from '@/app/types';
+import { RectangleText, ProcessingRules } from '@/app/types';
 import { FileIcon } from 'lucide-react';
+import ExtractedTextView from './ExtractedTextView';
 
 interface PDFViewerProps {
   url: string;
   onExtractText: (extractedText: RectangleText) => void;
   onDeleteText: (id?: string, deleteAll?: boolean) => void;
+  processingRules: ProcessingRules | null;
+  onUpdateAnnotations: (updatedRules: ProcessingRules) => void;
+  slicerId: string;
 }
 
-const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText }) => {
+const PDFViewer: React.FC<PDFViewerProps> = ({
+  url,
+  onExtractText,
+  onDeleteText,
+  processingRules,
+  onUpdateAnnotations,
+  slicerId
+}) => {
+  const [extractedTexts, setExtractedTexts] = useState<RectangleText[]>([]);
+
   const {
     numPages,
     pageNumber,
@@ -33,7 +46,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
     nextPage,
     toggleRectangleMode,
     fetchSignedPdfUrl,
-    updatePageAnnotations,
   } = usePDFViewer();
 
   useEffect(() => {
@@ -44,20 +56,44 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
 
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
 
-  const saveRectangles = () => {
-    if (fabricCanvasRef.current) {
-      const rectangles = fabricCanvasRef.current.getObjects('rect').map(obj => obj.toObject());
-      console.log('save rectangles', rectangles);
-      const transformedRectangles = rectangles.map((rect: any) => ({
-        left: rect.left,
-        top: rect.top,
-        width: rect.width,
-        height: rect.height,
-      }));
-      updatePageAnnotations(transformedRectangles);
-      localStorage.setItem(`pdfRectangles_${pageNumber}`, JSON.stringify(rectangles));
+  const saveRectangles = (rectangles: fabric.Object[]) => {
+    if (!processingRules) return;
+
+    const updatedRules = { ...processingRules };
+    const pageAnnotation = updatedRules.annotations.find(a => a.page === pageNumber);
+
+    const transformedRectangles = rectangles.map((rect: any) => ({
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    }));
+
+    if (pageAnnotation) {
+      pageAnnotation.rectangles = transformedRectangles;
+    } else {
+      updatedRules.annotations.push({
+        page: pageNumber,
+        rectangles: transformedRectangles,
+      });
     }
+
+    onUpdateAnnotations(updatedRules);
   };
+
+  // const handleExtractedText = (newExtractedText: RectangleText) => {
+  //   setExtractedTexts(prev => [...prev, newExtractedText]);
+  //   onExtractText(newExtractedText);
+  // };
+
+  // const handleDeleteText = (id?: string, deleteAll?: boolean) => {
+  //   if (deleteAll) {
+  //     setExtractedTexts([]);
+  //   } else {
+  //     setExtractedTexts(prev => prev.filter(text => text.id !== id));
+  //   }
+  //   onDeleteText(id, deleteAll);
+  // };
 
   const deleteSelectedObject = () => {
     if (fabricCanvasRef.current) {
@@ -68,7 +104,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
           onDeleteText(rect.id);
         }
         fabricCanvasRef.current.remove(activeObject);
-        saveRectangles();
+        saveRectangles(fabricCanvasRef.current.getObjects('rect'));
       }
     }
   };
@@ -77,8 +113,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.clear();
       onDeleteText(undefined, true);
-      localStorage.removeItem(`pdfRectangles_${pageNumber}`);
-      saveRectangles();
+      saveRectangles([]);
     }
   };
 
@@ -135,8 +170,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
   };
 
   const handleRectangleCreated = (rect: fabric.Rect) => {
-    saveRectangles();
-    extractTextFromRectangle(rect);
+    if (fabricCanvasRef.current) {
+      const rectangles = fabricCanvasRef.current.getObjects('rect');
+      saveRectangles(rectangles);
+      extractTextFromRectangle(rect);
+    }
   };
 
   const handleCanvasReady = (canvas: fabric.Canvas) => {
@@ -148,36 +186,42 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
       <div className="flex flex-col h-full w-full">
         <header className="flex items-center space-x-2 border-b p-2 border-gray-300">
           <FileIcon className="h-4 w-4 flex justify-center items-center" />
-          <h2 className="text-lg font-medium">{`Slicer:some name`}</h2>
+          <h2 className="text-lg font-medium">{`Slicer: ${slicerId}`}</h2>
         </header>
-        {pdfUrl ? <div className="relative flex justify-center items-start flex-grow overflow-auto">
-          <div className="relative">
-            <PDFRenderer
-              url={pdfUrl}
-              pageNumber={pageNumber}
-              onDocumentLoadSuccess={onDocumentLoadSuccess}
-              onPageRenderSuccess={onPageRenderSuccess}
-              skippedPages={skippedPages}
-            />
-            {pageDimensions && (
-              <div
-                className="absolute inset-0 z-10"
-                style={{
-                  width: `${pageDimensions.width}px`,
-                  height: `${pageDimensions.height}px`,
-                }}
-              >
-                <AnnotationCanvas
-                  pageDimensions={pageDimensions}
-                  isRectangleMode={isRectangleMode}
-                  pageNumber={pageNumber}
-                  onRectangleCreated={handleRectangleCreated}
-                  onCanvasReady={handleCanvasReady}
-                />
-              </div>
-            )}
+        {pdfUrl ? (
+          <div className="relative flex justify-center items-start flex-grow overflow-auto">
+            <div className="relative">
+              <PDFRenderer
+                url={pdfUrl}
+                pageNumber={pageNumber}
+                onDocumentLoadSuccess={onDocumentLoadSuccess}
+                onPageRenderSuccess={onPageRenderSuccess}
+                skippedPages={skippedPages}
+              />
+              {pageDimensions && (
+                <div
+                  className="absolute inset-0 z-10"
+                  style={{
+                    width: `${pageDimensions.width}px`,
+                    height: `${pageDimensions.height}px`,
+                  }}
+                >
+                  <AnnotationCanvas
+                    pageDimensions={pageDimensions}
+                    isRectangleMode={isRectangleMode}
+                    slicerId={slicerId}
+                    pageNumber={pageNumber}
+                    onRectangleCreated={handleRectangleCreated}
+                    onCanvasReady={handleCanvasReady}
+                    annotations={processingRules?.annotations || []}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-        </div> : <div>Loading PDF...</div>}
+        ) : (
+          <div>Loading PDF...</div>
+        )}
       </div>
 
       <PDFToolbar
@@ -192,6 +236,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onExtractText, onDeleteText 
         nextPage={nextPage}
         isPageSkipped={skippedPages.includes(pageNumber)}
         togglePageSkip={togglePageSkip}
+      />
+
+      <ExtractedTextView
+        slicedTexts={extractedTexts}
+        processingRules={processingRules}
       />
     </div>
   );

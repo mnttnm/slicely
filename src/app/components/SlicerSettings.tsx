@@ -3,9 +3,8 @@
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import ExtractedTextView from './ExtractedTextView';
-import { Slicer, SlicerConfigProps } from '@/app/types';
+import { ProcessingRules, RectangleText, Slicer } from '@/app/types';
 import { Button } from './ui/button';
-import { usePDFViewer } from '../contexts/PDFViewerContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 
 interface SlicerRulesProps {
@@ -89,8 +88,21 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer,
   );
 };
 
-const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, onUpdateSlicer }) => {
-  const { slicer: slicerObject, saveSlicer } = usePDFViewer();
+interface SlicerConfigProps {
+  extractedTexts: RectangleText[];
+  slicerObject: Slicer;
+  onUpdateSlicer: (slicer: Slicer) => void;
+}
+
+const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObject, onUpdateSlicer }) => {
+  const saveSlicer = () => {
+    onUpdateSlicer(slicerObject);
+  };
+
+  if (!slicerObject) {
+    return <div>No data available</div>;
+  }
+
   return (
     <div className="flex-1 w-1/2 bg-gray-200 dark:bg-gray-900 border-l border-gray-600">
       <Tabs defaultValue="extracted" className="w-full">
@@ -99,7 +111,7 @@ const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, onUpdateS
           <TabsTrigger value="config">Page Processing Rules</TabsTrigger>
         </TabsList>
         <TabsContent value="extracted" className="px-2">
-          <ExtractedTextView extractedTexts={extractedTexts} />
+          <ExtractedTextView slicedTexts={extractedTexts} processingRules={slicerObject.processing_rules ?? null} />
         </TabsContent>
         <TabsContent value="config" className="px-2 space-y-4">
           <SlicerRules slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} saveSlicer={saveSlicer} />

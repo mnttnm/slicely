@@ -4,6 +4,8 @@
 - [Done] Open pdf in studio mode
 - [Done] In studio mode, user should be able select the sections to be excluded or included while extracting text
 - [Done] Allow users to skip a page while extracting text or while chatting
+- [ ] Store the annotations and the processing rules in the db for slicer, read it on the slicer settings page.
+- [ ] Improve the layout of the slicer details page so that it has linked files |  studio
 - [ ] Breadcrumbs in studio mode
 - [ ] PDF chat support using Claude or GPT-4o
 - [ ] They will also define the output format
