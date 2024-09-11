@@ -6,7 +6,6 @@ import PDFViewer from '@/app/components/PDFViewer';
 import { PDFViewerProvider } from '@/app/contexts/PDFViewerContext';
 import SlicerSettings from '@/app/components/SlicerSettings';
 import { Slicer, ProcessingRules } from '@/app/types';
-import ExtractedTextView from '@/app/components/ExtractedTextView';
 import { getSlicerDetails, saveAnnotations } from '@/server/actions/studio/actions';
 
 interface ExtractedText {

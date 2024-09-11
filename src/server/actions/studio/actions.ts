@@ -55,19 +55,21 @@ export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'
   return newPdf;
 }
 
-export async function getUserPDFs(): Promise<Tables<'pdfs'>[]> {
+
+export async function getUserPDFs(): Promise<(Tables<'pdfs'> & { slicer_ids: string[] })[]> {
   const supabase = createClient()
-  // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    console.log('authError', authError);  
     throw new Error('Authentication failed');
   }
 
   const { data: userPDFs, error } = await supabase
     .from('pdfs')
-    .select('*')
+    .select(`
+      *,
+      pdf_slicers (slicer_id)
+    `)
     .eq('user_id', user.id);
 
   if (error) {
@@ -75,7 +77,14 @@ export async function getUserPDFs(): Promise<Tables<'pdfs'>[]> {
     throw new Error('Failed to fetch user PDFs');
   }
 
-  return userPDFs;
+  // Transform the data to include slicer_ids
+  const transformedPDFs = userPDFs.map(pdf => ({
+    ...pdf,
+    slicer_ids: pdf.pdf_slicers.map(ps => ps.slicer_id),
+    pdf_slicers: undefined // Remove this property as it's no longer needed
+  }));
+
+  return transformedPDFs;
 }
 
 // fetch PDF from Supabase Storage
@@ -104,6 +113,36 @@ export async function getSignedPdfUrl(filePath: string): Promise<string> {
   return data.signedUrl;
 }
 
+export async function getPdfDetails(pdfId: string): Promise<{ pdfDetails: Tables<'pdfs'>, slicer_ids: string[]; pdfUrl: string } | null> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('pdfs')
+    .select('*, pdf_slicers (slicer_id)')
+    .eq('id', pdfId)
+    .single();
+
+  if (!data) {
+    return null;
+  }
+
+  const { pdf_slicers: pdfSlicers, ...pdfDetails } = data;
+
+  if (error) {
+    console.error('Error fetching PDF details:', error);
+    throw new Error('Failed to fetch PDF details');
+  }
+
+  const pdfUrl = await getSignedPdfUrl(pdfDetails.file_path);
+
+  return {
+    pdfDetails,
+    slicer_ids: pdfSlicers.map(ps => ps.slicer_id),
+    pdfUrl
+  };
+}
+
+
+
 export async function getSlicers(): Promise<Tables<'slicers'>[]> {
   const supabase = createClient()
   // Get the authenticated user
@@ -128,7 +167,6 @@ export async function getSlicers(): Promise<Tables<'slicers'>[]> {
 
 export async function createSlicer({ name, description, fileId }: { name: string; description: string; fileId: string }) {
   const supabase = createClient()
-  // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
@@ -141,7 +179,6 @@ export async function createSlicer({ name, description, fileId }: { name: string
     .insert({
       name,
       description,
-      pdf_id: fileId,
       user_id: user.id,
     })
     .select()
@@ -152,15 +189,29 @@ export async function createSlicer({ name, description, fileId }: { name: string
     throw new Error('Failed to create slicer');
   }
 
-  // Update the PDF to link it to the new slicer
+  // Create the relationship in pdf_slicers
+  const { error: relationError } = await supabase
+    .from('pdf_slicers')
+    .insert({
+      pdf_id: fileId,
+      slicer_id: newSlicer.id,
+    });
+
+  if (relationError) {
+    console.error('Error creating pdf-slicer relationship:', relationError);
+    // You might want to handle this error, possibly by deleting the created slicer
+    throw new Error('Failed to link PDF to slicer');
+  }
+
+  // Update the PDF to mark it as a template
   const { error: updateError } = await supabase
     .from('pdfs')
-    .update({ slicer_id: newSlicer.id, is_template: true })
+    .update({ is_template: true })
     .eq('id', fileId);
 
   if (updateError) {
     console.error('Error updating PDF:', updateError);
-    // You might want to handle this error, possibly by deleting the created slicer
+    // You might want to handle this error
   }
 
   return newSlicer;
@@ -168,7 +219,6 @@ export async function createSlicer({ name, description, fileId }: { name: string
 
 export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Tables<'slicers'>; pdfUrl: string } | null> {
   const supabase = createClient()
-  // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
@@ -178,24 +228,33 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
   // Fetch slicer details
   const { data: slicerDetails, error } = await supabase
     .from('slicers')
-    .select('*, pdfs!slicers_pdf_id_fkey(*)')
+    .select(`
+      *,
+      pdf_slicers!inner (
+        pdfs:pdf_id (*)
+      )
+    `)
     .eq('id', slicerId)
     .single();
-
-
-  console.log('slicerDetails', slicerDetails);
 
   if (error) {
     console.error('Error fetching slicer details:', error);
     throw new Error('Failed to fetch slicer details');
   }
 
-  if (!slicerDetails) {
+  if (!slicerDetails || !slicerDetails.pdf_slicers[0]?.pdfs) {
     throw new Error('Slicer or associated PDF not found');
   }
 
+  const pdfDetails = slicerDetails.pdf_slicers[0].pdfs;
 
-  return { slicerDetails, pdfUrl: slicerDetails.pdfs.file_path };
+  return {
+    slicerDetails: {
+      ...slicerDetails,
+      pdf_slicers: undefined // Remove this property as it's not part of the original structure
+    },
+    pdfUrl: pdfDetails.file_path
+  };
 }
 
 export async function saveAnnotations(slicerId: string, annotations: ProcessingRules) {

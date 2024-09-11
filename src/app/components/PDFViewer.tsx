@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import * as fabric from 'fabric';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -10,7 +10,6 @@ import AnnotationCanvas from './AnnotationCanvas';
 import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
 import { RectangleText, ProcessingRules } from '@/app/types';
 import { FileIcon } from 'lucide-react';
-import ExtractedTextView from './ExtractedTextView';
 
 interface PDFViewerProps {
   url: string;
@@ -29,7 +28,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   onUpdateAnnotations,
   slicerId
 }) => {
-  const [extractedTexts, setExtractedTexts] = useState<RectangleText[]>([]);
 
   const {
     numPages,
@@ -236,11 +234,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         nextPage={nextPage}
         isPageSkipped={skippedPages.includes(pageNumber)}
         togglePageSkip={togglePageSkip}
-      />
-
-      <ExtractedTextView
-        slicedTexts={extractedTexts}
-        processingRules={processingRules}
       />
     </div>
   );

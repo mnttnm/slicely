@@ -50,15 +50,19 @@ const StudioPage = async () => {
                   <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
                   <TableCell className="text-gray-500">{pdf.created_at ? pdf.created_at.toLocaleString() : 'N/A'}</TableCell>
                   <TableCell className="text-gray-500">
-                    {pdf.slicer_id ? (
-                      <Link href={`/studio/slicers/${pdf.slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
-                        {pdf.slicer_id}
-                      </Link>
+                    {pdf.slicer_ids.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {pdf.slicer_ids.map((slicer_id) => (
+                          <Link key={slicer_id} href={`/studio/slicers/${slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
+                            {slicer_id}
+                          </Link>
+                        ))}
+                      </div>
                     ) : 'N/A'}
                   </TableCell>
                   <TableCell className="text-gray-500">{pdf.is_template ? 'Yes' : 'No'}</TableCell>
                   <TableCell className="text-gray-500">
-                    <Link href={`/studio/${pdf.id}`}>
+                    <Link href={`/studio/pdfs/${pdf.id}`}>
                       View
                     </Link>
                   </TableCell>

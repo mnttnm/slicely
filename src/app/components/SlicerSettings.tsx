@@ -3,7 +3,7 @@
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import ExtractedTextView from './ExtractedTextView';
-import { ProcessingRules, RectangleText, Slicer } from '@/app/types';
+import { RectangleText, Slicer } from '@/app/types';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 

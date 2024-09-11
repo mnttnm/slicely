@@ -2,63 +2,78 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { usePDFContext } from '@/app/contexts/PDFContext';
-import { PDFMetadata } from '@/app/types';
-import PDFViewer from '@/app/components/PDFViewer';
-import ExtractedTextView from '@/app/components/ExtractedTextView';
+import { PDFViewerProvider } from '@/app/contexts/PDFViewerContext';
+import { getPdfDetails } from '@/server/actions/studio/actions';
+import { Tables } from '@/types/supabase-types/database.types';
+import PDFRenderer from '@/app/components/PDFRenderer';
 
-interface ExtractedText {
-  id: string;
-  pageNumber: number;
-  text: string;
-  rectangleInfo: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  };
-}
-
-const PDFViewerPage = () => {
+const PDFDetails = () => {
   const { id } = useParams();
-  const { pdfs, setCurrentPDF } = usePDFContext();
-  const [pdf, setPdf] = useState<PDFMetadata | null>(null);
-  const [extractedTexts, setExtractedTexts] = useState<ExtractedText[]>([]);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfDetails, setPdfDetails] = useState<Tables<'pdfs'> | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const selectedPdf = pdfs.find(p => p.id === id);
-    if (selectedPdf) {
-      setPdf(selectedPdf);
-      setCurrentPDF(selectedPdf);
-    }
-  }, [id, pdfs, setCurrentPDF]);
+    const fetchPdfDetails = async () => {
+      if (!id || typeof id !== 'string') return;
 
-  const handleExtractedText = (newExtractedText: ExtractedText) => {
-    setExtractedTexts(prev => [...prev, newExtractedText]);
-  };
+      setIsLoading(true);
+      setError(null);
 
-  const handleDeleteText = (id?: string, deleteAll?: boolean) => {
-    if (deleteAll) {
-      setExtractedTexts([]);
-    } else {
-      setExtractedTexts(prev => prev.filter(text => text.id !== id));
-    }
-  };
+      try {
+        const result = await getPdfDetails(id);
+        if (result) {
+          const { pdfDetails, pdfUrl } = result;
+          setPdfDetails(pdfDetails);
+          setPdfUrl(pdfUrl);
+        }
+      } catch (err) {
+        console.error('Error fetching slicer:', err);
+        setError('Failed to fetch slicer details. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPdfDetails();
+  }, [id]);
 
 
-  if (!pdf) {
+
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!pdfUrl || !pdfDetails) {
+    return <div>No data available</div>;
+  }
+
   return (
-    <div className="flex flex-col h-screen p-4">
-      <h2 className="text-2xl font-bold mb-4">{pdf.name}</h2>
-      <div className="flex h-full">
-        <PDFViewer url={pdf.url} onExtractText={handleExtractedText} onDeleteText={handleDeleteText} processingRules={null} onUpdateAnnotations={() => { }} slicerId="" />
-        {extractedTexts && <ExtractedTextView slicedTexts={extractedTexts ?? []} processingRules={null} />}
+    <PDFViewerProvider>
+      <div className="flex flex-col h-[100vh] overflow-hidden">
+        <header className="flex p-2 border-b border-gray-300">
+          <h1 className="text-xl">{`pdfs > ${pdfDetails.file_name}`}</h1>
+        </header>
+        <div className="flex flex-grow">
+          <div className="flex w-1/2 h-full overflow-auto border-r border-gray-300 justify-center">
+            <PDFRenderer
+              url={pdfUrl}
+              pageNumber={1}
+              onDocumentLoadSuccess={() => { }}
+              onPageRenderSuccess={() => { }}
+              skippedPages={[]}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+
+    </PDFViewerProvider>
   );
 };
 
-export default PDFViewerPage;
+export default PDFDetails;

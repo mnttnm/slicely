@@ -33,7 +33,6 @@ const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ slicedTexts, proc
         {isPageExcluded ? (
           <p className="text-gray-600 dark:text-gray-400">No content for page (Excluded)</p>
         ) : pageAnnotations ? (
-          
           slicedTexts
             .filter((item) => item.pageNumber === pageNumber)
             .map((item) => (
