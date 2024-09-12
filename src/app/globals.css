@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html, body, #__next {
+    @apply h-full overflow-hidden;
+  }
+  
   /* reset css */
   dl, ol, ul, dt, dd {
     @apply p-0 m-0;

@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet" />
       </head>
-      <body suppressHydrationWarning className="flex flex-col min-h-screen overflow-hidden">
+      <body suppressHydrationWarning className="flex flex-col">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <PDFProvider>
             <Header />
-            <main className="flex-grow overflow-auto py-1">
+            <main className="flex-1">
               {children}
             </main>
             <CommandMenu />
