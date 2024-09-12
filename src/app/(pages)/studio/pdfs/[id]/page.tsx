@@ -8,6 +8,9 @@ import { Tables } from '@/types/supabase-types/database.types';
 import PDFRenderer from '@/app/components/PDFRenderer';
 import PDFLab from '@/app/components/PDFLab';
 import PDFNavigation from '@/app/components/PDFNavigation';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
+import { Button } from '@/app/components/ui/button';
+import { MoreVertical, Settings, Download, Database } from 'lucide-react';
 
 const PDFDetails = () => {
   const { id } = useParams();
@@ -62,10 +65,30 @@ const PDFDetails = () => {
   return (
     <PDFViewerProvider>
       <div className="flex-1 bg-gray-800 flex flex-col min-h-0 text-white">
-        <header className="h-[3rem] px-4 py-2 flex-shrink-0 flex-grow-0 border-b border-gray-600/30">
+        <header className="h-[3rem] px-4 py-2 flex-shrink-0 flex-grow-0 border-b border-gray-600/30 flex justify-between items-center">
           <h1 className="text-xl">{`PDFs > ${pdfDetails.file_name}`}</h1>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => { console.log('Create Slicer') }}>
+                <Settings className="mr-2 h-4 w-4" />
+                Create Slicer
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => { console.log('Export') }}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => { console.log('Save to DB') }}>
+                <Database className="mr-2 h-4 w-4" />
+                Save to DB
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
-
         <div className="flex-1 flex min-h-0">
           {/* Left Section for PDFRenderer */}
           <section className="relative w-[50%] bg-gray-700 flex justify-center">

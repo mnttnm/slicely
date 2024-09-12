@@ -48,7 +48,7 @@ export type Database = {
           created_at?: string | null
           data: Json
           id?: string
-          output_type: string
+          output_type?: string
           pdf_id: string
           slicer_id: string
           updated_at?: string | null
@@ -71,21 +71,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "outputs_pdf_id_pdfs_id_fk"
-            columns: ["pdf_id"]
-            isOneToOne: false
-            referencedRelation: "pdfs"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "outputs_slicer_id_fkey"
-            columns: ["slicer_id"]
-            isOneToOne: false
-            referencedRelation: "slicers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "outputs_slicer_id_slicers_id_fk"
             columns: ["slicer_id"]
             isOneToOne: false
             referencedRelation: "slicers"
