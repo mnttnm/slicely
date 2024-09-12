@@ -52,6 +52,7 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const onPageRenderSuccess = useCallback((page: any) => {
     const { width, height } = page.getViewport({ scale: 1 });
+    console.log('onPageRenderSuccess', width, height);
     setPageDimensions({ width, height });
   }, []);
 

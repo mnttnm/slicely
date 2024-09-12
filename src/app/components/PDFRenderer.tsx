@@ -15,7 +15,7 @@ const PDFRenderer: React.FC<PDFRendererProps> = ({
   onPageRenderSuccess,
   skippedPages,
 }) => (
-  <Document file={url} onLoadSuccess={onDocumentLoadSuccess}>
+  <Document file={url} onLoadSuccess={onDocumentLoadSuccess} className="overflow-y-hidden">
     <Page
       pageNumber={pageNumber}
       onRenderSuccess={onPageRenderSuccess}

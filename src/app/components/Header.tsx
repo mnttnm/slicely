@@ -11,7 +11,7 @@ const Header = React.memo(() => {
   const { user } = useUser();
 
   return (
-    <header className="px-4 py-2 top-0 z-50 w-full border-b border-gray-700/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="h-[4rem] px-4 py-2 top-0 z-50 w-full border-b border-gray-700/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <Link href="/" className="flex items-center justify-center space-x-2">

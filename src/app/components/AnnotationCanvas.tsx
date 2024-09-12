@@ -25,6 +25,7 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
 
+  console.log('AnnotationCanvas', pageDimensions);
   useEffect(() => {
     if (canvasRef.current && pageDimensions) {
       const fabricCanvas = new fabric.Canvas(canvasRef.current);

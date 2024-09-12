@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  html, body, #__next {
+  html, #__next {
     @apply h-full overflow-hidden;
   }
   
