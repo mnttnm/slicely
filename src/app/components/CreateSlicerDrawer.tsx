@@ -4,23 +4,33 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload } from 'lucide-react'; // Import the Upload icon
 import { Button } from "@/app/components/ui/button";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerTrigger } from "@/app/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from "@/app/components/ui/drawer";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { Label } from "@/app/components/ui/label";
 import { createSlicer, getUserPDFs, uploadPdf } from '@/server/actions/studio/actions';
 import { Tables } from '@/types/supabase-types/database.types';
+import { toast } from '../hooks/use-toast';
 
 interface CreateSlicerDrawerProps {
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  defaultName?: string;
+  defaultDescription?: string;
+  defaultFileId?: string;
 }
 
-const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({ children }) => {
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
+  open,
+  onOpenChange,
+  defaultName = '',
+  defaultDescription = '',
+  defaultFileId = null
+}) => {
+  const [name, setName] = useState(defaultName);
+  const [description, setDescription] = useState(defaultDescription);
+  const [selectedFile, setSelectedFile] = useState<string | null>(defaultFileId);
   const [uploadedFile, setUploadedFile] = useState<{ id: string; name: string } | null>(null);
   const [userPDFs, setUserPDFs] = useState<Tables<'pdfs'>[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -63,7 +73,10 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({ children }) => 
 
   const handleSave = async () => {
     if (!selectedFile || selectedFile === 'no-selection') {
-      // Show an error message or handle the case where no file is selected
+      toast({
+        title: 'No file selected',
+        description: 'Please select a file to create a slicer.',
+      });
       return;
     }
     try {
@@ -78,7 +91,7 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({ children }) => 
         description: slicerDescription,
         fileId: selectedFile
       });
-      setOpen(false);
+      onOpenChange(false);
       router.push(`/studio/slicers/${newSlicer.id}`);
     } catch (error) {
       console.error('Failed to create slicer:', error);
@@ -88,35 +101,52 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({ children }) => 
 
   const isFileSelected = selectedFile && selectedFile !== 'no-selection';
 
+
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
+
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
-        {children}
-      </DrawerTrigger>
-      <DrawerContent className="bg-gray-100">
-        <DrawerHeader>
-          <DrawerTitle>Create New Slicer</DrawerTitle>
-          <DrawerDescription>Provide details for your new slicer.</DrawerDescription>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="bg-background text-foreground">
+        <DrawerHeader className="border-b border-border">
+          <DrawerTitle className="text-xl font-semibold">Create New Slicer</DrawerTitle>
+          <DrawerDescription className="text-muted-foreground">Provide details for your new slicer.</DrawerDescription>
         </DrawerHeader>
         <div className="p-4 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter slicer name" />
+            <Label htmlFor="name" className="text-sm font-medium">Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter slicer name"
+              className="bg-input text-input-foreground"
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter slicer description" />
+            <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter slicer description"
+              className="bg-input text-input-foreground"
+            />
           </div>
           <div className="space-y-2">
-            <Label>Select or Upload PDF File</Label>
+            <Label className="text-sm font-medium">Select or Upload PDF File</Label>
             <div className="flex space-x-2">
-              <Select onValueChange={(value) => {
-                setSelectedFile(value);
-                if (value === 'no-selection') {
-                  setUploadedFile(null);
-                }
-              }} value={selectedFile || undefined}>
-                <SelectTrigger className="flex-grow">
+              <Select
+                onValueChange={(value) => {
+                  setSelectedFile(value);
+                  if (value === 'no-selection') {
+                    setUploadedFile(null);
+                  }
+                }}
+                value={selectedFile || undefined}
+              >
+                <SelectTrigger className="flex-grow bg-input text-input-foreground">
                   <SelectValue placeholder="Select a file" />
                 </SelectTrigger>
                 <SelectContent>
@@ -136,7 +166,7 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({ children }) => 
                   disabled={isUploading}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                <Button variant="outline" disabled={isUploading}>
+                <Button variant="outline" disabled={isUploading} className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
                   {isUploading ? 'Uploading...' : (
                     <>
                       <Upload className="w-4 h-4 mr-2" />
@@ -148,9 +178,9 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({ children }) => 
             </div>
           </div>
         </div>
-        <DrawerFooter>
-          <Button onClick={handleSave} disabled={!isFileSelected}>Save</Button>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+        <DrawerFooter className="border-t border-border">
+          <Button onClick={handleSave} disabled={!isFileSelected} className="bg-primary text-primary-foreground hover:bg-primary/90">Create</Button>
+          <Button variant="outline" onClick={handleCancel} className="bg-secondary text-secondary-foreground hover:bg-secondary/90">Cancel</Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

@@ -5,22 +5,22 @@ import { Button } from "@/app/components/ui/button";
 import { FileText, MessageSquare } from 'lucide-react';
 import ChatComponent from './ChatComponent';
 import ProcessedOutputComponent from './ProcessedOutputComponent';
+import { Tables } from '@/types/supabase-types/database.types';
 
-const PDFLab: React.FC = () => {
+const PDFLab: React.FC<{ pdfDetails: Tables<'pdfs'>; slicerIds: string[] }> = ({ pdfDetails, slicerIds }) => {
   const [activeTab, setActiveTab] = useState('processed-output');
-  const [processedOutput, setProcessedOutput] = useState('Your processed output will appear here.');
 
   return (
     <Tabs className="w-1/2 flex flex-col h-[100%]" value={activeTab} onValueChange={setActiveTab}>
-      <header className="flex justify-between items-center p-2">
+      {/* <header className="flex justify-between items-center p-2">
         <h2 className="text-2xl">PDF Lab</h2>
-      </header>
+      </header> */}
       <main className="flex-1 p-2">
         <TabsContent value="processed-output" className="h-full">
-          <ProcessedOutputComponent content={processedOutput} />
+          <ProcessedOutputComponent pdfDetails={pdfDetails} slicerIds={slicerIds} />
         </TabsContent>
         <TabsContent value="chat" className="h-full">
-          <ChatComponent onProcessedOutput={setProcessedOutput} />
+          <ChatComponent />
         </TabsContent>
       </main>
       <TabsList className="h-[3rem] border-t border-gray-600/30">

@@ -3,6 +3,7 @@
 import { ProcessingRules } from '@/app/types';
 import { createClient } from '@/server/services/supabase/server';
 import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
+import { ProcessedPageOutput } from '@/app/types';
 
 export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'>> {
   const supabase = createClient()
@@ -303,4 +304,29 @@ export async function getAnnotations(slicerId: string): Promise<ProcessingRules 
   }
 
   return data?.processing_rules || null;
+}
+
+export async function getProcessedOutput(pdfId: string): Promise<ProcessedPageOutput | null> {
+  const supabase = createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Authentication failed');
+  }
+
+  const { data: result, error } = await supabase
+    .from('outputs')
+    .select('*')
+    .eq('pdf_id', pdfId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching processed output:', error);
+    return null;
+  }
+
+  if (!result || !result.data) return null;
+
+  return result.data as ProcessedPageOutput;
 }

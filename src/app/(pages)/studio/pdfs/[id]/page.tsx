@@ -16,6 +16,7 @@ const PDFDetails = () => {
   const { id } = useParams();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfDetails, setPdfDetails] = useState<Tables<'pdfs'> | null>(null);
+  const [slicerIds, setSlicerIds] = useState<string[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,9 +36,10 @@ const PDFDetails = () => {
       try {
         const result = await getPdfDetails(id);
         if (result) {
-          const { pdfDetails, pdfUrl } = result;
+          const { pdfDetails, pdfUrl, slicer_ids } = result;
           setPdfDetails(pdfDetails);
           setPdfUrl(pdfUrl);
+          setSlicerIds(slicer_ids);
         }
       } catch (err) {
         console.error('Error fetching slicer:', err);
@@ -74,9 +76,9 @@ const PDFDetails = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => { console.log('Create Slicer') }}>
+              <DropdownMenuItem onSelect={() => { console.log('Configure Slicer') }}>
                 <Settings className="mr-2 h-4 w-4" />
-                Create Slicer
+                Configure Slicer
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => { console.log('Export') }}>
                 <Download className="mr-2 h-4 w-4" />
@@ -106,7 +108,7 @@ const PDFDetails = () => {
             />
           </section>
 
-          <PDFLab />
+          <PDFLab pdfDetails={pdfDetails} slicerIds={slicerIds} />
         </div>
 
       </div >

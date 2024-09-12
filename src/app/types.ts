@@ -56,3 +56,20 @@ export type ExtractedText = {
     height: number;
   };
 };
+
+
+export type LLMOutput = {
+  prompt: string;
+  output: string;
+};
+
+export type ProcessedPageOutput = {
+  pageNumber: number;
+  rawPageContent: string;
+  extractedSectionTexts: ExtractedText[];
+  llmOutputs: LLMOutput[];
+};
+
+
+
+

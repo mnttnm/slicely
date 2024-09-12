@@ -10,11 +10,7 @@ interface Message {
   content: string;
 }
 
-interface ChatComponentProps {
-  onProcessedOutput: (output: string) => void;
-}
-
-const ChatComponent: React.FC<ChatComponentProps> = ({ onProcessedOutput }) => {
+const ChatComponent = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
 
@@ -29,7 +25,6 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ onProcessedOutput }) => {
       setTimeout(() => {
         const assistantMessage = `Processed: ${input}`;
         setMessages(prev => [...prev, { role: 'assistant', content: assistantMessage }]);
-        onProcessedOutput(assistantMessage);
       }, 1000);
     }
   };

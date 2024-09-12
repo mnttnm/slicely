@@ -4,9 +4,7 @@ import Link from 'next/link';
 import UploadButton from '@/app/components/UploadButton';
 import { getUserPDFs, getSlicers } from '@/server/actions/studio/actions';
 import { Slicer } from "@/app/components/Slicer";
-import { Button } from "@/app/components/ui/button";
-import { PlusIcon } from "lucide-react";
-import CreateSlicerDrawer from "@/app/components/CreateSlicerDrawer";
+
 
 const StudioPage = async () => {
   const pdfs = await getUserPDFs();
@@ -18,12 +16,7 @@ const StudioPage = async () => {
         <h1 className="text-xl">Studio</h1>
         <div className="flex gap-2">
           <UploadButton />
-          <CreateSlicerDrawer>
-            <Button variant="outline">
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Create Slicer
-            </Button>
-          </CreateSlicerDrawer>
+
         </div>
       </div>
 
