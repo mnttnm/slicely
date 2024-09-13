@@ -19,8 +19,8 @@ const PDFRenderer: React.FC<PDFRendererProps> = ({
     <Page
       pageNumber={pageNumber}
       onRenderSuccess={onPageRenderSuccess}
-      renderTextLayer={true}
-      renderAnnotationLayer={true}
+      renderTextLayer={false}
+      renderAnnotationLayer={false}
     />
     {skippedPages.includes(pageNumber) && (
       <div className="absolute flex items-center justify-center inset-0 bg-red-900/70 py-5">

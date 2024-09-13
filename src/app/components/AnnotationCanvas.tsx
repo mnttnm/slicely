@@ -1,6 +1,7 @@
-import { useRef, useEffect } from 'react';
+"use client";
+
+import { useRef, useEffect, useCallback } from 'react';
 import * as fabric from 'fabric';
-import { saveAnnotations } from '@/server/actions/studio/actions';
 import { Rectangle, PageAnnotation } from '@/app/types';
 
 interface AnnotationCanvasProps {
@@ -25,29 +26,45 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
 
-  console.log('AnnotationCanvas', pageDimensions);
+  const renderAnnotations = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    canvas.clear();
+
+    const pageAnnotation = annotations.find(a => a.page === pageNumber);
+    if (pageAnnotation) {
+      pageAnnotation.rectangles.forEach((rect: Rectangle) => {
+        canvas.add(new fabric.Rect({
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+          fill: 'transparent',
+          stroke: 'red',
+          strokeWidth: 2,
+          selectable: true,
+          hasControls: true,
+          lockRotation: true,
+          id: `rect_${Date.now()}_${Math.random()}`,
+        }));
+      });
+    }
+    canvas.renderAll();
+  }, [annotations, pageNumber]);
+
   useEffect(() => {
     if (canvasRef.current && pageDimensions) {
-      const fabricCanvas = new fabric.Canvas(canvasRef.current);
-      fabricCanvas.setDimensions(pageDimensions);
-
-      const pageAnnotation = annotations.find(a => a.page === pageNumber);
-      if (pageAnnotation) {
-        pageAnnotation.rectangles.forEach((rect: Rectangle) => {
-          fabricCanvas.add(new fabric.Rect({
-            left: rect.left,
-            top: rect.top,
-            width: rect.width,
-            height: rect.height,
-            fill: 'transparent',
-            stroke: 'red',
-            strokeWidth: 2,
-          }));
-        });
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
       }
 
+      const fabricCanvas = new fabric.Canvas(canvasRef.current);
+      fabricCanvas.setDimensions(pageDimensions);
       fabricCanvasRef.current = fabricCanvas;
       onCanvasReady(fabricCanvas);
+
+      renderAnnotations();
     }
 
     return () => {
@@ -55,7 +72,8 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
         fabricCanvasRef.current.dispose();
       }
     };
-  }, [pageDimensions, pageNumber, onCanvasReady, annotations]);
+  }, [pageDimensions, onCanvasReady, renderAnnotations]);
+
 
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
@@ -68,7 +86,7 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
 
     const handleMouseDown = (o: fabric.TEvent) => {
       if (!isRectangleMode) return;
-      const pointer = canvas.getPointer(o.e);
+      const pointer = canvas.getViewportPoint(o.e);
       const clickedObject = canvas.findTarget(o.e);
       if (clickedObject) {
         canvas.setActiveObject(clickedObject);
@@ -82,7 +100,7 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
 
     const handleMouseMove = (o: fabric.TEvent) => {
       if (!isRectangleMode || !isDown) return;
-      const pointer = canvas.getPointer(o.e);
+      const pointer = canvas.getViewportPoint(o.e);
       if (!rect) {
         rect = new fabric.Rect({
           left: startX,
@@ -114,7 +132,7 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
           canvas.remove(rect);
         } else {
           canvas.setActiveObject(rect);
-          handleRectangleCreated(rect);
+          onRectangleCreated(rect); // Only call this, remove the local handleRectangleCreated
         }
         rect = null;
       }
@@ -129,39 +147,7 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
       canvas.off('mouse:move', handleMouseMove);
       canvas.off('mouse:up', handleMouseUp);
     };
-  }, [isRectangleMode, pageNumber, slicerId, fabricCanvasRef.current]);
-
-  const handleRectangleCreated = async (rect: fabric.Rect) => {
-    onRectangleCreated(rect);
-
-    const updatedAnnotations = annotations ? [...annotations] : [];
-    const pageAnnotation = updatedAnnotations.find(a => a.page === pageNumber);
-
-    if (pageAnnotation) {
-      pageAnnotation.rectangles.push({
-        left: rect.left || 0,
-        top: rect.top || 0,
-        width: rect.width || 0,
-        height: rect.height || 0,
-      });
-    } else {
-      updatedAnnotations.push({
-        page: pageNumber,
-        rectangles: [{
-          left: rect.left || 0,
-          top: rect.top || 0,
-          width: rect.width || 0,
-          height: rect.height || 0,
-        }],
-      });
-    }
-
-    try {
-      await saveAnnotations(slicerId, { annotations: updatedAnnotations, skipped_pages: [] });
-    } catch (error) {
-      console.error('Error saving annotations:', error);
-    }
-  };
+  }, [isRectangleMode, pageNumber, slicerId, annotations, onRectangleCreated]);
 
   return (
     <canvas

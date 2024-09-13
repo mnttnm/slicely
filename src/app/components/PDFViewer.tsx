@@ -2,14 +2,13 @@
 
 import { useRef, useEffect } from 'react';
 import * as fabric from 'fabric';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
 import PDFToolbar from './PDFToolbar';
 import PDFRenderer from './PDFRenderer';
 import AnnotationCanvas from './AnnotationCanvas';
 import { useSlicerControl } from '@/app/contexts/SlicerControlContext';
 import { RectangleText, ProcessingRules } from '@/app/types';
 import { FileIcon } from 'lucide-react';
+import { saveAnnotations } from '@/server/actions/studio/actions';
 
 interface PDFViewerProps {
   url: string;
@@ -54,7 +53,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
 
-  const saveRectangles = (rectangles: fabric.Object[]) => {
+  const saveRectangles = async (rectangles: fabric.Object[]) => {
     if (!processingRules) return;
 
     const updatedRules = { ...processingRules };
@@ -77,6 +76,12 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
 
     onUpdateAnnotations(updatedRules);
+
+    try {
+      await saveAnnotations(slicerId, updatedRules);
+    } catch (error) {
+      console.error('Error saving annotations:', error);
+    }
   };
 
   // const handleExtractedText = (newExtractedText: RectangleText) => {
@@ -169,6 +174,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
   const handleRectangleCreated = (rect: fabric.Rect) => {
     if (fabricCanvasRef.current) {
+      console.log('handleRectangleCreated', rect);
       const rectangles = fabricCanvasRef.current.getObjects('rect');
       saveRectangles(rectangles);
       extractTextFromRectangle(rect);

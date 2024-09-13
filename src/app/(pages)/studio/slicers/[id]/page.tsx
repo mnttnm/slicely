@@ -75,8 +75,9 @@ const SlicerPage = () => {
   const handleUpdateAnnotations = async (updatedRules: ProcessingRules) => {
     if (!slicer || !slicer.id) return;
 
+    console.log('handleUpdateAnnotations', updatedRules);
     try {
-      await saveAnnotations(slicer.id, updatedRules);
+      // await saveAnnotations(slicer.id, updatedRules);
       setProcessingRules(updatedRules);
     } catch (error) {
       console.error('Error saving annotations:', error);

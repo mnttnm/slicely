@@ -259,6 +259,7 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
 }
 
 export async function saveAnnotations(slicerId: string, annotations: ProcessingRules) {
+  console.log('saveAnnotations in server', annotations);
   const supabase = createClient()
   // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
