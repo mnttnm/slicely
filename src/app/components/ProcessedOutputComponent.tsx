@@ -35,11 +35,6 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
     fetchOutput();
   }, [pdfDetails.id]);
 
-  const handleProcessWithSlicer = async (slicerId: string) => {
-    console.log(`Processing with slicer ID: ${slicerId}`);
-    // Implement the actual processing logic here
-  };
-
   const handleCreateSlicer = () => {
     if (slicerIds.length > 0) {
       // Navigate to the slicer details page
@@ -47,10 +42,6 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
     } else {
       setIsSlicerDrawerOpen(true);
     }
-  };
-
-  const handleProcessWithDefaultSlicer = async () => {
-    console.log('Processing with default slicer');
   };
 
   const handleSlicerDrawerOpenChange = (open: boolean) => {
@@ -67,19 +58,17 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
         <>
           <p className="mb-4">Seems like the file is not processed yet. We need to process the file using Slicer.</p>
           <ul className="flex flex-col gap-2">
-            <li className="w-full">
+            {slicerIds.length > 0 ? (
+              <li className="w-full">
+                <Button onClick={handleCreateSlicer} className="w-full">
+                  Process with Existing Slicer
+                </Button>
+              </li>
+            ) : <li className="w-full">
               <Button onClick={handleCreateSlicer} className="w-full">
-                {slicerIds.length > 0 ? 'Configure Slicer' : 'Create Custom Slicer'}
+                Create Custom Slicer
               </Button>
-            </li>
-            <li className="w-full" >
-              <Button
-                onClick={() => handleProcessWithSlicer(slicerIds[0])}
-                variant="secondary"
-              >
-                Process with Existing Slicer
-              </Button>
-            </li>
+            </li>}
           </ul>
         </>
       ) : (
@@ -87,8 +76,8 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
         <ScrollArea className="h-[300px] w-[350px] rounded-md border p-4">
           {output.map((page, index) => (
             <div key={index} className="mb-4">
-              <h3 className="text-lg font-semibold">Page {page.page_number}</h3>
-              <p>{page.content}</p>
+              <h3 className="text-lg font-semibold">Page {page.pageNumber}</h3>
+              <p>{page.rawPageContent}</p>
             </div>
           ))}
         </ScrollArea>

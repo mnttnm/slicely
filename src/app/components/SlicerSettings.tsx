@@ -104,16 +104,16 @@ const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObj
   }
 
   return (
-    <div className="flex-1 w-1/2 bg-gray-200 dark:bg-gray-900 border-l border-gray-600">
-      <Tabs defaultValue="extracted" className="w-full">
+    <div className="flex-1 w-1/2 bg-gray-200 dark:bg-gray-900 border-l border-gray-600 flex flex-col">
+      <Tabs defaultValue="extracted" className="w-full flex flex-col h-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="extracted">Extracted Text</TabsTrigger>
           <TabsTrigger value="config">Page Processing Rules</TabsTrigger>
         </TabsList>
-        <TabsContent value="extracted" className="px-2">
+        <TabsContent value="extracted" className="flex-1 overflow-hidden">
           <ExtractedTextView slicedTexts={extractedTexts} processingRules={slicerObject.processing_rules ?? null} />
         </TabsContent>
-        <TabsContent value="config" className="px-2 space-y-4">
+        <TabsContent value="config" className="flex-1 overflow-hidden">
           <SlicerRules slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} saveSlicer={saveSlicer} />
         </TabsContent>
       </Tabs>
