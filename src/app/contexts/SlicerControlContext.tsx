@@ -4,7 +4,7 @@ import { getSignedPdfUrl } from '@/server/actions/studio/actions';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-interface PDFViewerContextType {
+interface SlicerControlContextType {
   numPages: number | null;
   pageNumber: number;
   pageDimensions: { width: number; height: number } | null;
@@ -21,9 +21,9 @@ interface PDFViewerContextType {
   fetchSignedPdfUrl: (url: string) => void;
 }
 
-const PDFViewerContext = createContext<PDFViewerContextType | null>(null);
+export const SlicerControlContext = createContext<SlicerControlContextType | undefined>(undefined);
 
-export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
+export const SlicerControlProvider = ({ children }: { children: ReactNode }) => {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -99,16 +99,16 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
   ]);
 
   return (
-    <PDFViewerContext.Provider value={contextValue}>
+    <SlicerControlContext.Provider value={contextValue}>
       {children}
-    </PDFViewerContext.Provider>
+    </SlicerControlContext.Provider>
   );
 };
 
-export const usePDFViewer = () => {
-  const context = useContext(PDFViewerContext);
-  if (!context) {
-    throw new Error('usePDFViewer must be used within a PDFViewerProvider');
+export const useSlicerControl = () => {
+  const context = useContext(SlicerControlContext);
+  if (context === undefined) {
+    throw new Error('useSlicerControl must be used within a SlicerControlProvider');
   }
   return context;
 };

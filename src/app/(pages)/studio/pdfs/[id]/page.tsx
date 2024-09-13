@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { PDFViewerProvider } from '@/app/contexts/PDFViewerContext';
+import { SlicerControlProvider } from '@/app/contexts/SlicerControlContext';
 import { getPdfDetails } from '@/server/actions/studio/actions';
 import { Tables } from '@/types/supabase-types/database.types';
 import PDFRenderer from '@/app/components/PDFRenderer';
@@ -65,7 +65,7 @@ const PDFDetails = () => {
   }
 
   return (
-    <PDFViewerProvider>
+    <SlicerControlProvider>
       <div className="flex-1 bg-gray-800 flex flex-col min-h-0 text-white">
         <header className="h-[3rem] px-4 py-2 flex-shrink-0 flex-grow-0 border-b border-gray-600/30 flex justify-between items-center">
           <h1 className="text-xl">{`PDFs > ${pdfDetails.file_name}`}</h1>
@@ -108,11 +108,11 @@ const PDFDetails = () => {
             />
           </section>
 
-          <PDFLab pdfDetails={pdfDetails} slicerIds={slicerIds} />
+          <PDFLab pdfDetails={pdfDetails} slicerIds={slicerIds ?? []} />
         </div>
 
       </div >
-    </PDFViewerProvider>
+    </SlicerControlProvider>
   );
 };
 

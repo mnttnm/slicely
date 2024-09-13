@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import PDFViewer from '@/app/components/PDFViewer';
-import { PDFViewerProvider } from '@/app/contexts/PDFViewerContext';
+import { SlicerControlProvider } from '@/app/contexts/SlicerControlContext';
 import SlicerSettings from '@/app/components/SlicerSettings';
 import { Slicer, ProcessingRules } from '@/app/types';
 import { getSlicerDetails, saveAnnotations } from '@/server/actions/studio/actions';
@@ -97,7 +97,7 @@ const SlicerPage = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <PDFViewerProvider>
+      <SlicerControlProvider>
         <div className="flex h-full">
           <PDFViewer
             url={pdfUrl}
@@ -113,7 +113,7 @@ const SlicerPage = () => {
             onUpdateSlicer={handleUpdateSlicer}
           />
         </div>
-      </PDFViewerProvider>
+      </SlicerControlProvider>
     </div>
   );
 };

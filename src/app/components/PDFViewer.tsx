@@ -7,7 +7,7 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 import PDFToolbar from './PDFToolbar';
 import PDFRenderer from './PDFRenderer';
 import AnnotationCanvas from './AnnotationCanvas';
-import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
+import { useSlicerControl } from '@/app/contexts/SlicerControlContext';
 import { RectangleText, ProcessingRules } from '@/app/types';
 import { FileIcon } from 'lucide-react';
 
@@ -44,7 +44,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     nextPage,
     toggleRectangleMode,
     fetchSignedPdfUrl,
-  } = usePDFViewer();
+  } = useSlicerControl();
 
   useEffect(() => {
     if (url) {

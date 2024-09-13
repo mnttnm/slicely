@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
 import { getProcessedOutput } from '@/server/actions/studio/actions';
@@ -14,6 +15,7 @@ interface ProcessedOutputComponentProps {
 }
 
 const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdfDetails, slicerIds }) => {
+  const router = useRouter();
   const [output, setOutput] = useState<ProcessedPageOutput[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSlicerDrawerOpen, setIsSlicerDrawerOpen] = useState(false);
@@ -39,7 +41,12 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
   };
 
   const handleCreateSlicer = () => {
-    setIsSlicerDrawerOpen(true);
+    if (slicerIds.length > 0) {
+      // Navigate to the slicer details page
+      router.push(`/studio/slicers/${slicerIds[0]}`);
+    } else {
+      setIsSlicerDrawerOpen(true);
+    }
   };
 
   const handleProcessWithDefaultSlicer = async () => {
@@ -59,34 +66,21 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
       {!output ? (
         <>
           <p className="mb-4">Seems like the file is not processed yet. We need to process the file using Slicer.</p>
-          {slicerIds.length > 0 ? (
-
-
-            <ul className="flex flex-col gap-2">
-              <li className="w-full">
-                <Button onClick={handleCreateSlicer} className="w-full">Configure Slicer</Button>
-              </li>
-              <li className="w-full">
-                <Button
-                  onClick={() => handleProcessWithSlicer(slicerIds[0])}
-                  variant="outline"
-                >
-                  Process with Existing Slicer
-                </Button>
-              </li>
-            </ul>
-          ) : (
-            <>
-                <ul className="flex flex-col gap-2">
-                <li className="w-full">
-                  <Button onClick={handleCreateSlicer} className="w-full">Create Custom Slicer</Button>
-                </li>
-                <li className="w-full">
-                  <Button onClick={handleProcessWithDefaultSlicer} variant="outline" className="w-full">Process with Default Slicer</Button>
-                </li>
-                </ul>
-            </>
-          )}
+          <ul className="flex flex-col gap-2">
+            <li className="w-full">
+              <Button onClick={handleCreateSlicer} className="w-full">
+                {slicerIds.length > 0 ? 'Configure Slicer' : 'Create Custom Slicer'}
+              </Button>
+            </li>
+            <li className="w-full" >
+              <Button
+                onClick={() => handleProcessWithSlicer(slicerIds[0])}
+                variant="secondary"
+              >
+                Process with Existing Slicer
+              </Button>
+            </li>
+          </ul>
         </>
       ) : (
         // Render the output here

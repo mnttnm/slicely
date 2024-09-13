@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePDFViewer } from '../contexts/PDFViewerContext';
+import { useSlicerControl } from '@/app/contexts/SlicerControlContext';
 import { ProcessingRules } from '@/app/types';
 
 interface ExtractedText {
@@ -20,7 +20,7 @@ interface ExtractedTextViewProps {
 }
 
 const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ slicedTexts, processingRules }) => {
-  const { pageNumber } = usePDFViewer();
+  const { pageNumber } = useSlicerControl();
 
   const isPageExcluded = processingRules?.skipped_pages?.includes(pageNumber);
   const pageAnnotations = processingRules?.annotations.find(
