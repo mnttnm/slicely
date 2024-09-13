@@ -6,11 +6,20 @@ import {
   Square,
   Trash2,
   RotateCcw,
-  FileText,
   ChevronLeft,
   ChevronRight,
-  BanIcon
+  BanIcon,
+  MoreVertical
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+import { useState } from "react";
+import { Input } from "@/app/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 
 interface PDFToolbarProps {
   isRectangleMode: boolean;
@@ -24,6 +33,10 @@ interface PDFToolbarProps {
   nextPage: () => void;
   isPageSkipped: boolean;
   togglePageSkip: (pageNumber: number) => void;
+  clearAllPages: () => void;
+  includeAllPages: () => void;
+  excludeAllPages: () => void;
+  jumpToPage: (page: number) => void;
 }
 
 const PDFToolbar: React.FC<PDFToolbarProps> = ({
@@ -37,7 +50,22 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
   nextPage,
   isPageSkipped,
   togglePageSkip,
+  clearAllPages,
+  includeAllPages,
+  excludeAllPages,
+  jumpToPage,
 }) => {
+  const [isJumpToPageOpen, setIsJumpToPageOpen] = useState(false);
+  const [jumpToPageNumber, setJumpToPageNumber] = useState("");
+
+  const handleJumpToPage = () => {
+    const pageNumber = parseInt(jumpToPageNumber, 10);
+    if (pageNumber && pageNumber > 0 && pageNumber <= numPages) {
+      jumpToPage(pageNumber);
+      setIsJumpToPageOpen(false);
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-50">
@@ -103,6 +131,53 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
             onClick={nextPage}
             disabled={pageNumber >= (numPages ?? 0)}
           />
+
+          {/* Action Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-gray-700/50 text-white hover:bg-gray-600/50"
+              >
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right">
+              <DropdownMenuItem onClick={clearAllPages}>
+                Clear All Pages
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={includeAllPages}>
+                Include All Pages
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={excludeAllPages}>
+                Exclude All Pages
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setIsJumpToPageOpen(true)}>
+                Jump to Page
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Jump to Page Dialog */}
+          <Dialog open={isJumpToPageOpen} onOpenChange={setIsJumpToPageOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Jump to Page</DialogTitle>
+              </DialogHeader>
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="number"
+                  min="1"
+                  max={numPages}
+                  value={jumpToPageNumber}
+                  onChange={(e) => setJumpToPageNumber(e.target.value)}
+                  placeholder="Enter page number"
+                />
+                <Button onClick={handleJumpToPage}>Go</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </TooltipProvider>

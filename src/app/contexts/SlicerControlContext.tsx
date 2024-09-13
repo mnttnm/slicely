@@ -19,6 +19,10 @@ interface SlicerControlContextType {
   nextPage: () => void;
   toggleRectangleMode: () => void;
   fetchSignedPdfUrl: (url: string) => void;
+  clearAllPages: () => void;
+  includeAllPages: () => void;
+  excludeAllPages: () => void;
+  jumpToPage: (page: number) => void;
 }
 
 export const SlicerControlContext = createContext<SlicerControlContextType | undefined>(undefined);
@@ -76,6 +80,27 @@ export const SlicerControlProvider = ({ children }: { children: ReactNode }) => 
     }
   }, []);
 
+  const clearAllPages = useCallback(() => {
+    // Implement clear all pages logic
+    console.log('Clear all pages');
+  }, []);
+
+  const includeAllPages = useCallback(() => {
+    setSkippedPages([]);
+  }, []);
+
+  const excludeAllPages = useCallback(() => {
+    if (numPages) {
+      setSkippedPages(Array.from({ length: numPages }, (_, i) => i + 1));
+    }
+  }, [numPages]);
+
+  const jumpToPage = useCallback((page: number) => {
+    if (page > 0 && page <= (numPages || 0)) {
+      setPageNumber(page);
+    }
+  }, [numPages]);
+
   const contextValue = useMemo(() => ({
     numPages,
     pageNumber,
@@ -91,11 +116,19 @@ export const SlicerControlProvider = ({ children }: { children: ReactNode }) => 
     nextPage,
     toggleRectangleMode,
     fetchSignedPdfUrl,
+    clearAllPages,
+    includeAllPages,
+    excludeAllPages,
+    jumpToPage,
   }), [
     numPages, pageNumber, pageDimensions, isRectangleMode,
     pdfDocument, pdfUrl, skippedPages, togglePageSkip, onDocumentLoadSuccess,
     onPageRenderSuccess, previousPage, nextPage,
-    toggleRectangleMode, fetchSignedPdfUrl
+    toggleRectangleMode, fetchSignedPdfUrl,
+    clearAllPages,
+    includeAllPages,
+    excludeAllPages,
+    jumpToPage
   ]);
 
   return (

@@ -43,6 +43,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     nextPage,
     toggleRectangleMode,
     fetchSignedPdfUrl,
+    clearAllPages,
+    includeAllPages,
+    excludeAllPages,
+    jumpToPage,
   } = useSlicerControl();
 
   useEffect(() => {
@@ -250,6 +254,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         nextPage={nextPage}
         isPageSkipped={skippedPages.includes(pageNumber)}
         togglePageSkip={togglePageSkip}
+        clearAllPages={clearAllPages}
+        includeAllPages={includeAllPages}
+        excludeAllPages={excludeAllPages}
+        jumpToPage={jumpToPage}
       />
     </div>
   );
