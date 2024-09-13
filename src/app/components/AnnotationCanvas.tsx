@@ -59,75 +59,77 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
 
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (canvas && isRectangleMode) {
-      let isDown = false;
-      let startX = 0;
-      let startY = 0;
-      let rect: fabric.Rect | null = null;
+    if (!canvas) return;
 
-      const handleMouseDown = (o: fabric.TEvent) => {
-        const pointer = canvas.getPointer(o.e);
-        const clickedObject = canvas.findTarget(o.e);
-        if (clickedObject) {
-          canvas.setActiveObject(clickedObject);
-          return;
-        }
+    let isDown = false;
+    let startX = 0;
+    let startY = 0;
+    let rect: fabric.Rect | null = null;
 
-        isDown = true;
-        startX = pointer.x;
-        startY = pointer.y;
-      };
+    const handleMouseDown = (o: fabric.TEvent) => {
+      if (!isRectangleMode) return;
+      const pointer = canvas.getPointer(o.e);
+      const clickedObject = canvas.findTarget(o.e);
+      if (clickedObject) {
+        canvas.setActiveObject(clickedObject);
+        return;
+      }
 
-      const handleMouseMove = (o: fabric.TEvent) => {
-        if (!isDown) return;
-        const pointer = canvas.getPointer(o.e);
-        if (!rect) {
-          rect = new fabric.Rect({
-            left: startX,
-            top: startY,
-            width: pointer.x - startX,
-            height: pointer.y - startY,
-            fill: 'transparent',
-            stroke: 'red',
-            strokeWidth: 2,
-            id: `rect_${Date.now()}`,
-          });
-          canvas.add(rect);
+      isDown = true;
+      startX = pointer.x;
+      startY = pointer.y;
+    };
+
+    const handleMouseMove = (o: fabric.TEvent) => {
+      if (!isRectangleMode || !isDown) return;
+      const pointer = canvas.getPointer(o.e);
+      if (!rect) {
+        rect = new fabric.Rect({
+          left: startX,
+          top: startY,
+          width: pointer.x - startX,
+          height: pointer.y - startY,
+          fill: 'transparent',
+          stroke: 'red',
+          strokeWidth: 2,
+          id: `rect_${Date.now()}`,
+        });
+        canvas.add(rect);
+      } else {
+        rect.set({
+          width: Math.abs(pointer.x - startX),
+          height: Math.abs(pointer.y - startY),
+          left: Math.min(startX, pointer.x),
+          top: Math.min(startY, pointer.y),
+        });
+      }
+      canvas.renderAll();
+    };
+
+    const handleMouseUp = () => {
+      if (!isRectangleMode || !isDown) return;
+      isDown = false;
+      if (rect) {
+        if (rect.width < 10 || rect.height < 10) {
+          canvas.remove(rect);
         } else {
-          rect.set({
-            width: Math.abs(pointer.x - startX),
-            height: Math.abs(pointer.y - startY),
-            left: Math.min(startX, pointer.x),
-            top: Math.min(startY, pointer.y),
-          });
+          canvas.setActiveObject(rect);
+          handleRectangleCreated(rect);
         }
-        canvas.renderAll();
-      };
+        rect = null;
+      }
+    };
 
-      const handleMouseUp = () => {
-        isDown = false;
-        if (rect) {
-          if (rect.width < 10 || rect.height < 10) {
-            canvas.remove(rect);
-          } else {
-            canvas.setActiveObject(rect);
-            handleRectangleCreated(rect);
-          }
-          rect = null;
-        }
-      };
+    canvas.on('mouse:down', handleMouseDown);
+    canvas.on('mouse:move', handleMouseMove);
+    canvas.on('mouse:up', handleMouseUp);
 
-      canvas.on('mouse:down', handleMouseDown);
-      canvas.on('mouse:move', handleMouseMove);
-      canvas.on('mouse:up', handleMouseUp);
-
-      return () => {
-        canvas.off('mouse:down', handleMouseDown);
-        canvas.off('mouse:move', handleMouseMove);
-        canvas.off('mouse:up', handleMouseUp);
-      };
-    }
-  }, [isRectangleMode, pageNumber, slicerId]);
+    return () => {
+      canvas.off('mouse:down', handleMouseDown);
+      canvas.off('mouse:move', handleMouseMove);
+      canvas.off('mouse:up', handleMouseUp);
+    };
+  }, [isRectangleMode, pageNumber, slicerId, fabricCanvasRef.current]);
 
   const handleRectangleCreated = async (rect: fabric.Rect) => {
     onRectangleCreated(rect);
