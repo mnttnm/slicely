@@ -6,7 +6,7 @@ import PDFViewer from '@/app/components/PDFViewer';
 import { SlicerControlProvider } from '@/app/contexts/SlicerControlContext';
 import SlicerSettings from '@/app/components/SlicerSettings';
 import { Slicer, ProcessingRules } from '@/app/types';
-import { getSlicerDetails, saveAnnotations } from '@/server/actions/studio/actions';
+import { getSlicerDetails } from '@/server/actions/studio/actions';
 
 interface ExtractedText {
   id: string;
@@ -20,7 +20,7 @@ interface ExtractedText {
   };
 }
 
-const SlicerPage = () => {
+const SlicerPage = ({ params }: { params: { id: string } }) => {
   const { id } = useParams();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [extractedTexts, setExtractedTexts] = useState<ExtractedText[]>([]);
@@ -30,7 +30,7 @@ const SlicerPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchSlicer = async () => {
+    const fetchSlicerDetails = async () => {
       if (!id || typeof id !== 'string') return;
 
       setIsLoading(true);
@@ -52,30 +52,30 @@ const SlicerPage = () => {
       }
     };
 
-    fetchSlicer();
+    fetchSlicerDetails();
   }, [id]);
 
-  const handleExtractedText = (newExtractedText: ExtractedText) => {
+  const addExtractedText = (newExtractedText: ExtractedText) => {
     setExtractedTexts(prev => [...prev, newExtractedText]);
   };
 
-  const handleDeleteText = (id?: string, deleteAll?: boolean) => {
-    if (deleteAll) {
-      setExtractedTexts([]);
-    } else {
+  const removeExtractedText = (id?: string, removeAll?: boolean, pageNumber?: number) => {
+    if (removeAll && pageNumber !== undefined) {
+      setExtractedTexts(prev => prev.filter(text => text.pageNumber !== pageNumber));
+    } else if (id) {
       setExtractedTexts(prev => prev.filter(text => text.id !== id));
     }
   };
 
-  const handleUpdateSlicer = (updatedSlicer: Partial<Slicer>) => {
+  const updateSlicerDetails = (updatedSlicer: Partial<Slicer>) => {
     setSlicer(prev => prev ? { ...prev, ...updatedSlicer } : null);
     // Here you would typically make an API call to update the slicer in the database
   };
 
-  const handleUpdateAnnotations = async (updatedRules: ProcessingRules) => {
+  const updateProcessingRules = async (updatedRules: ProcessingRules) => {
     if (!slicer || !slicer.id) return;
 
-    console.log('handleUpdateAnnotations', updatedRules);
+    console.log('Updating processing rules', updatedRules);
     try {
       // await saveAnnotations(slicer.id, updatedRules);
       setProcessingRules(updatedRules);
@@ -102,16 +102,16 @@ const SlicerPage = () => {
         <div className="flex h-full">
           <PDFViewer
             url={pdfUrl}
-            onExtractText={handleExtractedText}
-            onDeleteText={handleDeleteText}
+            onExtractText={addExtractedText}
+            onDeleteText={removeExtractedText}
             processingRules={processingRules}
-            onUpdateAnnotations={handleUpdateAnnotations}
+            onUpdateAnnotations={updateProcessingRules}
             slicerId={slicer.id}
           />
           <SlicerSettings
             slicerObject={slicer}
             extractedTexts={extractedTexts}
-            onUpdateSlicer={handleUpdateSlicer}
+            onUpdateSlicer={updateSlicerDetails}
           />
         </div>
       </SlicerControlProvider>

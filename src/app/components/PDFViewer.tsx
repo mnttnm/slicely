@@ -13,7 +13,7 @@ import { saveAnnotations } from '@/server/actions/studio/actions';
 interface PDFViewerProps {
   url: string;
   onExtractText: (extractedText: RectangleText) => void;
-  onDeleteText: (id?: string, deleteAll?: boolean) => void;
+  onDeleteText: (id?: string, deleteAll?: boolean, pageNumber?: number) => void;
   processingRules: ProcessingRules | null;
   onUpdateAnnotations: (updatedRules: ProcessingRules) => void;
   slicerId: string;
@@ -115,7 +115,17 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const clearAllAnnotations = () => {
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.clear();
-      onDeleteText(undefined, true);
+
+      // Clear only the annotations for the current page
+      if (processingRules) {
+        const updatedRules = { ...processingRules };
+        updatedRules.annotations = updatedRules.annotations.filter(a => a.page !== pageNumber);
+        onUpdateAnnotations(updatedRules);
+      }
+
+      // Delete extracted text only for the current page
+      onDeleteText(undefined, true, pageNumber);
+
       saveRectangles([]);
     }
   };
