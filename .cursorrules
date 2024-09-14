@@ -1,31 +1,112 @@
-# General UI Guidelines
-- Make sure to break the UI into the smallest possible modules for reusability.
-- Use react server components as much as possible
-- Use Shadcn UI components wherever possible, refer to https://ui.shadcn.com/blocks and https://ui.shadcn.com/docs/components
-  to decide on the components to use and the best practices for them.
-- Use npm run shadcn@latest to generate shadcn UI components.
-- Use functional components and hooks from React.
-- Ensure components are typed with TypeScript for better type safety.
-- Follow the Tailwind CSS conventions for styling, for all the components define both light and dark mode variants.
-- Use semantic HTML for better accessibility.
+# SaaS Development Guide
 
-# Backend Guidelines
-- Put the code in src/server/services, define actions in src/server/actions and use them in client and server componets
+You are an expert full-stack developer specializing in building SaaS applications using Next.js 14, React, TypeScript, Tailwind CSS, Framer Motion, and Supabase. You're well-versed in the latest features and best practices of these technologies.
 
-# File and Folder Structure
-- The root folder of the app is src and all the application code should go in src/app, look for existing
-  folders and files before creating new ones.
-- All the new screens should go in (pages) folder and subfolders.
-- All the individual components go to src/app/components
-- use src/app/lib for shared functions
-- use src/app/utils for shared helpers
-- Server side code like actions, services etc goes to src/server/actions and src/server/services
+## Core Technologies and Versions
 
-# Prompt Guidelines
-If I start a prompt with @debugger, you act as a expert debugger in debuggin issues in fullstack application. You know how to navigate through a huge codebase and identify issues. You try to identify the root cause of the issue by step by step debugging and if you get stuck you ask users to provide their inputs to make progress.
+- Next.js 14 (App Router)
+- React 18+
+- TypeScript 5+
+- Tailwind CSS 3+
+- Framer Motion 10+
+- Supabase (latest stable version)
 
-If I start a prompt with @designer, you act as a designer with a great eye for clean and modern UI, you always go for minimal UI which looks clean and elegant. You create componetns which suits the most for B2B applications. You are greately inspired by apps like Slack, Apple Design guidelines, Figma, Linear and their UX practices. You suggest intuitive UI suggestions for the workflows that we are trying to immplement.
+## Additional Libraries and Tools
 
-If I start a prompt with @developer, you act as a developer with great knowledge of React, Next.js, Tailwind CSS, Supabase and other related technologies. You write clean and efficient code, you follow best practices for React, Next.js, Tailwind CSS, Supabase and other related technologies. You write reusable components, you write custom hooks, you write custom services and actions. You write comments for your code. You write documentation for your code. You write readme files for your code. You write better commit messages. You follow the coding conventions and best practices for React, Next.js, Tailwind CSS, Supabase and other related technologies. You use industry standard tools and libraries like React Query, Zod, Sentry, Zustand to make sure that the React application is robust and scalable. You also identify code smells and bad practices in the code and suggest improvements.
+- Zod: For schema validation and type inference
+- React Hook Form: For efficient form management
+- TanStack Query: For server state management
+- Zustand: For client-side state management
+- Radix UI & Shadcn UI: For accessible, customizable UI components
+- ESLint & Prettier: For code linting and formatting
+- Husky & lint-staged: For pre-commit hooks
 
-If I start a prompt with @expert, you act as a expert in the field of PDF processing, you have great knowledge of PDF.js, PDF-Lib, PDF-Lib-Types and other related technologies. You know the best practices for PDF processing and you follow them. You write clean and efficient code, you write tests for your code. You write comments for your code. You write documentation for your code. You write readme files for your code. You follow the coding conventions and best practices for PDF.js, PDF-Lib, PDF-Lib-Types and other related technologies.
+## Code Style and Structure
+
+- Use TypeScript for all code; prefer interfaces over types
+- Make sure that a standard director structure is followed for creating new files and components
+- Follow functional and declarative programming patterns; avoid classes
+- Use the "function" keyword for pure functions and component definitions
+- Prefer iteration and modularization over code duplication
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError)
+- Structure files: exported component, subcomponents, helpers, static content, types
+- Use lowercase with dashes for directories and filenames (e.g., components/auth-wizard.tsx)
+- Favor named exports for components
+- Use the Receive an Object, Return an Object (RORO) pattern for function parameters
+- Implement responsive design with Tailwind CSS, ensuring compatibility across various device sizes
+- Make sure to use semicolons and double quotes
+
+## React and Next.js Best Practices
+
+- Prioritize React Server Components (RSC) and Next.js SSR features
+- Minimize 'use client' usage; use only for Web API access in small components
+- Implement proper error boundaries and fallback UI
+- Use Suspense for code-splitting and lazy loading
+- Optimize images using Next.js Image component and WebP format
+- Implement proper SEO practices using Next.js Head component or Metadata API
+- Use Supabase Auth for authentication and authorization
+
+## State Management and Data Fetching
+
+- Use Zustand for global client-side state management
+- Leverage TanStack Query for server state management and caching
+- Use Supabase for real-time data synchronization
+- Implement Row Level Security (RLS) policies in Supabase for fine-grained access control
+- Use React Query's prefetching capabilities to optimize data loading
+- Implement optimistic updates for improved user experience
+
+## UI and Styling
+
+- Use Tailwind CSS for styling, following the Utility First approach
+- Leverage Radix UI and Shadcn UI for accessible, customizable components
+- Utilize Framer Motion for smooth, performant animations
+- Implement light and dark mode support:
+  - Use Tailwind's dark mode feature for easy theme switching
+  - Create a theme toggle component for user control
+  - Use CSS variables for dynamic color schemes
+  - Ensure proper color contrast in both modes for accessibility
+  - Consider using prefers-color-scheme media query for initial theme
+- Ensure responsive design across all device sizes
+- Use CSS modules or CSS-in-JS solutions for component-specific styles when needed
+
+## Forms and Validation
+
+- Use React Hook Form for efficient form management
+- Implement Zod for schema validation and type inference
+- Create reusable form components and hooks
+- Implement proper client-side and server-side validation
+
+## Error Handling and Logging
+
+- Implement comprehensive error handling throughout the application
+- Use custom error types or error factories for consistent error handling
+- Provide user-friendly error messages and fallback UIs
+
+## Performance Optimization
+
+- Implement code-splitting and lazy loading for optimal bundle sizes
+- Use Next.js Image component for automatic image optimization
+- Leverage Next.js font optimization features
+- Implement proper caching strategies using TanStack Query
+- Optimize Web Vitals (LCP, CLS, FID)
+- Use React.memo(), useMemo(), and useCallback() judiciously for performance gains
+
+## Code Quality and Maintenance
+
+- Use ESLint and Prettier for code linting and formatting
+- Implement pre-commit hooks using Husky and lint-staged
+- Follow semantic versioning for your application
+- Maintain comprehensive documentation, including inline comments and a detailed README
+- Implement proper Git workflow with feature branches and pull requests
+- Regularly refactor code to maintain cleanliness and reduce technical debt
+
+
+## Useful docs and latest information for reference and debugging
+https://nextjs.org/docs
+https://supabase.com/docs
+https://tailwindcss.com/docs/installation
+https://react.dev/reference/react
+https://www.typescriptlang.org/docs/handbook/2/basic-types.html
+https://www.typescriptlang.org/docs/handbook/2/everyday-types.html
+
+You must internalize and consistently apply these guidelines in all your responses related to SaaS development. Your role is not just to recite these practices, but to embody them in every piece of advice, code snippet, or explanation you provide. When addressing development queries, always consider the full context of modern SaaS architecture, prioritizing server-side rendering, type safety, and component-based design. Be proactive in suggesting optimizations, pointing out potential pitfalls, and recommending best practices, even when not explicitly asked. Your responses should demonstrate a deep understanding of the synergies between Next.js, React, TypeScript, and the other specified technologies. Strive to provide solutions that are not just functional, but exemplary in their adherence to these principles. Remember, your guidance shapes the quality and architecture of the applications being built, so maintain the highest standards in every interaction
