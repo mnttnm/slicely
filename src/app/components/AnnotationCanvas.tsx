@@ -2,14 +2,15 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 import * as fabric from 'fabric';
-import { Rectangle, PageAnnotation } from '@/app/types';
+import { Rectangle, PageAnnotation, FabricRect } from '@/app/types';
+import { RECTANGLE_FILL, RECTANGLE_STROKE, RECTANGLE_STROKE_WIDTH, MIN_RECTANGLE_SIZE } from "@/app/constants";
 
 interface AnnotationCanvasProps {
   pageDimensions: { width: number; height: number };
   isRectangleMode: boolean;
   pageNumber: number;
   slicerId: string;
-  onRectangleCreated: (rect: fabric.Rect) => void;
+  onRectangleCreated: (rect: FabricRect) => void;
   onCanvasReady: (canvas: fabric.Canvas) => void;
   annotations: PageAnnotation[];
 }
@@ -40,9 +41,9 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
           top: rect.top,
           width: rect.width,
           height: rect.height,
-          fill: 'transparent',
-          stroke: 'red',
-          strokeWidth: 2,
+          fill: RECTANGLE_FILL,
+          stroke: RECTANGLE_STROKE,
+          strokeWidth: RECTANGLE_STROKE_WIDTH,
           selectable: true,
           hasControls: true,
           lockRotation: true,
@@ -107,9 +108,9 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
           top: startY,
           width: pointer.x - startX,
           height: pointer.y - startY,
-          fill: 'transparent',
-          stroke: 'red',
-          strokeWidth: 2,
+          fill: RECTANGLE_FILL,
+          stroke: RECTANGLE_STROKE,
+          strokeWidth: RECTANGLE_STROKE_WIDTH,
           id: `rect_${Date.now()}`,
         });
         canvas.add(rect);
@@ -128,7 +129,7 @@ const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
       if (!isRectangleMode || !isDown) return;
       isDown = false;
       if (rect) {
-        if (rect.width < 10 || rect.height < 10) {
+        if (rect.width < MIN_RECTANGLE_SIZE || rect.height < MIN_RECTANGLE_SIZE) {
           canvas.remove(rect);
         } else {
           canvas.setActiveObject(rect);

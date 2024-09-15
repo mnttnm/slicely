@@ -19,7 +19,7 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import { useState } from "react";
 import { Input } from "@/app/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 
 interface PDFToolbarProps {
   isRectangleMode: boolean;

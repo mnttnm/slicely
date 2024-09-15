@@ -1,3 +1,5 @@
+import * as fabric from 'fabric';
+
 export interface PDFMetadata {
   id: string;
   name: string;
@@ -57,7 +59,6 @@ export type ExtractedText = {
   };
 };
 
-
 export type LLMOutput = {
   prompt: string;
   output: string;
@@ -69,6 +70,26 @@ export type ProcessedPageOutput = {
   extractedSectionTexts: ExtractedText[];
   llmOutputs: LLMOutput[];
 };
+
+
+export interface FabricRect extends fabric.Rect {
+  id: string;
+}
+
+export interface ExtractedTextItem {
+  str: string;
+  transform: number[];
+}
+
+export interface Rectangle {
+  id: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+
 
 
 

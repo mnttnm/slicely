@@ -8,7 +8,10 @@ import AnnotationCanvas from './AnnotationCanvas';
 import { useSlicerControl } from '@/app/contexts/SlicerControlContext';
 import { RectangleText, ProcessingRules } from '@/app/types';
 import { FileIcon } from 'lucide-react';
-import { saveAnnotations } from '@/server/actions/studio/actions';
+import { useAnnotations } from "@/app/hooks/useAnnotations";
+import { useTextExtraction } from "@/app/hooks/useTextExtraction";
+import { PDFDocumentProxy } from 'pdfjs-dist';
+import { FabricRect } from '../types';
 
 interface PDFViewerProps {
   url: string;
@@ -49,147 +52,31 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     jumpToPage,
   } = useSlicerControl();
 
+  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+
+  const {
+    saveRectangles,
+    deleteSelectedObject,
+    clearAllAnnotations,
+  } = useAnnotations(fabricCanvasRef, processingRules, onUpdateAnnotations, slicerId, pageNumber, onDeleteText);
+
+  const { extractTextFromRectangle } = useTextExtraction(
+    fabricCanvasRef,
+    pdfDocument as PDFDocumentProxy | null,
+    pageNumber,
+    onExtractText
+  );
+
   useEffect(() => {
     if (url) {
       fetchSignedPdfUrl(url);
     }
   }, [url, fetchSignedPdfUrl]);
 
-  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
-
-  const saveRectangles = async (rectangles: fabric.Object[]) => {
-    if (!processingRules) return;
-
-    const updatedRules = { ...processingRules };
-    const pageAnnotation = updatedRules.annotations.find(a => a.page === pageNumber);
-
-    const transformedRectangles = rectangles.map((rect: any) => ({
-      left: rect.left,
-      top: rect.top,
-      width: rect.width,
-      height: rect.height,
-    }));
-
-    if (pageAnnotation) {
-      pageAnnotation.rectangles = transformedRectangles;
-    } else {
-      updatedRules.annotations.push({
-        page: pageNumber,
-        rectangles: transformedRectangles,
-      });
-    }
-
-    onUpdateAnnotations(updatedRules);
-
-    try {
-      await saveAnnotations(slicerId, updatedRules);
-    } catch (error) {
-      console.error('Error saving annotations:', error);
-    }
-  };
-
-  // const handleExtractedText = (newExtractedText: RectangleText) => {
-  //   setExtractedTexts(prev => [...prev, newExtractedText]);
-  //   onExtractText(newExtractedText);
-  // };
-
-  // const handleDeleteText = (id?: string, deleteAll?: boolean) => {
-  //   if (deleteAll) {
-  //     setExtractedTexts([]);
-  //   } else {
-  //     setExtractedTexts(prev => prev.filter(text => text.id !== id));
-  //   }
-  //   onDeleteText(id, deleteAll);
-  // };
-
-  const deleteSelectedObject = () => {
-    if (fabricCanvasRef.current) {
-      const activeObject = fabricCanvasRef.current.getActiveObject();
-      if (activeObject) {
-        if (activeObject.type === 'rect') {
-          const rect = activeObject as fabric.Rect & { id: string };
-          onDeleteText(rect.id);
-        }
-        fabricCanvasRef.current.remove(activeObject);
-        saveRectangles(fabricCanvasRef.current.getObjects('rect'));
-      }
-    }
-  };
-
-  const clearAllAnnotations = () => {
-    if (fabricCanvasRef.current) {
-      fabricCanvasRef.current.clear();
-
-      // Clear only the annotations for the current page
-      if (processingRules) {
-        const updatedRules = { ...processingRules };
-        updatedRules.annotations = updatedRules.annotations.filter(a => a.page !== pageNumber);
-        onUpdateAnnotations(updatedRules);
-      }
-
-      // Delete extracted text only for the current page
-      onDeleteText(undefined, true, pageNumber);
-
-      saveRectangles([]);
-    }
-  };
-
-  const extractTextFromRectangle = async (rect?: fabric.Rect) => {
-    if (!fabricCanvasRef.current || !pdfDocument) return;
-
-    const targetRect = rect || (fabricCanvasRef.current.getActiveObject() as fabric.Rect);
-    if (!targetRect || targetRect.type !== 'rect') return;
-
-    const page = await pdfDocument.getPage(pageNumber);
-    const scale = (await page.getViewport({ scale: 1 })).scale;
-
-    const { left, top, width, height } = targetRect;
-    const scaledRect = {
-      left: left / scale,
-      top: top / scale,
-      width: width / scale,
-      height: height / scale,
-    };
-
-    try {
-      const textContent = await page.getTextContent();
-      const pageViewport = page.getViewport({ scale: 1 });
-      const extractedText = textContent.items
-        .filter((item: any) => {
-          const [x, y] = item.transform.slice(-2);
-          const [newX, newY] = pageViewport.convertToViewportPoint(x, y);
-          return (
-            newX >= scaledRect.left &&
-            newX <= scaledRect.left + scaledRect.width &&
-            newY >= scaledRect.top &&
-            newY <= scaledRect.top + scaledRect.height
-          );
-        })
-        .map((item) => item.str)
-        .join(' ');
-
-      onExtractText({
-        id: (targetRect as any).id,
-        pageNumber,
-        text: extractedText,
-        rectangleInfo: {
-          left: scaledRect.left,
-          top: scaledRect.top,
-          width: scaledRect.width,
-          height: scaledRect.height,
-        },
-      });
-
-      console.log('Extracted text:', extractedText);
-    } catch (error) {
-      console.error('Error extracting text:', error);
-    }
-  };
-
-  const handleRectangleCreated = (rect: fabric.Rect) => {
+  const handleRectangleCreated = (rect: FabricRect) => {
     if (fabricCanvasRef.current) {
       console.log('handleRectangleCreated', rect);
-      const rectangles = fabricCanvasRef.current.getObjects('rect');
+      const rectangles = fabricCanvasRef.current.getObjects('rect') as FabricRect[];
       saveRectangles(rectangles);
       extractTextFromRectangle(rect);
     }
