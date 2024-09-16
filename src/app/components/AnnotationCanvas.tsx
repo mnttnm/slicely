@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import * as fabric from "fabric";
 import { Rectangle, PageAnnotation, FabricRect } from "@/app/types";
-import { RECTANGLE_FILL, RECTANGLE_STROKE, RECTANGLE_STROKE_WIDTH, MIN_RECTANGLE_SIZE } from "@/app/constants";
+import { RECTANGLE_FILL, RECTANGLE_STROKE, RECTANGLE_STROKE_WIDTH, MIN_RECTANGLE_SIZE, RECTANGLE_STROKE_HIGHLIGHT } from "@/app/constants";
+import { v4 as uuidv4 } from "uuid";
 
 interface AnnotationCanvasProps {
   pageDimensions: { width: number; height: number };
@@ -24,6 +25,32 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  const [selectedRectId, setSelectedRectId] = useState<string | null>(null);
+
+  const highlightRectangle = useCallback((rect: fabric.Rect | null) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    // Remove highlight from all rectangles
+    canvas.getObjects().forEach((obj) => {
+      if (obj.type === "rect") {
+        obj.set({
+          stroke: RECTANGLE_STROKE,
+          strokeWidth: RECTANGLE_STROKE_WIDTH,
+        });
+      }
+    });
+
+    // Highlight the selected rectangle
+    if (rect) {
+      rect.set({
+        stroke: RECTANGLE_STROKE_HIGHLIGHT,
+        strokeWidth: RECTANGLE_STROKE_WIDTH * 2,
+      });
+    }
+
+    canvas.renderAll();
+  }, []);
 
   const renderAnnotations = useCallback(() => {
     const canvas = fabricCanvasRef.current;
@@ -34,7 +61,7 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
     const pageAnnotation = annotations.find(a => a.page === pageNumber);
     if (pageAnnotation) {
       pageAnnotation.rectangles.forEach((rect: Rectangle) => {
-        canvas.add(new fabric.Rect({
+        const fabricRect = new fabric.Rect({
           left: rect.left,
           top: rect.top,
           width: rect.width,
@@ -42,15 +69,26 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
           fill: RECTANGLE_FILL,
           stroke: RECTANGLE_STROKE,
           strokeWidth: RECTANGLE_STROKE_WIDTH,
-          selectable: true,
-          hasControls: true,
+          hasControls: false,
+          lockMovementX: true,
+          lockMovementY: true,
           lockRotation: true,
-          id: rect.id,
-        }));
+          lockScalingX: true,
+          lockScalingY: true,
+          selectable: false,
+          id: rect.id || uuidv4(),
+        });
+
+        fabricRect.on("mousedown", () => {
+          setSelectedRectId(fabricRect.id as string);
+          highlightRectangle(fabricRect);
+        });
+
+        canvas.add(fabricRect);
       });
     }
     canvas.renderAll();
-  }, [annotations, pageNumber]);
+  }, [annotations, pageNumber, highlightRectangle]);
 
   useEffect(() => {
     if (canvasRef.current && pageDimensions) {
@@ -82,6 +120,8 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
         isDown = true;
         startX = pointer.x;
         startY = pointer.y;
+        setSelectedRectId(null);
+        highlightRectangle(null);
       };
 
       const handleMouseMove = (o: fabric.TEvent) => {
@@ -117,6 +157,15 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
           if (rect.width! < MIN_RECTANGLE_SIZE || rect.height! < MIN_RECTANGLE_SIZE) {
             fabricCanvas.remove(rect);
           } else {
+            rect.set({
+              hasControls: false,
+              lockMovementX: true,
+              lockMovementY: true,
+              lockRotation: true,
+              lockScalingX: true,
+              lockScalingY: true,
+              selectable: false,
+            });
             fabricCanvas.setActiveObject(rect);
             onRectangleCreated(rect as FabricRect);
           }
@@ -135,7 +184,7 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
         fabricCanvas.dispose();
       };
     }
-  }, [pageDimensions, onCanvasReady, renderAnnotations, isRectangleMode, onRectangleCreated]);
+  }, [pageDimensions, onCanvasReady, renderAnnotations, isRectangleMode, onRectangleCreated, highlightRectangle]);
 
   return (
     <canvas
