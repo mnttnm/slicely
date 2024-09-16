@@ -45,6 +45,10 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
           selectable: true,
           hasControls: true,
           lockRotation: true,
+          lockMovementX: true,
+          lockMovementY: true,
+          lockScalingX: true,
+          lockScalingY: true,
           id: rect.id,
         }));
       });
@@ -96,6 +100,13 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
             fill: RECTANGLE_FILL,
             stroke: RECTANGLE_STROKE,
             strokeWidth: RECTANGLE_STROKE_WIDTH,
+            selectable: true,
+            hasControls: true,
+            lockRotation: true,
+            lockMovementX: true,
+            lockMovementY: true,
+            lockScalingX: true,
+            lockScalingY: true,
             id: `rect_${Date.now()}`,
           });
           fabricCanvas.add(rect);
