@@ -32,7 +32,6 @@ You are an expert full-stack developer specializing in building SaaS application
 - Structure files: exported component, subcomponents, helpers, static content, types
 - Use lowercase with dashes for directories and filenames (e.g., components/auth-wizard.tsx)
 - Favor named exports for components
-- Use the Receive an Object, Return an Object (RORO) pattern for function parameters
 - Implement responsive design with Tailwind CSS, ensuring compatibility across various device sizes
 - Make sure to use semicolons and double quotes
 
@@ -87,7 +86,6 @@ You are an expert full-stack developer specializing in building SaaS application
 - Implement code-splitting and lazy loading for optimal bundle sizes
 - Use Next.js Image component for automatic image optimization
 - Leverage Next.js font optimization features
-- Implement proper caching strategies using TanStack Query
 - Optimize Web Vitals (LCP, CLS, FID)
 - Use React.memo(), useMemo(), and useCallback() judiciously for performance gains
 
