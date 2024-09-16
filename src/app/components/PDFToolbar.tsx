@@ -27,7 +27,7 @@ interface PDFToolbarProps {
   numPages: number | null;
   toggleRectangleMode: () => void;
   deleteSelectedObject: () => void;
-  clearAllAnnotations: () => void;
+  clearAnnotationFromCurrentPage: () => void;
   extractTextFromRectangle: () => void;
   previousPage: () => void;
   nextPage: () => void;
@@ -45,7 +45,7 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
   numPages,
   toggleRectangleMode,
   deleteSelectedObject,
-  clearAllAnnotations,
+  clearAnnotationFromCurrentPage,
   previousPage,
   nextPage,
   isPageSkipped,
@@ -60,7 +60,7 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
 
   const handleJumpToPage = () => {
     const pageNumber = parseInt(jumpToPageNumber, 10);
-    if (pageNumber && pageNumber > 0 && pageNumber <= numPages) {
+    if (pageNumber && pageNumber > 0 && numPages && pageNumber <= numPages) {
       jumpToPage(pageNumber);
       setIsJumpToPageOpen(false);
     }
@@ -89,8 +89,8 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
           {/* Clear All */}
           <ToolbarButton
             icon={<RotateCcw className="h-5 w-5" />}
-            tooltip="Clear All"
-            onClick={clearAllAnnotations}
+            tooltip="Clear Annotations on this page"
+            onClick={clearAnnotationFromCurrentPage}
           />
 
           {/* Extract Text */}

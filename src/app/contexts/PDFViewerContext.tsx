@@ -4,7 +4,7 @@ import { getSignedPdfUrl } from '@/server/actions/studio/actions';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-interface SlicerControlContextType {
+interface PDFViewerContextType {
   numPages: number | null;
   pageNumber: number;
   pageDimensions: { width: number; height: number } | null;
@@ -25,9 +25,9 @@ interface SlicerControlContextType {
   jumpToPage: (page: number) => void;
 }
 
-export const SlicerControlContext = createContext<SlicerControlContextType | undefined>(undefined);
+export const PDFViewerContext = createContext<PDFViewerContextType | undefined>(undefined);
 
-export const SlicerControlProvider = ({ children }: { children: ReactNode }) => {
+export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -101,6 +101,16 @@ export const SlicerControlProvider = ({ children }: { children: ReactNode }) => 
     }
   }, [numPages]);
 
+  const slicerObject = useMemo(() => ({
+    numPages,
+    pageNumber,
+    pageDimensions,
+    isRectangleMode,
+    pdfDocument,
+    pdfUrl,
+    skippedPages,
+  }), [numPages, pageNumber, pageDimensions, isRectangleMode, pdfDocument, pdfUrl, skippedPages]);
+
   const contextValue = useMemo(() => ({
     numPages,
     pageNumber,
@@ -120,6 +130,7 @@ export const SlicerControlProvider = ({ children }: { children: ReactNode }) => 
     includeAllPages,
     excludeAllPages,
     jumpToPage,
+    slicerObject
   }), [
     numPages, pageNumber, pageDimensions, isRectangleMode,
     pdfDocument, pdfUrl, skippedPages, togglePageSkip, onDocumentLoadSuccess,
@@ -128,20 +139,20 @@ export const SlicerControlProvider = ({ children }: { children: ReactNode }) => 
     clearAllPages,
     includeAllPages,
     excludeAllPages,
-    jumpToPage
+    jumpToPage,
+    slicerObject
   ]);
 
   return (
-    <SlicerControlContext.Provider value={contextValue}>
+    <PDFViewerContext.Provider value={contextValue}>
       {children}
-    </SlicerControlContext.Provider>
+    </PDFViewerContext.Provider>
   );
 };
-
-export const useSlicerControl = () => {
-  const context = useContext(SlicerControlContext);
+export const usePDFViewer = () => {
+  const context = useContext(PDFViewerContext);
   if (context === undefined) {
-    throw new Error('useSlicerControl must be used within a SlicerControlProvider');
+    throw new Error('usePDFViewer must be used within a PDFViewerProvider');
   }
   return context;
 };

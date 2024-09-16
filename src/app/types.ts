@@ -7,7 +7,8 @@ export interface PDFMetadata {
   uploadDate: Date;
 }
 
-export interface RectangleText {
+
+export interface ExtractedText {
   id: string;
   pageNumber: number;
   text: string;
@@ -20,6 +21,7 @@ export interface RectangleText {
 }
 
 export interface Rectangle {
+  id: string;
   left: number;     // X-coordinate of the top-left corner
   top: number;      // Y-coordinate of the top-left corner
   width: number;    // Width of the rectangle
@@ -45,18 +47,6 @@ export type Slicer = {
   llm_prompt?: string; // Prompt for the language model (optional)
   output_mode?: string; // Mode of output, default is 'text' (optional)
   webhook_url?: string; // URL for webhook (optional)
-};
-
-export type ExtractedText = {
-  id: string;
-  pageNumber: number;
-  text: string;
-  rectangleInfo: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  };
 };
 
 export type LLMOutput = {

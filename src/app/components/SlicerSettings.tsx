@@ -3,7 +3,7 @@
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import ExtractedTextView from './ExtractedTextView';
-import { RectangleText, Slicer } from '@/app/types';
+import { ExtractedText, Slicer } from '@/app/types';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 
@@ -89,7 +89,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer,
 };
 
 interface SlicerConfigProps {
-  extractedTexts: RectangleText[];
+  extractedTexts: ExtractedText[];
   slicerObject: Slicer;
   onUpdateSlicer: (slicer: Slicer) => void;
 }

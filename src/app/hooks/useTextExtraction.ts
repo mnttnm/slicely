@@ -1,13 +1,11 @@
 import { useCallback } from "react";
 import * as fabric from "fabric";
 import { PDFDocumentProxy } from "pdfjs-dist";
-import { RectangleText } from "@/app/types";
 
 export const useTextExtraction = (
   fabricCanvasRef: React.RefObject<fabric.Canvas>,
   pdfDocument: PDFDocumentProxy | null,
   pageNumber: number,
-  onExtractText: (extractedText: RectangleText) => void
 ) => {
   const extractTextFromRectangle = useCallback(async (rect?: fabric.Rect) => {
     if (!fabricCanvasRef.current || !pdfDocument) return;
@@ -43,23 +41,24 @@ export const useTextExtraction = (
         .map((item: any) => item.str)
         .join(' ');
 
-      onExtractText({
-        id: (targetRect as any).id,
-        pageNumber,
-        text: extractedText,
-        rectangleInfo: {
-          left: scaledRect.left,
-          top: scaledRect.top,
-          width: scaledRect.width,
-          height: scaledRect.height,
-        },
-      });
-
       console.log('Extracted text:', extractedText);
+      return extractedText;
+      // onExtractText({
+      //   id: (targetRect as any).id,
+      //   pageNumber,
+      //   text: extractedText,
+      //   rectangleInfo: {
+      //     left: scaledRect.left,
+      //     top: scaledRect.top,
+      //     width: scaledRect.width,
+      //     height: scaledRect.height,
+      //   },
+      // });
+
     } catch (error) {
       console.error('Error extracting text:', error);
     }
-  }, [fabricCanvasRef, pdfDocument, pageNumber, onExtractText]);
+  }, [fabricCanvasRef, pdfDocument, pageNumber]);
 
   return { extractTextFromRectangle };
 };

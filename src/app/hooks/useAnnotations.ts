@@ -1,47 +1,13 @@
 import { useCallback } from "react";
 import * as fabric from "fabric";
-import { ProcessingRules, FabricRect } from "@/app/types";
-
-import { saveAnnotations } from "@/server/actions/studio/actions";
+import { ProcessingRules, Rectangle, FabricRect } from "@/app/types";
 
 export const useAnnotations = (
   fabricCanvasRef: React.RefObject<fabric.Canvas>,
-  processingRules: ProcessingRules | null,
-  onUpdateAnnotations: (updatedRules: ProcessingRules) => void,
-  slicerId: string,
+  processingRules: ProcessingRules | undefined,
+  onProcessingRulesUpdate: (updatedRules: ProcessingRules) => void,
   pageNumber: number,
-  onDeleteText: (id?: string, deleteAll?: boolean, pageNumber?: number) => void
 ) => {
-  const saveRectangles = useCallback(async (rectangles: FabricRect[]) => {
-    if (!processingRules) return;
-
-    const updatedRules = { ...processingRules };
-    const pageAnnotation = updatedRules.annotations.find(a => a.page === pageNumber);
-
-    const transformedRectangles = rectangles.map(rect => ({
-      left: rect.left,
-      top: rect.top,
-      width: rect.width,
-      height: rect.height,
-    }));
-
-    if (pageAnnotation) {
-      pageAnnotation.rectangles = transformedRectangles;
-    } else {
-      updatedRules.annotations.push({
-        page: pageNumber,
-        rectangles: transformedRectangles,
-      });
-    }
-
-    onUpdateAnnotations(updatedRules);
-
-    try {
-      await saveAnnotations(slicerId, updatedRules);
-    } catch (error) {
-      console.error('Error saving annotations:', error);
-    }
-  }, [processingRules, pageNumber, onUpdateAnnotations, slicerId]);
 
   const deleteSelectedObject = useCallback(() => {
     if (fabricCanvasRef.current) {
@@ -49,28 +15,32 @@ export const useAnnotations = (
       if (activeObject) {
         if (activeObject.type === 'rect') {
           const rect = activeObject as FabricRect;
-          onDeleteText(rect.id);
+          fabricCanvasRef.current.remove(activeObject);
+          if (processingRules) {
+            // find the rectangle in the processing rules and remove it
+            const currentPageAnnotations = processingRules.annotations.find(annotation => annotation.page === pageNumber);
+            if (currentPageAnnotations) {
+              currentPageAnnotations.rectangles = currentPageAnnotations.rectangles.filter(annotation => annotation.id !== rect.id);
+              onProcessingRulesUpdate({ ...processingRules, annotations: processingRules.annotations.map(annotation => annotation.page === pageNumber ? currentPageAnnotations : annotation) });
+            }
+          }
         }
-        fabricCanvasRef.current.remove(activeObject);
-        saveRectangles(fabricCanvasRef.current.getObjects('rect') as FabricRect[]);
       }
-    }
-  }, [fabricCanvasRef, onDeleteText, saveRectangles]);
 
-  const clearAllAnnotations = useCallback(() => {
+    }
+  }, [fabricCanvasRef, processingRules, pageNumber, onProcessingRulesUpdate]);
+
+  const clearAnnotationFromCurrentPage = useCallback(() => {
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.clear();
 
       if (processingRules) {
         const updatedRules = { ...processingRules };
         updatedRules.annotations = updatedRules.annotations.filter(a => a.page !== pageNumber);
-        onUpdateAnnotations(updatedRules);
+        onProcessingRulesUpdate(updatedRules);
       }
-
-      onDeleteText(undefined, true, pageNumber);
-      saveRectangles([]);
     }
-  }, [fabricCanvasRef, processingRules, onUpdateAnnotations, onDeleteText, pageNumber, saveRectangles]);
+  }, [fabricCanvasRef, processingRules, onProcessingRulesUpdate, pageNumber]);
 
-  return { saveRectangles, deleteSelectedObject, clearAllAnnotations };
+  return { deleteSelectedObject, clearAnnotationFromCurrentPage: clearAnnotationFromCurrentPage };
 };

@@ -1,13 +1,12 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import * as fabric from 'fabric';
 import PDFToolbar from './PDFToolbar';
 import PDFRenderer from './PDFRenderer';
-import AnnotationCanvas from './AnnotationCanvas';
-import { useSlicerControl } from '@/app/contexts/SlicerControlContext';
-import { RectangleText, ProcessingRules } from '@/app/types';
-import { FileIcon } from 'lucide-react';
+import { AnnotationCanvas } from './AnnotationCanvas';
+import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
+import { ExtractedText, ProcessingRules } from '@/app/types';
 import { useAnnotations } from "@/app/hooks/useAnnotations";
 import { useTextExtraction } from "@/app/hooks/useTextExtraction";
 import { PDFDocumentProxy } from 'pdfjs-dist';
@@ -15,20 +14,17 @@ import { FabricRect } from '../types';
 
 interface PDFViewerProps {
   url: string;
-  onExtractText: (extractedText: RectangleText) => void;
-  onDeleteText: (id?: string, deleteAll?: boolean, pageNumber?: number) => void;
-  processingRules: ProcessingRules | null;
-  onUpdateAnnotations: (updatedRules: ProcessingRules) => void;
-  slicerId: string;
+  onExtractText: (extractedText: ExtractedText) => void;
+  onExtractedTextsUpdate: (updatedExtractedTexts: ExtractedText[]) => void;
+  processingRules: ProcessingRules | undefined;
+  onProcessingRulesUpdate: (updatedRules: ProcessingRules) => void;
 }
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
   url,
   onExtractText,
-  onDeleteText,
   processingRules,
-  onUpdateAnnotations,
-  slicerId
+  onProcessingRulesUpdate,
 }) => {
 
   const {
@@ -50,22 +46,19 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     includeAllPages,
     excludeAllPages,
     jumpToPage,
-  } = useSlicerControl();
+  } = usePDFViewer();
 
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
 
   const {
-    saveRectangles,
     deleteSelectedObject,
-    clearAllAnnotations,
-  } = useAnnotations(fabricCanvasRef, processingRules, onUpdateAnnotations, slicerId, pageNumber, onDeleteText);
+    clearAnnotationFromCurrentPage,
+  } = useAnnotations(fabricCanvasRef, processingRules, onProcessingRulesUpdate, pageNumber);
 
   const { extractTextFromRectangle } = useTextExtraction(
     fabricCanvasRef,
     pdfDocument as PDFDocumentProxy | null,
-    pageNumber,
-    onExtractText
-  );
+    pageNumber);
 
   useEffect(() => {
     if (url) {
@@ -73,26 +66,49 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   }, [url, fetchSignedPdfUrl]);
 
-  const handleRectangleCreated = (rect: FabricRect) => {
+  const handleRectangleCreated = useCallback(async (rect: FabricRect) => {
     if (fabricCanvasRef.current) {
-      console.log('handleRectangleCreated', rect);
-      const rectangles = fabricCanvasRef.current.getObjects('rect') as FabricRect[];
-      saveRectangles(rectangles);
-      extractTextFromRectangle(rect);
-    }
-  };
+      const extractedText = await extractTextFromRectangle(rect) ?? "";
 
-  const handleCanvasReady = (canvas: fabric.Canvas) => {
+      //extract text from rectangle
+      const newExtractedText: ExtractedText = {
+        id: rect.id,
+        pageNumber,
+        text: extractedText,
+        rectangleInfo: {
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+        },
+      };
+      onExtractText(newExtractedText);
+
+      // Update the processing rules here
+      if (processingRules) {
+        const updatedRules = { ...processingRules };
+        const pageAnnotation = updatedRules.annotations.find(a => a.page === pageNumber);
+        if (pageAnnotation) {
+          pageAnnotation.rectangles.push(rect);
+        } else {
+          updatedRules.annotations.push({ page: pageNumber, rectangles: [rect] });
+        }
+        onProcessingRulesUpdate(updatedRules);
+      }
+    }
+  }, [fabricCanvasRef, extractTextFromRectangle, onExtractText, processingRules, onProcessingRulesUpdate, pageNumber]);
+
+  const handleCanvasReady = useCallback((canvas: fabric.Canvas) => {
     fabricCanvasRef.current = canvas;
-  };
+  }, []);
 
   return (
     <div className="relative w-1/2 h-full flex">
       <div className="flex flex-col h-full w-full">
-        <header className="flex items-center space-x-2 border-b p-2 border-gray-300">
+        {/* <header className="flex items-center space-x-2 border-b p-2 border-gray-300">
           <FileIcon className="h-4 w-4 flex justify-center items-center" />
           <h2 className="text-lg font-medium">{`Slicer: ${slicerId}`}</h2>
-        </header>
+        </header> */}
         {pdfUrl ? (
           <div className="relative flex justify-center items-start flex-grow overflow-auto">
             <div className="relative">
@@ -114,7 +130,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                   <AnnotationCanvas
                     pageDimensions={pageDimensions}
                     isRectangleMode={isRectangleMode}
-                    slicerId={slicerId}
                     pageNumber={pageNumber}
                     onRectangleCreated={handleRectangleCreated}
                     onCanvasReady={handleCanvasReady}
@@ -135,7 +150,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         numPages={numPages}
         toggleRectangleMode={toggleRectangleMode}
         deleteSelectedObject={deleteSelectedObject}
-        clearAllAnnotations={clearAllAnnotations}
+        clearAnnotationFromCurrentPage={clearAnnotationFromCurrentPage}
         extractTextFromRectangle={extractTextFromRectangle}
         previousPage={previousPage}
         nextPage={nextPage}
