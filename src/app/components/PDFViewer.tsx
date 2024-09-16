@@ -67,7 +67,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const handleAnnotationDelete = useCallback(() => {
     if (fabricCanvasRef.current) {
       const id = deleteSelectedObject();
+      console.log("deleteSelectedObject # ", id);
       if (id) {
+        console.log("remove # ", id);
         onRectangleUpdate("remove", { id, pageNumber });
       }
     }
@@ -96,35 +98,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
 
   const handleRectangleCreated = useCallback(async (rect: FabricRect) => {
+    console.log("handleRectangleCreated # ", rect);
     if (fabricCanvasRef.current) {
       onRectangleUpdate("add", { id: rect.id, rect, pageNumber });
-      // const extractedText = await extractTextFromRectangle(rect) ?? "";
-
-      //extract text from rectangle
-      // const newExtractedText: ExtractedText = {
-      //   id: rect.id,
-      //   pageNumber,
-      //   text: extractedText,
-      //   rectangleInfo: {
-      //     left: rect.left,
-      //     top: rect.top,
-      //     width: rect.width,
-      //     height: rect.height,
-      //   },
-      // };
-      // onExtractText(newExtractedText);
-
-      // Update the processing rules here
-      // if (processingRules) {
-      //   const updatedRules = { ...processingRules };
-      //   const pageAnnotation = updatedRules.annotations.find(a => a.page === pageNumber);
-      //   if (pageAnnotation) {
-      //     pageAnnotation.rectangles.push(rect);
-      //   } else {
-      //     updatedRules.annotations.push({ page: pageNumber, rectangles: [rect] });
-      //   }
-      //   onProcessingRulesUpdate(updatedRules);
-      // }
     }
   }, [fabricCanvasRef, onRectangleUpdate, pageNumber]);
 
@@ -168,7 +144,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 pageNumber={pageNumber}
                 onDocumentLoadSuccess={onDocumentLoadSuccess}
                 onPageRenderSuccess={onPageRenderSuccess}
-                skippedPages={skippedPages}
+                skippedPages={processingRules?.skipped_pages || []}
               />
               {pageDimensions && (
                 <div

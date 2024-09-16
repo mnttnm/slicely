@@ -49,8 +49,8 @@ const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ slicedTexts, proc
           {isPageExcluded && !showAllPages ? (
             <p className="text-gray-600 dark:text-gray-400">No content for page (Excluded)</p>
           ) : reversedTexts.length > 0 ? (
-              reversedTexts.map((item) => (
-              <section key={item.id} className="bg-white dark:bg-gray-700 shadow-sm rounded-lg p-4">
+              reversedTexts.map((item, index) => (
+                <section key={item.id ?? index} className="bg-white dark:bg-gray-700 shadow-sm rounded-lg p-4">
                 <h2 className="text-sm font-semibold mb-2">Page: {item.pageNumber}</h2>
                 <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                   <p>Position: (L: {item.rectangleInfo.left.toFixed(2)}, T: {item.rectangleInfo.top.toFixed(2)})</p>

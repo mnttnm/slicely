@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import * as fabric from "fabric";
-import { Rectangle, PageAnnotation, FabricRect } from "@/app/types";
+import { PageAnnotation, FabricRect } from "@/app/types";
 import { RECTANGLE_FILL, RECTANGLE_STROKE, RECTANGLE_STROKE_WIDTH, MIN_RECTANGLE_SIZE } from "@/app/constants";
 
 interface AnnotationCanvasProps {
@@ -32,24 +32,24 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
 
     const pageAnnotation = annotations.find(a => a.page === pageNumber);
     if (pageAnnotation) {
-      pageAnnotation.rectangles.forEach((rect: Rectangle) => {
-        canvas.add(new fabric.Rect({
-          left: rect.left,
-          top: rect.top,
-          width: rect.width,
-          height: rect.height,
-          fill: RECTANGLE_FILL,
-          stroke: RECTANGLE_STROKE,
-          strokeWidth: RECTANGLE_STROKE_WIDTH,
-          selectable: true,
-          hasControls: true,
-          lockRotation: true,
-          lockMovementX: true,
-          lockMovementY: true,
-          lockScalingX: true,
-          lockScalingY: true,
-          id: rect.id,
-        }));
+      pageAnnotation.rectangles.forEach((rect: FabricRect) => {
+        console.log("rect # ", rect);
+        canvas.add(
+          new fabric.Rect({
+            ...rect,
+            id: rect.id,
+            fill: RECTANGLE_FILL,
+            stroke: RECTANGLE_STROKE,
+            strokeWidth: RECTANGLE_STROKE_WIDTH,
+            selectable: true,
+            hasControls: true,
+            lockRotation: true,
+            lockMovementX: true,
+            lockMovementY: true,
+            lockScalingX: true,
+            lockScalingY: true,
+          })
+        );
       });
     }
     canvas.renderAll();
@@ -79,6 +79,7 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
         const clickedObject = fabricCanvas.findTarget(o.e);
         if (clickedObject) {
           fabricCanvas.setActiveObject(clickedObject);
+          console.log("clickedObject # ", clickedObject);
           return;
         }
 
@@ -127,6 +128,7 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
           if (rect.width! < MIN_RECTANGLE_SIZE || rect.height! < MIN_RECTANGLE_SIZE) {
             fabricCanvas.remove(rect);
           } else {
+            console.log("rect # ", rect);
             fabricCanvas.setActiveObject(rect);
             onRectangleCreated(rect as FabricRect);
           }

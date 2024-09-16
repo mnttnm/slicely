@@ -22,41 +22,8 @@ const SlicerPage = () => {
     skipped_pages: []
   });
   const [pdfDocument, setPdfDocument] = useState<pdfjs.PDFDocumentProxy | null>(null);
-  const [skippedPages, setSkippedPages] = useState<number[]>([]);
-  const transformSlicerDetails = (slicerDetails: any): Slicer => {
-    return {
-      ...slicerDetails,
-      processing_rules: slicerDetails.processing_rules as ProcessingRules,
-      skipped_pages: slicerDetails.processing_rules?.skipped_pages || []
-    };
-  };
 
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
-
-  useEffect(() => {
-    const fetchSlicerDetails = async () => {
-      if (!id || typeof id !== 'string') return;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const result = await getSlicerDetails(id);
-        if (result) {
-          const { slicerDetails, pdfUrl } = result;
-          setSlicer(transformSlicerDetails(slicerDetails));
-          setPdfUrl(pdfUrl);
-        }
-      } catch (err) {
-        console.error('Error fetching slicer:', err);
-        setError('Failed to fetch slicer details. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSlicerDetails();
-  }, [id]);
 
   const updateSlicerDetails = useCallback((updatedSlicer: Partial<Slicer>) => {
     setSlicer(prev => {
@@ -66,13 +33,14 @@ const SlicerPage = () => {
         ...updatedSlicer,
         processing_rules: {
           annotations: processingRules?.annotations || [],
-          skipped_pages: skippedPages
+          skipped_pages: processingRules?.skipped_pages || []
         }
       };
     });
-  }, [processingRules, skippedPages]);
+  }, [processingRules]);
 
   const onRectangleUpdate = useCallback(async (operation: "add" | "remove", payload: { id: string, rect?: FabricRect, pageNumber?: number }) => {
+    console.log("onRectangleUpdate # ", operation, payload);
     if (operation === "add") {
       if (!payload.pageNumber || !payload.rect) return;
       // Correctly search for page annotations and add the new rectangle to the existing one
@@ -125,10 +93,9 @@ const SlicerPage = () => {
         if (!prev) return [];
         return [...prev, newExtractedText];
       });
-
-      // After updating processingRules and extractedTexts
-      // Remove this line: updateSlicerDetails({});
     } else if (operation === "remove") {
+      console.log("remove # ", payload);
+
       if (!payload.pageNumber || !payload.id) return;
       // Correctly search for and remove the annotation with the specified id
       setProcessingRules(prev => {
@@ -148,6 +115,7 @@ const SlicerPage = () => {
         }
       });
 
+      console.log("remove ", payload);
       // remove the extracted text for the page
       setExtractedTexts(prev => prev.filter(text => text.id !== payload.id && text.pageNumber !== payload.pageNumber));
     }
@@ -162,8 +130,6 @@ const SlicerPage = () => {
       };
     });
     setExtractedTexts(prev => prev.filter(text => text.pageNumber !== pageNumber));
-
-    // Remove this line: updateSlicerDetails({});
   }, []);
 
   const onClearAllPages = useCallback(() => {
@@ -184,31 +150,45 @@ const SlicerPage = () => {
 
   const onPageExclude = useCallback((pageNumber: number) => {
     if (!pdfDocument) return;
-    setSkippedPages(prev => {
-      const newSkippedPages = [...prev, pageNumber];
-      return newSkippedPages;
+    setProcessingRules(prev => {
+      return {
+        ...prev,
+        skipped_pages: [...prev.skipped_pages, pageNumber]
+      };
     });
   }, [pdfDocument]);
 
   const onPageInclude = useCallback((pageNumber: number) => {
     if (!pdfDocument) return;
-    setSkippedPages(prev => {
-      const newSkippedPages = prev.filter(page => page !== pageNumber);
-      return newSkippedPages;
+    setProcessingRules(prev => {
+      return {
+        ...prev,
+        skipped_pages: prev.skipped_pages.filter(page => page !== pageNumber)
+      };
     });
   }, [pdfDocument]);
 
   const onPageExcludeAll = useCallback(() => {
     if (!pdfDocument) return;
     const allPages = Array.from({ length: pdfDocument?.numPages }, (_, i) => i + 1);
-    setSkippedPages(allPages);
+    setProcessingRules(prev => {
+      return {
+        ...prev,
+        skipped_pages: allPages
+      };
+    });
   }, [pdfDocument]);
 
   const onPageIncludeAll = useCallback(() => {
-    setSkippedPages([]);
+    setProcessingRules(prev => {
+      return {
+        ...prev,
+        skipped_pages: []
+      };
+    });
   }, []);
 
-  // Add this effect to update slicer when processingRules or skippedPages change
+  // Add this effect to update slicer when processingRules changes
   useEffect(() => {
     setSlicer(prev => {
       if (!prev) return null;
@@ -216,11 +196,73 @@ const SlicerPage = () => {
         ...prev,
         processing_rules: {
           annotations: processingRules?.annotations || [],
-          skipped_pages: skippedPages
+          skipped_pages: processingRules?.skipped_pages || []
         }
       };
     });
-  }, [processingRules, skippedPages]);
+  }, [processingRules]);
+
+  // Update this useEffect to extract text when pdfDocument is available
+  const extractTexts = useCallback(async () => {
+    if (!pdfDocument) return;
+    const updatedTexts = await Promise.all(
+      extractedTexts.map(async (text) => ({
+        ...text,
+        text: await extractTextFromRectangle(text.rectangleInfo, text.pageNumber) || '',
+      }))
+    );
+    setExtractedTexts(updatedTexts);
+
+    //todo: fix this dependency array warning, currently
+    // if we include extractTexts in the dependency array, it will cause
+    // an infinite re-rendering loop
+  }, [pdfDocument, extractTextFromRectangle]);
+
+  useEffect(() => {
+    extractTexts();
+  }, [extractTexts]);
+
+  useEffect(() => {
+    const fetchSlicerDetails = async () => {
+      if (!id || typeof id !== 'string') return;
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await getSlicerDetails(id);
+        if (result) {
+          const { slicerDetails, linkedPdfs } = result;
+          console.log(linkedPdfs);
+
+          const pdfUrl = linkedPdfs[0].file_path ?? null;
+          setSlicer(slicerDetails);
+          setPdfUrl(pdfUrl);
+          setProcessingRules(slicerDetails.processing_rules);
+
+          // Initialize extractedTexts based on the fetched slicer details
+          const initialExtractedTexts: ExtractedText[] = slicerDetails.processing_rules.annotations.flatMap(
+            (annotation) =>
+              annotation.rectangles.map((rect) => ({
+                id: rect.id,
+                pageNumber: annotation.page,
+                text: '', // We'll need to extract the text later
+                rectangleInfo: rect,
+              }))
+          );
+          setExtractedTexts(initialExtractedTexts);
+        }
+      } catch (err) {
+        console.error('Error fetching slicer:', err);
+        setError('Failed to fetch slicer details. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSlicerDetails();
+  }, [id]);
+
 
   if (isLoading) {
     return <div>Loading...</div>;

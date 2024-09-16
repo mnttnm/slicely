@@ -1,11 +1,11 @@
 import { useCallback } from "react";
-import * as fabric from "fabric";
 import { pdfjs } from "react-pdf";
+import { FabricRect } from "../types";
 
 export const useTextExtraction = (
   pdfDocument: pdfjs.PDFDocumentProxy | null,
 ) => {
-  const extractTextFromRectangle = useCallback(async (rect: fabric.Rect, pageNumber: number) => {
+  const extractTextFromRectangle = useCallback(async (rect: FabricRect, pageNumber: number) => {
     if (!pdfDocument || !rect) return;
 
     const page = await pdfDocument.getPage(pageNumber);

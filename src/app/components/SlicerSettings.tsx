@@ -10,13 +10,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 interface SlicerRulesProps {
   slicerObject: Slicer;
   onUpdateSlicer: (slicer: Slicer) => void;
-  saveSlicer: () => void;
 }
 
 import { Label } from "@/app/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/app/components/ui/card";
+import { updateSlicer } from "@/server/actions/studio/actions";
 
-const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer, saveSlicer }) => {
+const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }) => {
+  const saveSlicer = () => {
+    console.log("slicerObject # ", slicerObject);
+    updateSlicer(slicerObject.id, slicerObject);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-hidden">
@@ -95,14 +100,11 @@ interface SlicerConfigProps {
 }
 
 const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObject, onUpdateSlicer }) => {
-  const saveSlicer = () => {
-    onUpdateSlicer(slicerObject);
-  };
-
   if (!slicerObject) {
     return <div>No data available</div>;
   }
 
+  console.log("extractedTexts # ", slicerObject);
   return (
     <div className="flex-1 w-1/2 bg-gray-200 dark:bg-gray-900 border-l border-gray-600 flex flex-col">
       <Tabs defaultValue="extracted" className="w-full flex flex-col h-full">
@@ -111,10 +113,13 @@ const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObj
           <TabsTrigger value="config">Page Processing Rules</TabsTrigger>
         </TabsList>
         <TabsContent value="extracted" className="flex-1 overflow-hidden">
-          <ExtractedTextView slicedTexts={extractedTexts} processingRules={slicerObject.processing_rules ?? null} />
+          <ExtractedTextView slicedTexts={extractedTexts} processingRules={slicerObject.processing_rules || {
+            annotations: [],
+            skipped_pages: []
+          }} />
         </TabsContent>
         <TabsContent value="config" className="flex-1 overflow-hidden">
-          <SlicerRules slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} saveSlicer={saveSlicer} />
+          <SlicerRules slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} />
         </TabsContent>
       </Tabs>
     </div>

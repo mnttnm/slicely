@@ -1,6 +1,6 @@
 'use server';
 
-import { ProcessingRules } from '@/app/types';
+import { ProcessingRules, Slicer } from '@/app/types';
 import { createClient } from '@/server/services/supabase/server';
 import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 import { ProcessedPageOutput } from '@/app/types';
@@ -143,7 +143,6 @@ export async function getPdfDetails(pdfId: string): Promise<{ pdfDetails: Tables
 }
 
 
-
 export async function getSlicers(): Promise<Tables<'slicers'>[]> {
   const supabase = createClient()
   // Get the authenticated user
@@ -218,7 +217,39 @@ export async function createSlicer({ name, description, fileId }: { name: string
   return newSlicer;
 }
 
-export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Tables<'slicers'>; pdfUrl: string } | null> {
+export async function updateSlicer(slicerId: string, slicer: Slicer) {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Authentication failed');
+  }
+  console.log("slicer # ", slicer);
+
+  // print processing rules
+  console.log("processing rules # ", slicer.processing_rules.annotations.map((a) => a.rectangles.map((r) => console.log(r))));
+
+
+
+  console.log({ ...slicer, processing_rules: JSON.stringify(slicer.processing_rules) });
+
+  const { data, error } = await supabase
+    .from('slicers')
+    .update({ ...slicer, processing_rules: JSON.stringify(slicer.processing_rules) })
+    .eq('id', slicerId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error updating slicer:', error);
+    throw new Error('Failed to update slicer');
+  }
+
+  return data;
+}
+
+
+export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Slicer; linkedPdfs: { id: string | undefined, file_name: string | undefined, file_path: string | undefined }[] } | null> {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -229,12 +260,7 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
   // Fetch slicer details
   const { data: slicerDetails, error } = await supabase
     .from('slicers')
-    .select(`
-      *,
-      pdf_slicers!inner (
-        pdfs:pdf_id (*)
-      )
-    `)
+    .select('*, pdf_slicers (pdfs(id, file_name, file_path))')
     .eq('id', slicerId)
     .single();
 
@@ -247,14 +273,23 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
     throw new Error('Slicer or associated PDF not found');
   }
 
-  const pdfDetails = slicerDetails.pdf_slicers[0].pdfs;
+  const { pdf_slicers, ...slicerDetailsWithoutPdfSlicers } = slicerDetails;
+
+  const linkedPdfs = pdf_slicers.map(ps => ({ id: ps.pdfs?.id ?? undefined, file_name: ps.pdfs?.file_name ?? undefined, file_path: ps.pdfs?.file_path ?? undefined }));
+
+  const processingRules = typeof slicerDetailsWithoutPdfSlicers.processing_rules === 'string'
+    ? JSON.parse(slicerDetailsWithoutPdfSlicers.processing_rules)
+    : slicerDetails.processing_rules;
 
   return {
     slicerDetails: {
-      ...slicerDetails,
-      pdf_slicers: undefined // Remove this property as it's not part of the original structure
+      ...slicerDetailsWithoutPdfSlicers,
+      processing_rules: processingRules as ProcessingRules || {
+        annotations: [],
+        skipped_pages: []
+      } as ProcessingRules
     },
-    pdfUrl: pdfDetails.file_path
+    linkedPdfs
   };
 }
 
