@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
 import { ProcessingRules } from '@/app/types';
 import { Switch } from "@/app/components/ui/switch";
 import { Label } from "@/app/components/ui/label";
+import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
 
 interface ExtractedText {
   id: string;
@@ -49,14 +49,15 @@ const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ slicedTexts, proc
           {isPageExcluded && !showAllPages ? (
             <p className="text-gray-600 dark:text-gray-400">No content for page (Excluded)</p>
           ) : reversedTexts.length > 0 ? (
-            reversedTexts.map((item) => (
+              reversedTexts.map((item) => (
               <section key={item.id} className="bg-white dark:bg-gray-700 shadow-sm rounded-lg p-4">
                 <h2 className="text-sm font-semibold mb-2">Page: {item.pageNumber}</h2>
                 <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                   <p>Position: (L: {item.rectangleInfo.left.toFixed(2)}, T: {item.rectangleInfo.top.toFixed(2)})</p>
                   <p>Size: {item.rectangleInfo.width.toFixed(2)} x {item.rectangleInfo.height.toFixed(2)}</p>
-                </div>
-                <p className="text-sm dark:text-gray-200">{item.text}</p>
+                  </div>
+                  {processingRules?.skipped_pages?.includes(item.pageNumber) ? <p className="text-gray-600 dark:text-gray-400" key={item.id}>Not extracted as page is excluded</p> :
+                    <p className="text-sm dark:text-gray-200">{item.text}</p>}
               </section>
             ))
           ) : (

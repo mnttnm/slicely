@@ -24,7 +24,6 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
-
   const renderAnnotations = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;

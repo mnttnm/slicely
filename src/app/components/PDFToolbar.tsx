@@ -27,13 +27,12 @@ interface PDFToolbarProps {
   numPages: number | null;
   toggleRectangleMode: () => void;
   deleteSelectedObject: () => void;
-  clearAnnotationFromCurrentPage: () => void;
-  extractTextFromRectangle: () => void;
+  clearCurrentPage: () => void;
+  clearAllPages: () => void;
   previousPage: () => void;
   nextPage: () => void;
   isPageSkipped: boolean;
   togglePageSkip: (pageNumber: number) => void;
-  clearAllPages: () => void;
   includeAllPages: () => void;
   excludeAllPages: () => void;
   jumpToPage: (page: number) => void;
@@ -45,7 +44,7 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
   numPages,
   toggleRectangleMode,
   deleteSelectedObject,
-  clearAnnotationFromCurrentPage,
+  clearCurrentPage: clearAnnotationFromCurrentPage,
   previousPage,
   nextPage,
   isPageSkipped,
@@ -169,7 +168,7 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
                 <Input
                   type="number"
                   min="1"
-                  max={numPages}
+                  max={numPages ?? 0}
                   value={jumpToPageNumber}
                   onChange={(e) => setJumpToPageNumber(e.target.value)}
                   placeholder="Enter page number"
