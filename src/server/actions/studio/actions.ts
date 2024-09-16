@@ -4,6 +4,7 @@ import { ProcessingRules, Slicer } from '@/app/types';
 import { createClient } from '@/server/services/supabase/server';
 import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 import { ProcessedPageOutput } from '@/app/types';
+import { serializeProcessingRules, deserializeProcessingRules } from '@/app/utils/fabricHelper';
 
 export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'>> {
   const supabase = createClient()
@@ -224,18 +225,12 @@ export async function updateSlicer(slicerId: string, slicer: Slicer) {
   if (authError || !user) {
     throw new Error('Authentication failed');
   }
-  console.log("slicer # ", slicer);
 
-  // print processing rules
-  console.log("processing rules # ", slicer.processing_rules.annotations.map((a) => a.rectangles.map((r) => console.log(r))));
-
-
-
-  console.log({ ...slicer, processing_rules: JSON.stringify(slicer.processing_rules) });
+  const serializedProcessingRules = serializeProcessingRules(slicer.processing_rules);
 
   const { data, error } = await supabase
     .from('slicers')
-    .update({ ...slicer, processing_rules: JSON.stringify(slicer.processing_rules) })
+    .update({ ...slicer, processing_rules: serializedProcessingRules })
     .eq('id', slicerId)
     .eq('user_id', user.id)
     .single();
@@ -278,16 +273,13 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
   const linkedPdfs = pdf_slicers.map(ps => ({ id: ps.pdfs?.id ?? undefined, file_name: ps.pdfs?.file_name ?? undefined, file_path: ps.pdfs?.file_path ?? undefined }));
 
   const processingRules = typeof slicerDetailsWithoutPdfSlicers.processing_rules === 'string'
-    ? JSON.parse(slicerDetailsWithoutPdfSlicers.processing_rules)
-    : slicerDetails.processing_rules;
+    ? deserializeProcessingRules(slicerDetailsWithoutPdfSlicers.processing_rules)
+    : slicerDetailsWithoutPdfSlicers.processing_rules;
 
   return {
     slicerDetails: {
       ...slicerDetailsWithoutPdfSlicers,
-      processing_rules: processingRules as ProcessingRules || {
-        annotations: [],
-        skipped_pages: []
-      } as ProcessingRules
+      processing_rules: processingRules
     },
     linkedPdfs
   };
@@ -303,9 +295,11 @@ export async function saveAnnotations(slicerId: string, annotations: ProcessingR
     throw new Error('Authentication failed');
   }
 
+  const serializedAnnotations = serializeProcessingRules(annotations);
+
   const { data, error } = await supabase
     .from('slicers')
-    .update({ processing_rules: annotations })
+    .update({ processing_rules: serializedAnnotations })
     .eq('id', slicerId)
     .eq('user_id', user.id)
     .single();
@@ -339,7 +333,11 @@ export async function getAnnotations(slicerId: string): Promise<ProcessingRules 
     throw new Error('Failed to fetch annotations');
   }
 
-  return data?.processing_rules || null;
+  if (data?.processing_rules) {
+    return deserializeProcessingRules(data.processing_rules);
+  }
+
+  return null;
 }
 
 export async function getProcessedOutput(pdfId: string): Promise<ProcessedPageOutput | null> {

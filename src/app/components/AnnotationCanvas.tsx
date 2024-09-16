@@ -149,6 +149,7 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
     }
   }, [pageDimensions, onCanvasReady, renderAnnotations, isRectangleMode, onRectangleCreated]);
 
+
   return (
     <canvas
       ref={canvasRef}

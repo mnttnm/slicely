@@ -9,6 +9,7 @@ import { Slicer, ProcessingRules, ExtractedText, FabricRect } from '@/app/types'
 import { getSlicerDetails } from '@/server/actions/studio/actions';
 import { useTextExtraction } from '@/app/hooks/useTextExtraction';
 import { pdfjs } from "react-pdf";
+import { serializeFabricRect } from '@/app/utils/fabricHelper';
 
 const SlicerPage = () => {
   const { id } = useParams();
@@ -43,14 +44,14 @@ const SlicerPage = () => {
     console.log("onRectangleUpdate # ", operation, payload);
     if (operation === "add") {
       if (!payload.pageNumber || !payload.rect) return;
-      // Correctly search for page annotations and add the new rectangle to the existing one
+      const serializedRect = serializeFabricRect(payload.rect);
       setProcessingRules((prev) => {
         if (!prev) {
           return {
             annotations: [
               {
                 page: payload.pageNumber!,
-                rectangles: [payload.rect!]
+                rectangles: [serializedRect]
               }
             ],
             skipped_pages: []
@@ -58,7 +59,7 @@ const SlicerPage = () => {
         } else {
           const pageAnnotation = prev.annotations.find(annotation => annotation.page === payload.pageNumber);
           if (pageAnnotation) {
-            const updatedRectangles = [...pageAnnotation.rectangles, payload.rect!];
+            const updatedRectangles = [...pageAnnotation.rectangles, serializedRect];
             return {
               ...prev,
               annotations: prev.annotations.map(annotation => annotation.page === payload.pageNumber ? {
@@ -71,7 +72,7 @@ const SlicerPage = () => {
               ...prev,
               annotations: [...prev.annotations, {
                 page: payload.pageNumber!,
-                rectangles: [payload.rect!]
+                rectangles: [serializedRect]
               }]
             };
           }
@@ -94,30 +95,25 @@ const SlicerPage = () => {
         return [...prev, newExtractedText];
       });
     } else if (operation === "remove") {
-      console.log("remove # ", payload);
-
       if (!payload.pageNumber || !payload.id) return;
-      // Correctly search for and remove the annotation with the specified id
+      
       setProcessingRules(prev => {
-        if (!prev) {
-          return {
-            annotations: [],
-            skipped_pages: []
-          };
-        } else {
-          return {
-            ...prev,
-            annotations: prev.annotations.map(annotation => annotation.page === payload.pageNumber ? {
-              ...annotation,
-              rectangles: annotation.rectangles.filter(rect => rect.id !== payload.id)
-            } : annotation)
-          };
-        }
+        if (!prev) return { annotations: [], skipped_pages: [] };
+        return {
+          ...prev,
+          annotations: prev.annotations.map(annotation => 
+            annotation.page === payload.pageNumber 
+              ? {
+                  ...annotation,
+                  rectangles: annotation.rectangles.filter(rect => rect.id !== payload.id)
+                }
+              : annotation
+          )
+        };
       });
 
-      console.log("remove ", payload);
-      // remove the extracted text for the page
-      setExtractedTexts(prev => prev.filter(text => text.id !== payload.id && text.pageNumber !== payload.pageNumber));
+      // Remove only the specific extracted text
+      setExtractedTexts(prev => prev.filter(text => text.id !== payload.id));
     }
   }, [extractTextFromRectangle]);
 

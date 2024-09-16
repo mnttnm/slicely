@@ -10,10 +10,11 @@ import { ProcessingRules } from '@/app/types';
 import { useAnnotations } from "@/app/hooks/useAnnotations";
 import { FabricRect } from '../types';
 import { pdfjs } from 'react-pdf';
+import { serializeFabricRect } from '@/app/utils/fabricHelper';
 
 interface PDFViewerProps {
   url: string;
-  onRectangleUpdate(operation: "add" | "remove", payload: { id: string, rect?: FabricRect, pageNumber?: number }): void;
+  onRectangleUpdate(operation: "add" | "remove", payload: { id: string, rect?: Partial<FabricRect>, pageNumber?: number }): void;
   onClearPage: (pageNumber: number) => void;
   onClearAllPages: () => void;
   processingRules: ProcessingRules | null;
@@ -100,7 +101,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const handleRectangleCreated = useCallback(async (rect: FabricRect) => {
     console.log("handleRectangleCreated # ", rect);
     if (fabricCanvasRef.current) {
-      onRectangleUpdate("add", { id: rect.id, rect, pageNumber });
+      const serializedRect = serializeFabricRect(rect);
+      onRectangleUpdate("add", { id: rect.id, rect: serializedRect, pageNumber });
     }
   }, [fabricCanvasRef, onRectangleUpdate, pageNumber]);
 
