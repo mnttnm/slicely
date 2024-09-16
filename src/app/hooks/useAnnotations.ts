@@ -8,7 +8,6 @@ export const useAnnotations = (
   const deleteSelectedObject = useCallback(() => {
     if (fabricCanvasRef.current) {
       const activeObject = fabricCanvasRef.current.getActiveObject();
-      console.log("activeObject # ", activeObject);
       const id = activeObject?.get("id");
       if (activeObject) {
         if (activeObject.type === 'rect') {

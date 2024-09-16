@@ -68,9 +68,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const handleAnnotationDelete = useCallback(() => {
     if (fabricCanvasRef.current) {
       const id = deleteSelectedObject();
-      console.log("deleteSelectedObject # ", id);
       if (id) {
-        console.log("remove # ", id);
         onRectangleUpdate("remove", { id, pageNumber });
       }
     }
@@ -99,7 +97,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
 
   const handleRectangleCreated = useCallback(async (rect: FabricRect) => {
-    console.log("handleRectangleCreated # ", rect);
     if (fabricCanvasRef.current) {
       const serializedRect = serializeFabricRect(rect);
       onRectangleUpdate("add", { id: rect.id, rect: serializedRect, pageNumber });

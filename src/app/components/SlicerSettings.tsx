@@ -18,7 +18,6 @@ import { updateSlicer } from "@/server/actions/studio/actions";
 
 const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }) => {
   const saveSlicer = () => {
-    console.log("slicerObject # ", slicerObject);
     updateSlicer(slicerObject.id, slicerObject);
   };
 
@@ -104,7 +103,6 @@ const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObj
     return <div>No data available</div>;
   }
 
-  console.log("extractedTexts # ", slicerObject);
   return (
     <div className="flex-1 w-1/2 bg-gray-200 dark:bg-gray-900 border-l border-gray-600 flex flex-col">
       <Tabs defaultValue="extracted" className="w-full flex flex-col h-full">

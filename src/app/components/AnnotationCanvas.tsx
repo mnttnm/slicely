@@ -33,7 +33,7 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
     const pageAnnotation = annotations.find(a => a.page === pageNumber);
     if (pageAnnotation) {
       pageAnnotation.rectangles.forEach((rect: FabricRect) => {
-        console.log("rect # ", rect);
+
         canvas.add(
           new fabric.Rect({
             ...rect,
@@ -79,7 +79,6 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
         const clickedObject = fabricCanvas.findTarget(o.e);
         if (clickedObject) {
           fabricCanvas.setActiveObject(clickedObject);
-          console.log("clickedObject # ", clickedObject);
           return;
         }
 
@@ -128,7 +127,6 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
           if (rect.width! < MIN_RECTANGLE_SIZE || rect.height! < MIN_RECTANGLE_SIZE) {
             fabricCanvas.remove(rect);
           } else {
-            console.log("rect # ", rect);
             fabricCanvas.setActiveObject(rect);
             onRectangleCreated(rect as FabricRect);
           }

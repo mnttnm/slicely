@@ -41,7 +41,6 @@ const SlicerPage = () => {
   }, [processingRules]);
 
   const onRectangleUpdate = useCallback(async (operation: "add" | "remove", payload: { id: string, rect?: FabricRect, pageNumber?: number }) => {
-    console.log("onRectangleUpdate # ", operation, payload);
     if (operation === "add") {
       if (!payload.pageNumber || !payload.rect) return;
       const serializedRect = serializeFabricRect(payload.rect);
@@ -229,8 +228,6 @@ const SlicerPage = () => {
         const result = await getSlicerDetails(id);
         if (result) {
           const { slicerDetails, linkedPdfs } = result;
-          console.log(linkedPdfs);
-
           const pdfUrl = linkedPdfs[0].file_path ?? null;
           setSlicer(slicerDetails);
           setPdfUrl(pdfUrl);

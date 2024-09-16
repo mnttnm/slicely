@@ -36,7 +36,6 @@ export const useTextExtraction = (
         .map((item: any) => item.str)
         .join(' ');
 
-      console.log('Extracted text:', extractedText);
       return extractedText;
     } catch (error) {
       console.error('Error extracting text:', error);

@@ -56,7 +56,6 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const onPageRenderSuccess = useCallback((page: any) => {
     const { width, height } = page.getViewport({ scale: 1 });
-    console.log('onPageRenderSuccess', width, height);
     setPageDimensions({ width, height });
   }, []);
 
@@ -82,7 +81,6 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const clearAllPages = useCallback(() => {
     // Implement clear all pages logic
-    console.log('Clear all pages');
   }, []);
 
   const includeAllPages = useCallback(() => {
