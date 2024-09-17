@@ -1,6 +1,6 @@
 'use server';
 
-import { ProcessingRules, Slicer } from '@/app/types';
+import { PDFMetadata, ProcessingRules, Slicer } from '@/app/types';
 import { createClient } from '@/server/services/supabase/server';
 import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 import { ProcessedPageOutput } from '@/app/types';
@@ -240,7 +240,7 @@ export async function updateSlicer(slicerId: string, slicer: Slicer) {
 }
 
 
-export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Slicer; linkedPdfs: { id: string | undefined, file_name: string | undefined, file_path: string | undefined }[] } | null> {
+export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Slicer; linkedPdfs: PDFMetadata[] } | null> {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -251,7 +251,7 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
   // Fetch slicer details
   const { data: slicerDetails, error } = await supabase
     .from('slicers')
-    .select('*, pdf_slicers (pdfs(id, file_name, file_path))')
+    .select('*, pdf_slicers (pdfs(*))')
     .eq('id', slicerId)
     .single();
 
@@ -266,7 +266,7 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
 
   const { pdf_slicers, ...slicerDetailsWithoutPdfSlicers } = slicerDetails;
 
-  const linkedPdfs = pdf_slicers.map(ps => ({ id: ps.pdfs?.id ?? undefined, file_name: ps.pdfs?.file_name ?? undefined, file_path: ps.pdfs?.file_path ?? undefined }));
+  const linkedPdfs = pdf_slicers.map(ps => ps.pdfs);
 
   const processingRules = typeof slicerDetailsWithoutPdfSlicers.processing_rules === 'string'
     ? deserializeProcessingRules(slicerDetailsWithoutPdfSlicers.processing_rules)
@@ -277,7 +277,7 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
       ...slicerDetailsWithoutPdfSlicers,
       processing_rules: processingRules
     },
-    linkedPdfs
+    linkedPdfs: linkedPdfs as PDFMetadata[]
   };
 }
 

@@ -74,15 +74,7 @@ const SlicerPage = () => {
         setSlicer(slicerDetails);
         setPdfUrl(pdfUrl);
         setProcessingRules(slicerDetails.processing_rules);
-        setLinkedPdfs(linkedPdfs.map(
-          (pdf) => ({
-            id: pdf.id ?? '',
-            name: pdf.file_name ?? '',
-            url: pdf.file_path ?? '',
-            uploadDate: new Date(),
-            status: 'uploaded'
-          })
-        ));
+        setLinkedPdfs(linkedPdfs);
 
         // Initialize extractedTexts based on the fetched slicer details
         const initialExtractedTexts: ExtractedText[] = slicerDetails.processing_rules.annotations.flatMap(
