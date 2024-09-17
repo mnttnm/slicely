@@ -1,4 +1,5 @@
-import { FabricRect, ProcessingRules } from '@/app/types';
+import { FabricRect, PageAnnotation, ProcessingRules } from '@/app/types';
+import { Json } from '@/types/supabase-types/database.types';
 
 const defaultRectValues: Partial<FabricRect> = {
   fillRule: "nonzero",
@@ -51,11 +52,11 @@ export function serializeProcessingRules(rules: ProcessingRules): string {
   return JSON.stringify(serializedRules);
 }
 
-export function deserializeProcessingRules(rulesString: string): ProcessingRules {
-  const parsedRules = JSON.parse(rulesString);
+export function deserializeProcessingRules(rulesString: Json): ProcessingRules {
+  const parsedRules = JSON.parse(rulesString as string) as ProcessingRules;
   return {
     ...parsedRules,
-    annotations: parsedRules.annotations.map((annotation: any) => ({
+    annotations: parsedRules.annotations.map((annotation: PageAnnotation) => ({
       ...annotation,
       rectangles: annotation.rectangles.map(deserializeFabricRect),
     })),

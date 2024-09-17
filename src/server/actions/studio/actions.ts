@@ -1,8 +1,8 @@
 'use server';
 
-import { PDFMetadata, ProcessingRules, Slicer } from '@/app/types';
+import { PDFMetadata, ProcessedText, ProcessingRules, Slicer } from '@/app/types';
 import { createClient } from '@/server/services/supabase/server';
-import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
+import { Json, Tables, TablesInsert } from '@/types/supabase-types/database.types';
 import { ProcessedPageOutput } from '@/app/types';
 import { serializeProcessingRules, deserializeProcessingRules } from '@/app/utils/fabricHelper';
 
@@ -335,7 +335,42 @@ export async function getAnnotations(slicerId: string): Promise<ProcessingRules 
   return null;
 }
 
-export async function getProcessedOutput(pdfId: string): Promise<ProcessedPageOutput | null> {
+const deserializeProcessedOutput = (output: Json): ProcessedPageOutput[] => {
+  if (typeof output !== "object" || output === null || !("data" in output)) {
+    throw new Error("Invalid output format");
+  }
+
+  return {
+    ...output,
+    data: (output.data as Array<unknown>).map((page) => {
+      if (typeof page !== "object" || page === null || !("extractedSectionTexts" in page)) {
+        throw new Error("Invalid page format");
+      }
+
+      return {
+        ...page,
+        extractedSectionTexts: (page.extractedSectionTexts as Array<unknown>).map((text) => {
+          if (typeof text !== "object" || text === null || !("transform" in text)) {
+            throw new Error("Invalid text format");
+          }
+
+          return {
+            ...text,
+            transform: (text.transform as Array<unknown>).map((num) => {
+              if (typeof num !== "number") {
+                throw new Error("Invalid transform value");
+              }
+              return num;
+            }),
+          };
+        }),
+      };
+    }),
+  };
+};
+
+
+export async function getProcessedOutput(pdfId: string): Promise<ProcessedText | null> {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -357,7 +392,11 @@ export async function getProcessedOutput(pdfId: string): Promise<ProcessedPageOu
 
   if (!result || !result.data) return null;
 
-  return result.data as ProcessedPageOutput;
+  const { data: PageOutputJson, ...rest } = result;
+  const deserializedOutput = deserializeProcessedOutput(PageOutputJson);
+
+  console.log(deserializedOutput);
+  return { ...rest, data: deserializedOutput };
 }
 
 export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
@@ -396,4 +435,29 @@ export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
   */
 
   return { success: true };
+}
+
+export async function saveProcessedOutput(pdfId: string, output: ProcessedPageOutput) {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Authentication failed");
+  }
+
+  const { data, error } = await supabase
+    .from("outputs")
+    .upsert({
+      pdf_id: pdfId,
+      user_id: user.id,
+      data: output,
+    })
+    .single();
+
+  if (error) {
+    console.error("Error saving processed output:", error);
+    throw new Error("Failed to save processed output");
+  }
+
+  return data;
 }

@@ -52,6 +52,10 @@ const PDFDetails = () => {
     fetchPdfDetails();
   }, [id]);
 
+  const handleSaveToDB = () => {
+    console.log('Save to DB');
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -84,7 +88,7 @@ const PDFDetails = () => {
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => { console.log('Save to DB') }}>
+              <DropdownMenuItem onSelect={handleSaveToDB}>
                 <Database className="mr-2 h-4 w-4" />
                 Save to DB
               </DropdownMenuItem>

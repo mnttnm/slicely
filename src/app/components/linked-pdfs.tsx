@@ -96,15 +96,13 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold">Linked PDFs ({linkedPdfs.length})</h2>
         <div className="flex space-x-2">
-          {selectedPdfs.length === linkedPdfs.length && (
-            <Button
-              onClick={processAllPdfs}
-              className="btn btn-primary"
-              disabled={isProcessing}
-            >
-              {isProcessing ? "Processing..." : "Process All"}
-            </Button>
-          )}
+          <Button
+            onClick={processAllPdfs}
+            className="btn btn-primary"
+            disabled={isProcessing}
+          >
+            {isProcessing ? "Processing..." : "Process All"}
+          </Button>
           <UploadButton
             onSuccess={onUploadSuccess}
             buttonText="Upload More file"

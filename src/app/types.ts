@@ -23,14 +23,6 @@ export interface ExtractedText {
   };
 }
 
-// export interface Rectangle {
-//   id: string;
-//   left: number;     // X-coordinate of the top-left corner
-//   top: number;      // Y-coordinate of the top-left corner
-//   width: number;    // Width of the rectangle
-//   height: number;   // Height of the rectangle
-// };
-
 export interface PageAnnotation {
   page: number;            // Page number the annotation applies to
   rectangles: FabricRect[]; // List of rectangle annotations for the page
@@ -57,13 +49,22 @@ export type LLMOutput = {
   output: string;
 };
 
+export type ProcessedText = {
+  id: string;
+  pdf_id: string;
+  slicer_id: string;
+  data: ProcessedPageOutput[];
+  output_type: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ProcessedPageOutput = {
   pageNumber: number;
   rawPageContent: string;
   extractedSectionTexts: ExtractedText[];
   llmOutputs: LLMOutput[];
 };
-
 
 export interface FabricRect extends fabric.Rect {
   id: string;

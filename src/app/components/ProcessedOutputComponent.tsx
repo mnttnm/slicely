@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
-import { getProcessedOutput } from '@/server/actions/studio/actions';
-import { ProcessedPageOutput } from '@/app/types';
 import { Tables } from '@/types/supabase-types/database.types';
 import CreateSlicerDrawer from './CreateSlicerDrawer';
+import { ProcessPdf } from "@/services/pdfProcessingService";
+import { ProcessedPageOutput } from "@/app/types";
+import ExtractedTextView from './ExtractedTextView';
 
 interface ProcessedOutputComponentProps {
   pdfDetails: Tables<'pdfs'>;
@@ -17,23 +18,23 @@ interface ProcessedOutputComponentProps {
 const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdfDetails, slicerIds }) => {
   const router = useRouter();
   const [output, setOutput] = useState<ProcessedPageOutput[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isSlicerDrawerOpen, setIsSlicerDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchOutput = async () => {
-      try {
-        const data = await getProcessedOutput(pdfDetails.id);
-        setOutput(data);
-      } catch (error) {
-        console.error('Error fetching processed output:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchOutput = async () => {
+  //     try {
+  //       const data = await getProcessedOutput(pdfDetails.id);
+  //       setOutput(data);
+  //     } catch (error) {
+  //       console.error('Error fetching processed output:', error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchOutput();
-  }, [pdfDetails.id]);
+  //   // fetchOutput();
+  // }, [pdfDetails.id]);
 
   const handleCreateSlicer = () => {
     if (slicerIds.length > 0) {
@@ -48,19 +49,29 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
     setIsSlicerDrawerOpen(open);
   };
 
+  async function handlePDFProcessing() {
+    try {
+      const result = await ProcessPdf(pdfDetails, slicerIds[0]);
+      setOutput(result);
+    } catch (error) {
+      console.error("Error processing PDF:", error);
+      throw error;
+    }
+  }
+
   if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="text-center flex flex-col items-center justify-center h-full">
+    <div className="flex flex-col items-start h-full">
       {!output ? (
-        <>
+        <div className="flex flex-col items-center justify-center h-full">
           <p className="mb-4">Seems like the file is not processed yet. We need to process the file using Slicer.</p>
           <ul className="flex flex-col gap-2">
             {slicerIds.length > 0 ? (
               <li className="w-full">
-                <Button onClick={handleCreateSlicer} className="w-full">
+                <Button onClick={handlePDFProcessing} className="w-full">
                   Process with Existing Slicer
                 </Button>
               </li>
@@ -70,17 +81,22 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
               </Button>
             </li>}
           </ul>
-        </>
+        </div>
       ) : (
         // Render the output here
-        <ScrollArea className="h-[300px] w-[350px] rounded-md border p-4">
-          {output.map((page, index) => (
-            <div key={index} className="mb-4">
-              <h3 className="text-lg font-semibold">Page {page.pageNumber}</h3>
-              <p>{page.rawPageContent}</p>
-            </div>
-          ))}
-        </ScrollArea>
+          <ScrollArea className="h-full w-full rounded-md border p-4">
+            <ExtractedTextView
+              slicedTexts={output.flatMap(pageOutput =>
+                pageOutput.extractedSectionTexts.map(section => ({
+                  id: section.id,
+                  pageNumber: pageOutput.pageNumber,
+                  text: section.text,
+                  rectangleInfo: section.rectangleInfo
+                }))
+              )}
+              processingRules={null} // You might want to pass the actual processing rules here if available
+            />
+          </ScrollArea> 
       )}
       <CreateSlicerDrawer
         open={isSlicerDrawerOpen}
