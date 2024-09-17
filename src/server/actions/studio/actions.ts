@@ -21,7 +21,6 @@ export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'
     throw new Error('Invalid file provided');
   }
 
-  const slicerId = formData.get('slicer_id')?.toString() || null;
   const isTemplate = formData.get('is_template') === 'true';
 
   // Upload file to Supabase Storage
@@ -42,7 +41,6 @@ export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'
     .insert({
       file_name: file.name,
       file_path: fileData.path,
-      slicer_id: slicerId,
       is_template: isTemplate,
       user_id: user.id,
     })
@@ -56,7 +54,6 @@ export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'
 
   return newPdf;
 }
-
 
 export async function getUserPDFs(): Promise<(Tables<'pdfs'> & { slicer_ids: string[] })[]> {
   const supabase = createClient()
@@ -142,7 +139,6 @@ export async function getPdfDetails(pdfId: string): Promise<{ pdfDetails: Tables
     pdfUrl
   };
 }
-
 
 export async function getSlicers(): Promise<Tables<'slicers'>[]> {
   const supabase = createClient()
@@ -362,4 +358,42 @@ export async function getProcessedOutput(pdfId: string): Promise<ProcessedPageOu
   if (!result || !result.data) return null;
 
   return result.data as ProcessedPageOutput;
+}
+
+export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Authentication failed");
+  }
+
+  // Create the relationship in pdf_slicers
+  const { error: relationError } = await supabase
+    .from("pdf_slicers")
+    .insert({
+      pdf_id: pdfId,
+      slicer_id: slicerId,
+    });
+
+  if (relationError) {
+    console.error("Error creating pdf-slicer relationship:", relationError);
+    throw new Error("Failed to link PDF to slicer");
+  }
+
+  // Optionally, you can update the PDF to mark it as a template
+  // Uncomment the following block if you want this behavior
+  /*
+  const { error: updateError } = await supabase
+    .from("pdfs")
+    .update({ is_template: true })
+    .eq("id", pdfId);
+
+  if (updateError) {
+    console.error("Error updating PDF:", updateError);
+    // You might want to handle this error
+  }
+  */
+
+  return { success: true };
 }

@@ -1,42 +1,32 @@
 import { useState } from "react";
-import { usePDFContext } from "@/app/contexts/PDFContext";
-import { v4 as uuidv4 } from 'uuid';
-import { uploadPdf } from '@/server/actions/studio/actions';
-import { useRouter } from "next/navigation";
 import { useToast } from "@/app/hooks/use-toast";
+import { uploadPdf } from "@/server/actions/studio/actions";
+import { TablesInsert } from "@/types/supabase-types/database.types";
 
-export const useFileUpload = () => {
+export const useFileUpload = (onSuccess?: (pdf: TablesInsert<'pdfs'>) => void) => {
   const [isUploading, setIsUploading] = useState(false);
-  const { addPDF } = usePDFContext();
-  const router = useRouter();
   const { toast } = useToast();
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = async (file: File, isTemplate: boolean = false) => {
     if (!file) return;
 
     setIsUploading(true);
 
     try {
       const formData = new FormData();
-      formData.append('pdf', file);
-      formData.append('is_template', 'false'); // Set is_template as needed
+      formData.append("pdf", file);
+      formData.append("is_template", isTemplate.toString());
 
       const result = await uploadPdf(formData);
 
-      const pdfMetadata = {
-        id: result.id || uuidv4(),
-        name: result.file_name,
-        url: result.file_path || URL.createObjectURL(file),
-        uploadDate: new Date(),
-      };
-
-      addPDF(pdfMetadata);
-      router.push('/studio');
-      router.refresh();
       toast({
         title: "File uploaded",
-        description: "Your file has been uploaded",
+        description: "Your file has been uploaded successfully",
       });
+
+      onSuccess?.(result);
+
+      return result;
     } catch (error) {
       console.error("Error uploading file:", error);
       toast({
@@ -44,6 +34,7 @@ export const useFileUpload = () => {
         description: "There was an error uploading your file",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsUploading(false);
     }

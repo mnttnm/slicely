@@ -12,6 +12,8 @@ import { pdfjs } from "react-pdf";
 import { serializeFabricRect } from '@/app/utils/fabricHelper';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { LinkedPdfs } from '@/app/components/linked-pdfs';
+import { TablesInsert } from '@/types/supabase-types/database.types';
+import { linkPdfToSlicer } from "@/server/actions/studio/actions";
 
 const SlicerPage = () => {
   const { id } = useParams();
@@ -53,56 +55,58 @@ const SlicerPage = () => {
     );
     setExtractedTexts(updatedTexts);
   }, [pdfDocument, extractTextFromRectangle]);
+
   useEffect(() => {
     extractTexts();
   }, [extractTexts]);
 
-  useEffect(() => {
-    const fetchSlicerDetails = async () => {
-      if (!id || typeof id !== 'string') return;
+  const fetchSlicerDetails = async () => {
+    if (!id || typeof id !== 'string') return;
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const result = await getSlicerDetails(id);
-        if (result) {
-          const { slicerDetails, linkedPdfs } = result;
-          const pdfUrl = linkedPdfs[0].file_path ?? null;
-          setSlicer(slicerDetails);
-          setPdfUrl(pdfUrl);
-          setProcessingRules(slicerDetails.processing_rules);
-          setLinkedPdfs(linkedPdfs.map(
-            (pdf) => ({
-              id: pdf.id ?? '',
-              name: pdf.file_name ?? '',
-              url: pdf.file_path ?? '',
-              uploadDate: new Date()
-            })
-          ));
+    try {
+      const result = await getSlicerDetails(id);
+      if (result) {
+        const { slicerDetails, linkedPdfs } = result;
+        const pdfUrl = linkedPdfs[0].file_path ?? null;
+        setSlicer(slicerDetails);
+        setPdfUrl(pdfUrl);
+        setProcessingRules(slicerDetails.processing_rules);
+        setLinkedPdfs(linkedPdfs.map(
+          (pdf) => ({
+            id: pdf.id ?? '',
+            name: pdf.file_name ?? '',
+            url: pdf.file_path ?? '',
+            uploadDate: new Date(),
+            status: 'uploaded'
+          })
+        ));
 
-          // Initialize extractedTexts based on the fetched slicer details
-          const initialExtractedTexts: ExtractedText[] = slicerDetails.processing_rules.annotations.flatMap(
-            (annotation) =>
-              annotation.rectangles.map((rect) => ({
-                id: rect.id,
-                pageNumber: annotation.page,
-                text: '', // We'll need to extract the text later
-                rectangleInfo: rect,
-              }))
-          );
-          setExtractedTexts(initialExtractedTexts);
-        }
-      } catch (err) {
-        console.error('Error fetching slicer:', err);
-        setError('Failed to fetch slicer details. Please try again.');
-      } finally {
-        setIsLoading(false);
+        // Initialize extractedTexts based on the fetched slicer details
+        const initialExtractedTexts: ExtractedText[] = slicerDetails.processing_rules.annotations.flatMap(
+          (annotation) =>
+            annotation.rectangles.map((rect) => ({
+              id: rect.id,
+              pageNumber: annotation.page,
+              text: '', // We'll need to extract the text later
+              rectangleInfo: rect,
+            }))
+        );
+        setExtractedTexts(initialExtractedTexts);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching slicer:', err);
+      setError('Failed to fetch slicer details. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSlicerDetails();
-  }, [id]);
+  }, []);
 
   const updateSlicerDetails = useCallback((updatedSlicer: Partial<Slicer>) => {
     setSlicer(prev => {
@@ -262,6 +266,18 @@ const SlicerPage = () => {
   }, []);
 
 
+  const onUploadSuccess = async (pdf: TablesInsert<"pdfs">) => {
+    if (!slicer || !pdf.id) return;
+    try {
+      await linkPdfToSlicer(slicer.id, pdf.id);
+      // Refresh the slicer details to include the newly linked PDF
+      await fetchSlicerDetails();
+    } catch (error) {
+      console.error("Error linking PDF to slicer:", error);
+      // Handle the error (e.g., show an error message to the user)
+    }
+  };
+
   if (isLoading) {
     return <div className="h-full flex items-center justify-center">Loading...</div>;
   }
@@ -307,7 +323,7 @@ const SlicerPage = () => {
           </PDFViewerProvider>
         </TabsContent>
         <TabsContent value="linkedPdfs" className="flex-1 overflow-hidden">
-          <LinkedPdfs linkedPdfs={linkedPdfs} />
+          <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} />
         </TabsContent>
       </Tabs >
     </div >

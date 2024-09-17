@@ -1,28 +1,32 @@
 'use client';
 
 import { useRef } from "react";
-import { Button } from "@/app/components/ui/button";
+import { Button, ButtonProps } from "@/app/components/ui/button";
 import { Upload } from "lucide-react";
 import { useFileUpload } from "@/app/hooks/useFileUpload";
-import { useUser } from "../hooks/useUser";
+import { TablesInsert } from "@/types/supabase-types/database.types";
 
-const UploadButton = () => {
+interface UploadButtonProps extends ButtonProps {
+  onSuccess?: (pdf: TablesInsert<'pdfs'>) => void;
+  accept?: string;
+  buttonText?: string;
+  isTemplate?: boolean;
+}
+
+const UploadButton = ({
+  onSuccess,
+  accept = ".pdf",
+  buttonText = "Upload PDF",
+  isTemplate = false,
+  ...buttonProps
+}: UploadButtonProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { isUploading, uploadFile } = useFileUpload();
-  const { user, loading } = useUser();
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!user) {
-    throw new Error("User not found");
-  }
+  const { isUploading, uploadFile } = useFileUpload(onSuccess);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      await uploadFile(file);
+      await uploadFile(file, isTemplate);
     }
   };
 
@@ -30,7 +34,7 @@ const UploadButton = () => {
     <>
       <input
         type="file"
-        accept=".pdf"
+        accept={accept}
         ref={fileInputRef}
         onChange={handleUpload}
         className="hidden"
@@ -38,12 +42,13 @@ const UploadButton = () => {
       <Button
         onClick={() => fileInputRef.current?.click()}
         disabled={isUploading}
+        {...buttonProps}
       >
         {isUploading ? (
           "Uploading..."
         ) : (
           <>
-            <Upload className="mr-2 h-4 w-4" /> Upload PDF
+            <Upload className="mr-2 h-4 w-4" /> {buttonText}
           </>
         )}
       </Button>
