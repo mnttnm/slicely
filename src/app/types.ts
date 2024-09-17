@@ -5,6 +5,7 @@ export interface PDFMetadata {
   name: string;
   url: string;
   uploadDate: Date;
+  status: "uploaded" | "processing" | "processed" | "error";
 }
 
 
