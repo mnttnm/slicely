@@ -1,11 +1,11 @@
 "use client";
-import { PDFMetadata, } from "@/app/types";
+import { useState } from "react";
+import { PDFMetadata } from "@/app/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import UploadButton from "@/app/components/UploadButton";
 import { useUser } from "@/app/hooks/useUser";
 import { TablesInsert } from "@/types/supabase-types/database.types";
-import { useState } from "react";
 import { Button } from "./ui/button";
 import { Eye, Play, MoreVertical } from "lucide-react";
 import {
@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useRouter } from "next/navigation";
+
 interface LinkedPdfsProps {
   linkedPdfs: PDFMetadata[];
   onUploadSuccess: (pdf: TablesInsert<'pdfs'>) => void;
@@ -23,7 +24,9 @@ interface LinkedPdfsProps {
 export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
   const { user, loading } = useUser();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedPdfs, setSelectedPdfs] = useState<string[]>([]);
   const router = useRouter();
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -31,6 +34,22 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
   if (!user) {
     throw new Error("User not found");
   }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedPdfs(linkedPdfs.map(pdf => pdf.id));
+    } else {
+      setSelectedPdfs([]);
+    }
+  };
+
+  const handleSelectPdf = (pdfId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedPdfs(prev => [...prev, pdfId]);
+    } else {
+      setSelectedPdfs(prev => prev.filter(id => id !== pdfId));
+    }
+  };
 
   const processAllPdfs = async () => {
     setIsProcessing(true);
@@ -75,15 +94,17 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
   return (
     <div className="flex flex-col h-full mt-2">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">Linked PDFs</h2>
+        <h2 className="text-2xl font-semibold">Linked PDFs ({linkedPdfs.length})</h2>
         <div className="flex space-x-2">
-          <Button
-            onClick={processAllPdfs}
-            className="btn btn-primary"
-            disabled={isProcessing}
-          >
-            {isProcessing ? "Processing..." : "Process All"}
-          </Button>
+          {selectedPdfs.length === linkedPdfs.length && (
+            <Button
+              onClick={processAllPdfs}
+              className="btn btn-primary"
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Processing..." : "Process All"}
+            </Button>
+          )}
           <UploadButton
             onSuccess={onUploadSuccess}
             buttonText="Upload More file"
@@ -97,7 +118,10 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[40px]">
-                <Checkbox />
+                <Checkbox
+                  checked={selectedPdfs.length === linkedPdfs.length}
+                  onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                />
               </TableHead>
               <TableHead className="w-[30%]">Name</TableHead>
               <TableHead className="w-[20%]">Uploaded at</TableHead>
@@ -109,7 +133,10 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
             {linkedPdfs.map((pdf) => (
               <TableRow key={pdf.id}>
                 <TableCell>
-                  <Checkbox />
+                  <Checkbox
+                    checked={selectedPdfs.includes(pdf.id)}
+                    onCheckedChange={(checked) => handleSelectPdf(pdf.id, checked as boolean)}
+                  />
                 </TableCell>
                 <TableCell className="font-medium">{pdf.file_name}</TableCell>
                 <TableCell>{pdf.updated_at ?? 'N/A'}</TableCell>
