@@ -129,7 +129,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   }, []);
 
   return (
-    <div className="relative w-1/2 h-full flex">
+    <div className="relative w-1/2 h-full flex justify-center">
       <div className="flex flex-col h-full w-full">
         {/* <header className="flex items-center space-x-2 border-b p-2 border-gray-300">
           <FileIcon className="h-4 w-4 flex justify-center items-center" />

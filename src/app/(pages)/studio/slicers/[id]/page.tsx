@@ -11,8 +11,7 @@ import { useTextExtraction } from '@/app/hooks/useTextExtraction';
 import { pdfjs } from "react-pdf";
 import { serializeFabricRect } from '@/app/utils/fabricHelper';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
-import Link from "next/link";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
+import { LinkedPdfs } from '@/app/components/linked-pdfs';
 
 const SlicerPage = () => {
   const { id } = useParams();
@@ -49,14 +48,10 @@ const SlicerPage = () => {
     const updatedTexts = await Promise.all(
       extractedTexts.map(async (text) => ({
         ...text,
-        text: await extractTextFromRectangle(text.rectangleInfo, text.pageNumber) || '',
+        text: await extractTextFromRectangle(text.rectangleInfo as FabricRect, text.pageNumber) || '',
       }))
     );
     setExtractedTexts(updatedTexts);
-
-    //todo: fix this dependency array warning, currently
-    // if we include extractTexts in the dependency array, it will cause
-    // an infinite re-rendering loop
   }, [pdfDocument, extractTextFromRectangle]);
   useEffect(() => {
     extractTexts();
@@ -146,7 +141,7 @@ const SlicerPage = () => {
               ...prev,
               annotations: prev.annotations.map(annotation => annotation.page === payload.pageNumber ? {
                 ...annotation,
-                rectangles: updatedRectangles
+                rectangles: updatedRectangles as FabricRect[]
               } : annotation)
             };
           } else {
@@ -187,7 +182,7 @@ const SlicerPage = () => {
             annotation.page === payload.pageNumber 
               ? {
                   ...annotation,
-                  rectangles: annotation.rectangles.filter(rect => rect.id !== payload.id)
+                  rectangles: annotation.rectangles.filter(rect => rect.id !== payload.id) as FabricRect[]
                 }
               : annotation
           )
@@ -281,10 +276,10 @@ const SlicerPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <Tabs defaultValue="slicerStudio" className="flex flex-col h-full">
-        <TabsList className="flex-shrink-0">
-          <TabsTrigger value="slicerStudio">Slicer Studio</TabsTrigger>
-          <TabsTrigger value="linkedPdfs">Linked PDFs</TabsTrigger>
+      <Tabs defaultValue="linkedPdfs" className="flex flex-col h-full">
+        <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
+          <TabsTrigger value="slicerStudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
+          <TabsTrigger value="linkedPdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>
         </TabsList>
         <TabsContent value="slicerStudio" className="flex-1 overflow-hidden">
           <PDFViewerProvider>
@@ -312,36 +307,7 @@ const SlicerPage = () => {
           </PDFViewerProvider>
         </TabsContent>
         <TabsContent value="linkedPdfs" className="flex-1 overflow-hidden">
-          <div className="flex flex-col h-full p-6">
-            <h2 className="text-2xl font-semibold mb-6">Linked PDFs</h2>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>PDF Name</TableHead>
-                    <TableHead>Link</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {linkedPdfs.map((pdf) => (
-                    <TableRow key={pdf.id}>
-                      <TableCell className="font-medium">{pdf.name}</TableCell>
-                      <TableCell>
-                        <Link
-                          href={`/studio/pdfs/${pdf.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          View PDF
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          <LinkedPdfs linkedPdfs={linkedPdfs} />
         </TabsContent>
       </Tabs >
     </div >
