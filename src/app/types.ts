@@ -2,12 +2,14 @@ import * as fabric from 'fabric';
 
 export interface PDFMetadata {
   id: string;
-  name: string;
-  url: string;
-  uploadDate: Date;
-  status: "uploaded" | "processing" | "processed" | "error";
+  file_name: string;
+  file_path: string;
+  created_at: string | null;
+  updated_at: string | null;
+  file_processing_status: string;
+  is_template: boolean | null;
+  last_processed_at: string | null;
 }
-
 
 export interface ExtractedText {
   id: string;

@@ -34,6 +34,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      extracted_text: {
+        Row: {
+          created_at: string | null
+          id: string
+          pdf_id: string | null
+          text_content: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          pdf_id?: string | null
+          text_content: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          pdf_id?: string | null
+          text_content?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extracted_text_pdf_id_fkey"
+            columns: ["pdf_id"]
+            isOneToOne: false
+            referencedRelation: "pdfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outputs: {
         Row: {
           created_at: string | null
@@ -159,8 +191,10 @@ export type Database = {
           created_at: string | null
           file_name: string
           file_path: string
+          file_processing_status: string
           id: string
           is_template: boolean | null
+          last_processed_at: string | null
           updated_at: string | null
           user_id: string
         }
@@ -168,8 +202,10 @@ export type Database = {
           created_at?: string | null
           file_name: string
           file_path: string
+          file_processing_status?: string
           id?: string
           is_template?: boolean | null
+          last_processed_at?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -177,8 +213,10 @@ export type Database = {
           created_at?: string | null
           file_name?: string
           file_path?: string
+          file_processing_status?: string
           id?: string
           is_template?: boolean | null
+          last_processed_at?: string | null
           updated_at?: string | null
           user_id?: string
         }
