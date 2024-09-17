@@ -25,7 +25,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-hidden">
         <Card className="h-full flex flex-col">
-          <CardHeader className="flex-shrink-0">
+          <CardHeader className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
             <CardTitle className="text-lg font-medium">Processing Rules</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto">
@@ -104,23 +104,24 @@ const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObj
   }
 
   return (
-    <div className="flex-1 w-1/2 bg-gray-200 dark:bg-gray-900 border-l border-gray-600 flex flex-col">
-      <Tabs defaultValue="extracted" className="w-full flex flex-col h-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="extracted">Extracted Text</TabsTrigger>
-          <TabsTrigger value="config">Page Processing Rules</TabsTrigger>
-        </TabsList>
-        <TabsContent value="extracted" className="flex-1 overflow-hidden">
-          <ExtractedTextView slicedTexts={extractedTexts} processingRules={slicerObject.processing_rules || {
+    <Tabs defaultValue="extracted" className="flex flex-col h-full pt-2 px-2">
+      <TabsList className="flex-shrink-0 bg-transparent border-b border-gray-200 dark:border-gray-700">
+        <TabsTrigger value="extracted">Extracted Text</TabsTrigger>
+        <TabsTrigger value="config">Page Processing Rules</TabsTrigger>
+      </TabsList>
+      <TabsContent value="extracted" className="flex-1 overflow-hidden">
+        <ExtractedTextView
+          slicedTexts={extractedTexts}
+          processingRules={slicerObject.processing_rules || {
             annotations: [],
             skipped_pages: []
-          }} />
-        </TabsContent>
-        <TabsContent value="config" className="flex-1 overflow-hidden">
-          <SlicerRules slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} />
-        </TabsContent>
-      </Tabs>
-    </div>
+          }}
+        />
+      </TabsContent>
+      <TabsContent value="config" className="flex-1 overflow-hidden">
+        <SlicerRules slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} />
+      </TabsContent>
+    </Tabs>
   );
 };
 

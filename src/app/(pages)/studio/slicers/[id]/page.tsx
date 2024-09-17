@@ -5,11 +5,14 @@ import { useParams } from 'next/navigation';
 import PDFViewer from '@/app/components/PDFViewer';
 import { PDFViewerProvider } from '@/app/contexts/PDFViewerContext';
 import SlicerSettings from '@/app/components/SlicerSettings';
-import { Slicer, ProcessingRules, ExtractedText, FabricRect } from '@/app/types';
+import { Slicer, ProcessingRules, ExtractedText, FabricRect, PDFMetadata } from '@/app/types';
 import { getSlicerDetails } from '@/server/actions/studio/actions';
 import { useTextExtraction } from '@/app/hooks/useTextExtraction';
 import { pdfjs } from "react-pdf";
 import { serializeFabricRect } from '@/app/utils/fabricHelper';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
+import Link from "next/link";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
 
 const SlicerPage = () => {
   const { id } = useParams();
@@ -18,13 +21,93 @@ const SlicerPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [extractedTexts, setExtractedTexts] = useState<ExtractedText[]>([]);
+  const [linkedPdfs, setLinkedPdfs] = useState<PDFMetadata[]>([]);
   const [processingRules, setProcessingRules] = useState<ProcessingRules>({
     annotations: [],
     skipped_pages: []
   });
   const [pdfDocument, setPdfDocument] = useState<pdfjs.PDFDocumentProxy | null>(null);
-
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
+
+  // Add this effect to update slicer when processingRules changes
+  useEffect(() => {
+    setSlicer(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        processing_rules: {
+          annotations: processingRules?.annotations || [],
+          skipped_pages: processingRules?.skipped_pages || []
+        }
+      };
+    });
+  }, [processingRules]);
+
+  // Update this useEffect to extract text when pdfDocument is available
+  const extractTexts = useCallback(async () => {
+    if (!pdfDocument) return;
+    const updatedTexts = await Promise.all(
+      extractedTexts.map(async (text) => ({
+        ...text,
+        text: await extractTextFromRectangle(text.rectangleInfo, text.pageNumber) || '',
+      }))
+    );
+    setExtractedTexts(updatedTexts);
+
+    //todo: fix this dependency array warning, currently
+    // if we include extractTexts in the dependency array, it will cause
+    // an infinite re-rendering loop
+  }, [pdfDocument, extractTextFromRectangle]);
+  useEffect(() => {
+    extractTexts();
+  }, [extractTexts]);
+
+  useEffect(() => {
+    const fetchSlicerDetails = async () => {
+      if (!id || typeof id !== 'string') return;
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await getSlicerDetails(id);
+        if (result) {
+          const { slicerDetails, linkedPdfs } = result;
+          const pdfUrl = linkedPdfs[0].file_path ?? null;
+          setSlicer(slicerDetails);
+          setPdfUrl(pdfUrl);
+          setProcessingRules(slicerDetails.processing_rules);
+          setLinkedPdfs(linkedPdfs.map(
+            (pdf) => ({
+              id: pdf.id ?? '',
+              name: pdf.file_name ?? '',
+              url: pdf.file_path ?? '',
+              uploadDate: new Date()
+            })
+          ));
+
+          // Initialize extractedTexts based on the fetched slicer details
+          const initialExtractedTexts: ExtractedText[] = slicerDetails.processing_rules.annotations.flatMap(
+            (annotation) =>
+              annotation.rectangles.map((rect) => ({
+                id: rect.id,
+                pageNumber: annotation.page,
+                text: '', // We'll need to extract the text later
+                rectangleInfo: rect,
+              }))
+          );
+          setExtractedTexts(initialExtractedTexts);
+        }
+      } catch (err) {
+        console.error('Error fetching slicer:', err);
+        setError('Failed to fetch slicer details. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSlicerDetails();
+  }, [id]);
 
   const updateSlicerDetails = useCallback((updatedSlicer: Partial<Slicer>) => {
     setSlicer(prev => {
@@ -183,116 +266,85 @@ const SlicerPage = () => {
     });
   }, []);
 
-  // Add this effect to update slicer when processingRules changes
-  useEffect(() => {
-    setSlicer(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        processing_rules: {
-          annotations: processingRules?.annotations || [],
-          skipped_pages: processingRules?.skipped_pages || []
-        }
-      };
-    });
-  }, [processingRules]);
-
-  // Update this useEffect to extract text when pdfDocument is available
-  const extractTexts = useCallback(async () => {
-    if (!pdfDocument) return;
-    const updatedTexts = await Promise.all(
-      extractedTexts.map(async (text) => ({
-        ...text,
-        text: await extractTextFromRectangle(text.rectangleInfo, text.pageNumber) || '',
-      }))
-    );
-    setExtractedTexts(updatedTexts);
-
-    //todo: fix this dependency array warning, currently
-    // if we include extractTexts in the dependency array, it will cause
-    // an infinite re-rendering loop
-  }, [pdfDocument, extractTextFromRectangle]);
-
-  useEffect(() => {
-    extractTexts();
-  }, [extractTexts]);
-
-  useEffect(() => {
-    const fetchSlicerDetails = async () => {
-      if (!id || typeof id !== 'string') return;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const result = await getSlicerDetails(id);
-        if (result) {
-          const { slicerDetails, linkedPdfs } = result;
-          const pdfUrl = linkedPdfs[0].file_path ?? null;
-          setSlicer(slicerDetails);
-          setPdfUrl(pdfUrl);
-          setProcessingRules(slicerDetails.processing_rules);
-
-          // Initialize extractedTexts based on the fetched slicer details
-          const initialExtractedTexts: ExtractedText[] = slicerDetails.processing_rules.annotations.flatMap(
-            (annotation) =>
-              annotation.rectangles.map((rect) => ({
-                id: rect.id,
-                pageNumber: annotation.page,
-                text: '', // We'll need to extract the text later
-                rectangleInfo: rect,
-              }))
-          );
-          setExtractedTexts(initialExtractedTexts);
-        }
-      } catch (err) {
-        console.error('Error fetching slicer:', err);
-        setError('Failed to fetch slicer details. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSlicerDetails();
-  }, [id]);
-
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="h-full flex items-center justify-center">Loading...</div>;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="h-full flex items-center justify-center">Error: {error}</div>;
   }
 
   if (!pdfUrl || !slicer) {
-    return <div>No data available</div>;
+    return <div className="h-full flex items-center justify-center">No data available</div>;
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <PDFViewerProvider>
-        <div className="flex h-full">
-          <PDFViewer
-            url={pdfUrl}
-            processingRules={processingRules}
-            onRectangleUpdate={onRectangleUpdate}
-            onClearPage={onClearPage}
-            onClearAllPages={onClearAllPages}
-            onPageExclude={onPageExclude}
-            onPageInclude={onPageInclude}
-            onPageExcludeAll={onPageExcludeAll}
-            onPageIncludeAll={onPageIncludeAll}
-            onPdfDocumentUpdate={setPdfDocument}
-          />
-          <SlicerSettings
-            slicerObject={slicer}
-            extractedTexts={extractedTexts}
-            onUpdateSlicer={updateSlicerDetails}
-          />
-        </div>
-      </PDFViewerProvider>
-    </div>
+    <div className="flex flex-col h-full">
+      <Tabs defaultValue="slicerStudio" className="flex flex-col h-full">
+        <TabsList className="flex-shrink-0">
+          <TabsTrigger value="slicerStudio">Slicer Studio</TabsTrigger>
+          <TabsTrigger value="linkedPdfs">Linked PDFs</TabsTrigger>
+        </TabsList>
+        <TabsContent value="slicerStudio" className="flex-1 overflow-hidden">
+          <PDFViewerProvider>
+            <div className="flex h-full">
+              <PDFViewer
+                url={pdfUrl}
+                processingRules={processingRules}
+                onRectangleUpdate={onRectangleUpdate}
+                onClearPage={onClearPage}
+                onClearAllPages={onClearAllPages}
+                onPageExclude={onPageExclude}
+                onPageInclude={onPageInclude}
+                onPageExcludeAll={onPageExcludeAll}
+                onPageIncludeAll={onPageIncludeAll}
+                onPdfDocumentUpdate={setPdfDocument}
+              />
+              <div className="w-1/2 border-l border-gray-200 dark:border-gray-700">
+                <SlicerSettings
+                  slicerObject={slicer}
+                  extractedTexts={extractedTexts}
+                  onUpdateSlicer={updateSlicerDetails}
+                />
+              </div>
+            </div>
+          </PDFViewerProvider>
+        </TabsContent>
+        <TabsContent value="linkedPdfs" className="flex-1 overflow-hidden">
+          <div className="flex flex-col h-full p-6">
+            <h2 className="text-2xl font-semibold mb-6">Linked PDFs</h2>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>PDF Name</TableHead>
+                    <TableHead>Link</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {linkedPdfs.map((pdf) => (
+                    <TableRow key={pdf.id}>
+                      <TableCell className="font-medium">{pdf.name}</TableCell>
+                      <TableCell>
+                        <Link
+                          href={`/studio/pdfs/${pdf.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          View PDF
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs >
+    </div >
   );
 };
 

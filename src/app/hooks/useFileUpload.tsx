@@ -19,7 +19,6 @@ export const useFileUpload = () => {
     try {
       const formData = new FormData();
       formData.append('pdf', file);
-      formData.append('slicer_id', ''); // Add slicer_id if needed
       formData.append('is_template', 'false'); // Set is_template as needed
 
       const result = await uploadPdf(formData);
