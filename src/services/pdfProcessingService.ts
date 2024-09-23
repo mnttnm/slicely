@@ -3,7 +3,8 @@
 import { PDFMetadata, ProcessedPageOutput, FabricRect } from "@/app/types";
 import { getSignedPdfUrl, getAnnotations } from "@/server/actions/studio/actions";
 import { extractTextFromRectangle } from "@/app/utils/textExtraction";
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
 
 export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<ProcessedPageOutput[]> {
   console.log("Processing PDF", pdf, slicerId);
@@ -12,7 +13,7 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
   const pdfUrl = await getSignedPdfUrl(pdf.file_path);
 
   // 2. Load the PDF document
-  const pdfDocument = await pdfjs.getDocument(pdfUrl).promise;
+  const pdfDocument = await getDocument(pdfUrl).promise;
 
   // 3. Get the processing rules for the slicer
   const processingRules = await getAnnotations(slicerId);
