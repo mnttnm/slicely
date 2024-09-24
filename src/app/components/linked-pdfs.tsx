@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { PDFMetadata } from "@/app/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -15,13 +16,17 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useRouter } from "next/navigation";
+import { ProcessPdf } from "@/services/pdfProcessingService";
+import { saveProcessedOutput, updatePDF } from "@/server/actions/studio/actions";
 
 interface LinkedPdfsProps {
   linkedPdfs: PDFMetadata[];
   onUploadSuccess: (pdf: TablesInsert<'pdfs'>) => void;
+  onRefresh: () => void; // Add this prop
 }
 
-export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
+export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdfsProps) {
+  const { id: slicerId } = useParams();
   const { user, loading } = useUser();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPdfs, setSelectedPdfs] = useState<string[]>([]);
@@ -58,6 +63,7 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
         await processPdf(pdf);
       }
       alert("All PDFs processed successfully!");
+      onRefresh(); // Trigger refresh after processing all PDFs
     } catch (error) {
       console.error("Error processing PDFs:", error);
       alert("An error occurred while processing PDFs.");
@@ -67,10 +73,30 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
   };
 
   const processPdf = async (pdf: PDFMetadata) => {
-    // Implement the logic to apply slicer rules and extract text from the PDF
-    // This is a placeholder function and should be replaced with actual processing logic
-    console.log(`Processing PDF: ${pdf.file_name}`);
-    // Example: await applySlicerRules(pdf);
+    if (!slicerId) {
+      alert(`No slicer associated with PDF ${pdf.file_name}. Please link a slicer first.`);
+      return;
+    }
+
+    try {
+      const result = await ProcessPdf(pdf, slicerId);
+      await saveProcessedOutput(pdf.id, slicerId, result);
+      const updatedData: Partial<PDFMetadata> = {
+        file_processing_status: "processed",
+      };
+
+      try {
+        await updatePDF(pdf.id, updatedData);
+        onRefresh(); // Trigger refresh after processing a single PDF
+        router.refresh();
+      } catch (error) {
+        console.error(`Error updating PDF ${pdf.file_name} status:`, error);
+        alert(`An error occurred while updating the status of PDF ${pdf.file_name}.`);
+      }
+    } catch (error) {
+      console.error(`Error processing PDF ${pdf.file_name}:`, error);
+      alert(`An error occurred while processing PDF ${pdf.file_name}.`);
+    }
   };
 
   const viewPdf = (pdfId: string) => {
@@ -82,7 +108,6 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess }: LinkedPdfsProps) {
     setIsProcessing(true);
     try {
       await processPdf(pdf);
-      alert(`PDF ${pdf.file_name} processed successfully!`);
     } catch (error) {
       console.error(`Error processing PDF ${pdf.file_name}:`, error);
       alert(`An error occurred while processing PDF ${pdf.file_name}.`);

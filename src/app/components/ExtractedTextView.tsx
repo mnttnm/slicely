@@ -21,7 +21,7 @@ interface ExtractedTextViewProps {
   processingRules: ProcessingRules | null;
 }
 
-const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ slicedTexts, processingRules }) => {
+function ExtractedTextView({ slicedTexts, processingRules }: ExtractedTextViewProps) {
   const { pageNumber } = usePDFViewer();
   const [showAllPages, setShowAllPages] = useState(false);
 
@@ -48,8 +48,8 @@ const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ slicedTexts, proc
           <p className="text-gray-600 dark:text-gray-400">No content for page (Excluded)</p>
         ) : reversedTexts.length > 0 ? (
           reversedTexts.map((item) => (
-            <section key={item.id} className="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-4 mb-4">
-              <h2 className="text-sm font-semibold mb-2">Page: {item.pageNumber}</h2>
+            <section key={item.id} className="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">Page: {item.pageNumber}</h2>
               <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                 <p>Position: (L: {item.rectangleInfo.left.toFixed(2)}, T: {item.rectangleInfo.top.toFixed(2)})</p>
                 <p>Size: {item.rectangleInfo.width.toFixed(2)} x {item.rectangleInfo.height.toFixed(2)}</p>
@@ -57,7 +57,7 @@ const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ slicedTexts, proc
               {processingRules?.skipped_pages?.includes(item.pageNumber) ? (
                 <p className="text-gray-600 dark:text-gray-400">Not extracted as page is excluded</p>
               ) : (
-                <p className="text-sm dark:text-gray-200">{item.text}</p>
+                  <p className="text-sm text-gray-900 dark:text-gray-200">{item.text}</p>
               )}
             </section>
           ))
@@ -67,6 +67,6 @@ const ExtractedTextView: React.FC<ExtractedTextViewProps> = ({ slicedTexts, proc
       </div>
     </div>
   );
-};
+}
 
 export default ExtractedTextView;

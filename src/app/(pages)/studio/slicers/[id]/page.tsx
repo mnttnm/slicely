@@ -270,6 +270,10 @@ const SlicerPage = () => {
     }
   };
 
+  const refreshLinkedPdfs = async () => {
+    await fetchSlicerDetails();
+  };
+
   if (isLoading) {
     return <div className="h-full flex items-center justify-center">Loading...</div>;
   }
@@ -315,7 +319,7 @@ const SlicerPage = () => {
           </PDFViewerProvider>
         </TabsContent>
         <TabsContent value="linkedPdfs" className="flex-1 overflow-hidden">
-          <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} />
+          <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
         </TabsContent>
       </Tabs >
     </div >

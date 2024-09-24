@@ -240,6 +240,29 @@ export async function updateSlicer(slicerId: string, slicer: Slicer) {
 }
 
 
+export async function updatePDF(pdfId: string, updatedData: Partial<PDFMetadata>): Promise<PDFMetadata> {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Authentication failed');
+  }
+
+  const { data, error } = await supabase
+    .from('pdfs')
+    .update(updatedData)
+    .eq('id', pdfId)
+    .single();
+
+  if (error) {
+    console.error('Error updating PDF:', error);
+    throw new Error('Failed to update PDF');
+  }
+
+  return data;
+}
+
+
 export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Slicer; linkedPdfs: PDFMetadata[] } | null> {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -437,7 +460,7 @@ export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
   return { success: true };
 }
 
-export async function saveProcessedOutput(pdfId: string, output: ProcessedPageOutput) {
+export async function saveProcessedOutput(pdfId: string, slicerId: string, output: ProcessedPageOutput[]) {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -445,12 +468,45 @@ export async function saveProcessedOutput(pdfId: string, output: ProcessedPageOu
     throw new Error("Authentication failed");
   }
 
+  // Check if the output already exists for the given PDF and slicer
+  const { data: existingOutput, error: fetchError } = await supabase
+    .from("outputs")
+    .select("*")
+    .eq("pdf_id", pdfId)
+    .eq("slicer_id", slicerId)
+    .single();
+
+  if (fetchError && fetchError.code !== "PGRST116") { // PGRST116 is the code for "No rows found"
+    console.error("Error fetching existing output:", fetchError);
+    throw new Error("Failed to fetch existing output");
+  }
+
+  if (existingOutput) {
+    // Update the existing output
+    const { data: updatedOutput, error: updateError } = await supabase
+      .from("outputs")
+      .update({
+        data: output,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existingOutput.id)
+      .single();
+
+    if (updateError) {
+      console.error("Error updating existing output:", updateError);
+      throw new Error("Failed to update existing output");
+    }
+
+    return updatedOutput;
+  }
+
   const { data, error } = await supabase
     .from("outputs")
     .upsert({
       pdf_id: pdfId,
-      user_id: user.id,
+      slicer_id: slicerId,
       data: output,
+      output_type: "processed_text", // Assuming the output type is "processed_text"
     })
     .single();
 

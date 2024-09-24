@@ -26,7 +26,6 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
   const processedOutput: ProcessedPageOutput[] = [];
 
   for (const { page, rectangles } of processingRules.annotations) {
-    console.log(page);
     const pageObj = await pdfDocument.getPage(page);
 
     const output: ProcessedPageOutput = {
