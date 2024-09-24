@@ -14,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/ta
 import { LinkedPdfs } from '@/app/components/linked-pdfs';
 import { TablesInsert } from '@/types/supabase-types/database.types';
 import { linkPdfToSlicer } from "@/server/actions/studio/actions";
+import Explore from "@/app/components/Explore";
+
 
 const SlicerPage = () => {
   const { id } = useParams();
@@ -29,6 +31,7 @@ const SlicerPage = () => {
   });
   const [pdfDocument, setPdfDocument] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
+  const [activeTab, setActiveTab] = useState<"details" | "linkedPdfs" | "explore">("details");
 
   // Add this effect to update slicer when processingRules changes
   useEffect(() => {
@@ -292,6 +295,7 @@ const SlicerPage = () => {
         <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
           <TabsTrigger value="slicerStudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
           <TabsTrigger value="linkedPdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>
+          <TabsTrigger value="explore" className="px-4 py-2">Explore</TabsTrigger>
         </TabsList>
         <TabsContent value="slicerStudio" className="flex-1 overflow-hidden">
           <PDFViewerProvider>
@@ -320,6 +324,9 @@ const SlicerPage = () => {
         </TabsContent>
         <TabsContent value="linkedPdfs" className="flex-1 overflow-hidden">
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
+        </TabsContent>
+        <TabsContent value="explore" className="flex-1 overflow-hidden">
+          <Explore />
         </TabsContent>
       </Tabs >
     </div >
