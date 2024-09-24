@@ -1,4 +1,6 @@
-export type Json =
+Need to install the following packages:
+supabase@1.200.3
+Ok to proceed? (y) export type Json =
   | string
   | number
   | boolean
@@ -34,64 +36,35 @@ export type Database = {
   }
   public: {
     Tables: {
-      extracted_text: {
-        Row: {
-          created_at: string | null
-          id: string
-          pdf_id: string | null
-          text_content: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          pdf_id?: string | null
-          text_content: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          pdf_id?: string | null
-          text_content?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "extracted_text_pdf_id_fkey"
-            columns: ["pdf_id"]
-            isOneToOne: false
-            referencedRelation: "pdfs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       outputs: {
         Row: {
           created_at: string | null
-          data: Json
           id: string
-          output_type: string
+          page_number: number | null
           pdf_id: string
+          section_info: Json | null
           slicer_id: string
+          text_content: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          data: Json
           id?: string
-          output_type?: string
+          page_number?: number | null
           pdf_id: string
+          section_info?: Json | null
           slicer_id: string
+          text_content: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          data?: Json
           id?: string
-          output_type?: string
+          page_number?: number | null
           pdf_id?: string
+          section_info?: Json | null
           slicer_id?: string
+          text_content?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -104,48 +77,6 @@ export type Database = {
           },
           {
             foreignKeyName: "outputs_slicer_id_fkey"
-            columns: ["slicer_id"]
-            isOneToOne: false
-            referencedRelation: "slicers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pdf_annotations: {
-        Row: {
-          annotations: Json
-          created_at: string | null
-          id: string
-          pdf_id: string
-          slicer_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          annotations: Json
-          created_at?: string | null
-          id?: string
-          pdf_id: string
-          slicer_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          annotations?: Json
-          created_at?: string | null
-          id?: string
-          pdf_id?: string
-          slicer_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pdf_annotations_pdf_id_fkey"
-            columns: ["pdf_id"]
-            isOneToOne: false
-            referencedRelation: "pdfs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pdf_annotations_slicer_id_fkey"
             columns: ["slicer_id"]
             isOneToOne: false
             referencedRelation: "slicers"
@@ -374,5 +305,4 @@ export type Enums<
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
     : never
-
 
