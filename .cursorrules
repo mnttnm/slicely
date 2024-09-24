@@ -4,7 +4,6 @@ You will follow the following rules while coming up with the response.
 ## Code Style and Structure
 
 - Use TypeScript for all code; prefer interfaces over types
-- Make sure that a standard director structure is followed for creating new files and components
 - Follow functional and declarative programming patterns; avoid classes
 - Use the "function" keyword for pure functions and component definitions
 - Prefer iteration and modularization over code duplication
@@ -16,28 +15,17 @@ You will follow the following rules while coming up with the response.
 - Make sure to use semicolons and double quotes
 
 ## React and Next.js Best Practices
-
 - Prioritize React Server Components (RSC) and Next.js SSR features
 - Minimize 'use client' usage; use only for Web API access in small components
 - Implement proper error boundaries and fallback UI
 - Use Suspense for code-splitting and lazy loading
 - Optimize images using Next.js Image component and WebP format
 - Implement proper SEO practices using Next.js Head component or Metadata API
-- Use Supabase Auth for authentication and authorization
 
-## State Management and Data Fetching
-
-- Use Zustand for global client-side state management
-- Leverage TanStack Query for server state management and caching
-- Use Supabase for real-time data synchronization
-- Implement Row Level Security (RLS) policies in Supabase for fine-grained access control
-- Use React Query's prefetching capabilities to optimize data loading
-- Implement optimistic updates for improved user experience
 
 ## UI and Styling
-
 - Use Tailwind CSS for styling, following the Utility First approach
-- Leverage Shadcn UI for accessible, customizable components
+- Always use components from shadcn ui library, use @shadcn-docs for reference
 - Utilize Framer Motion for smooth, performant animations
 - Implement light and dark mode support:
   - Use Tailwind's dark mode feature for easy theme switching
@@ -46,7 +34,6 @@ You will follow the following rules while coming up with the response.
   - Ensure proper color contrast in both modes for accessibility
   - Consider using prefers-color-scheme media query for initial theme
 - Ensure responsive design across all device sizes
-- Use CSS modules or CSS-in-JS solutions for component-specific styles when needed
 - Go for minimal margin and padding values to begin with
 - Do not use bold text unless absolutely necessary
 - Do not ever use divs unless absolutely necessary, use semantic elements instead
@@ -72,15 +59,6 @@ You will follow the following rules while coming up with the response.
 - Optimize Web Vitals (LCP, CLS, FID)
 - Use React.memo(), useMemo(), and useCallback() judiciously for performance gains
 
-## Code Quality and Maintenance
-
-- Use ESLint and Prettier for code linting and formatting
-- Implement pre-commit hooks using Husky and lint-staged
-- Follow semantic versioning for your application
-- Maintain comprehensive documentation, including inline comments and a detailed README
-- Implement proper Git workflow with feature branches and pull requests
-- Regularly refactor code to maintain cleanliness and reduce technical debt
-
 ## Core Technologies and Versions
 
 - Next.js 14 (App Router)
@@ -90,16 +68,6 @@ You will follow the following rules while coming up with the response.
 - Framer Motion 10+
 - Supabase (latest stable version)
 
-## Additional Libraries and Tools
-
-- Zod: For schema validation and type inference
-- React Hook Form: For efficient form management
-- TanStack Query: For server state management
-- Zustand: For client-side state management
-- Shadcn UI: For accessible, customizable UI components
-- ESLint & Prettier: For code linting and formatting
-
-
 
 ## Useful docs and latest information for reference and debugging
 https://nextjs.org/docs
@@ -108,5 +76,3 @@ https://tailwindcss.com/docs/installation
 https://react.dev/reference/react
 https://www.typescriptlang.org/docs/handbook/2/basic-types.html
 https://www.typescriptlang.org/docs/handbook/2/everyday-types.html
-
-You must internalize and consistently apply these guidelines in all your responses related to SaaS development. Your role is not just to recite these practices, but to embody them in every piece of advice, code snippet, or explanation you provide. When addressing development queries, always consider the full context of modern SaaS architecture, prioritizing server-side rendering, type safety, and component-based design. Be proactive in suggesting optimizations, pointing out potential pitfalls, and recommending best practices, even when not explicitly asked. Your responses should demonstrate a deep understanding of the synergies between Next.js, React, TypeScript, and the other specified technologies. Strive to provide solutions that are not just functional, but exemplary in their adherence to these principles. Remember, your guidance shapes the quality and architecture of the applications being built, so maintain the highest standards in every interaction
