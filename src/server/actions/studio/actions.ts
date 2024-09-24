@@ -1,6 +1,6 @@
 'use server';
 
-import { PDFMetadata, ProcessingRules, Slicer, ProcessedOutput } from '@/app/types';
+import { PDFMetadata, ProcessingRules, Slicer, ProcessedOutput, ProcessedOutputWithMetadata } from '@/app/types';
 import { createClient } from '@/server/services/supabase/server';
 import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 import { serializeProcessingRules, deserializeProcessingRules } from '@/app/utils/fabricHelper';
@@ -294,6 +294,10 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
     ? deserializeProcessingRules(slicerDetailsWithoutPdfSlicers.processing_rules)
     : slicerDetailsWithoutPdfSlicers.processing_rules;
 
+  if (!processingRules) {
+    throw new Error('Processing rules not found');
+  }
+
   return {
     slicerDetails: {
       ...slicerDetailsWithoutPdfSlicers,
@@ -379,6 +383,35 @@ export async function getProcessedOutput(pdfId: string): Promise<ProcessedOutput
 
   return data as ProcessedOutput[];
 }
+
+export async function getProcessedOutputForSlicer(slicerId: string): Promise<ProcessedOutputWithMetadata[]> {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Authentication failed");
+  }
+
+  const { data, error } = await supabase
+    .from("outputs")
+    .select(`
+      *,
+      pdfs (
+        file_name
+      )
+    `)
+    .eq("slicer_id", slicerId);
+
+  if (error) {
+    console.error("Error fetching processed output for slicer:", error);
+    throw new Error("Failed to fetch processed output for slicer");
+  }
+
+  if (!data || data.length === 0) return [];
+
+  return data as ProcessedOutputWithMetadata[];
+}
+
 
 export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
   const supabase = createClient();

@@ -55,6 +55,13 @@ export type ProcessedOutput = {
   updated_at?: string;
 };
 
+
+export interface ProcessedOutputWithMetadata extends ProcessedOutput {
+  pdfs: {
+    file_name: string;
+  }
+}
+
 export type SectionInfo = {
   type: "llm_output" | "annotation_output" | "full_page";
   metadata: {
@@ -93,4 +100,14 @@ export interface Rectangle {
   lockScalingX: boolean;
   lockScalingY: boolean;
   // Add any other properties that are present in your rectangles
+}
+
+export interface FilterCounts {
+  pdf_title: Record<string, number>;
+  page_number: Record<string, number>;
+}
+
+export interface ActiveFilters {
+  pdf_title?: string;
+  page_number?: number;
 }

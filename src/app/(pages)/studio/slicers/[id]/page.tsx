@@ -291,7 +291,7 @@ const SlicerPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <Tabs defaultValue="linkedPdfs" className="flex flex-col h-full">
+      <Tabs defaultValue="explore" className="flex flex-col h-full">
         <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
           <TabsTrigger value="slicerStudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
           <TabsTrigger value="linkedPdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>
@@ -326,7 +326,7 @@ const SlicerPage = () => {
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
         </TabsContent>
         <TabsContent value="explore" className="flex-1 overflow-hidden">
-          <Explore />
+          <Explore slicerID={slicer.id} />
         </TabsContent>
       </Tabs >
     </div >
