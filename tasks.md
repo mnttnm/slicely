@@ -6,14 +6,13 @@
       - define data processing rules/prompts for the slicer data
  - [ ] Bulk process all the files of a slicer
  - [ ] Chat with PDF feature
- - [ ] If a pdf has been processed, then show the output while viewing the pdf
+ - [ Done] If a pdf has been processed, then show the output while viewing the pdf
 - [ ] Breadcrumbs in studio mode
-- [ ] PDF chat support using Claude or GPT-4o
+- [] PDF chat support using Claude or GPT-4o
 - [ ] They will also define the output format
-- [ ] Search page to search across multiple pdfs or entire documents
-- [ ] User should be able to assign pdf processing template to pdf or multiple pdfs or folder, all
+- [Done] Search page to search across multiple pdfs or entire documents
+- [Done] User should be able to assign pdf processing template to pdf or multiple pdfs or folder, all
       pdfs in a folder should be processed using the same template
-
 
 - [Done] Supabase project init
 - [Done] Auth using supabase-ssr package, Google OAuth as well
