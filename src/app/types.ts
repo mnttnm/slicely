@@ -44,27 +44,23 @@ export type Slicer = {
   webhook_url: string | null; // URL for webhook (optional)
 };
 
-export type LLMOutput = {
-  prompt: string;
-  output: string;
-};
-
-export type ProcessedText = {
+export type ProcessedOutput = {
   id: string;
   pdf_id: string;
   slicer_id: string;
-  data: ProcessedPageOutput[];
-  output_type: string;
-  created_at: string;
-  updated_at: string;
+  page_number: number;
+  section_info: SectionInfo;
+  text_content: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
-export type ProcessedPageOutput = {
-  pageNumber: number;
-  rawPageContent: string;
-  extractedSectionTexts: ExtractedText[];
-  llmOutputs: LLMOutput[];
-};
+export type SectionInfo = {
+  type: "llm_output" | "annotation_output" | "full_page";
+  metadata: {
+    [key: string]: any;
+  };
+}
 
 export interface FabricRect extends fabric.Rect {
   id: string;
@@ -98,9 +94,3 @@ export interface Rectangle {
   lockScalingY: boolean;
   // Add any other properties that are present in your rectangles
 }
-
-
-
-
-
-

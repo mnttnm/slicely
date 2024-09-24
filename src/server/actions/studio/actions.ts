@@ -1,10 +1,10 @@
 'use server';
 
-import { PDFMetadata, ProcessedText, ProcessingRules, Slicer } from '@/app/types';
+import { PDFMetadata, ProcessingRules, Slicer, ProcessedOutput } from '@/app/types';
 import { createClient } from '@/server/services/supabase/server';
-import { Json, Tables, TablesInsert } from '@/types/supabase-types/database.types';
-import { ProcessedPageOutput } from '@/app/types';
+import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 import { serializeProcessingRules, deserializeProcessingRules } from '@/app/utils/fabricHelper';
+import { revalidatePath } from 'next/cache';
 
 export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'>> {
   const supabase = createClient()
@@ -239,7 +239,6 @@ export async function updateSlicer(slicerId: string, slicer: Slicer) {
   return data;
 }
 
-
 export async function updatePDF(pdfId: string, updatedData: Partial<PDFMetadata>): Promise<PDFMetadata> {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -259,9 +258,9 @@ export async function updatePDF(pdfId: string, updatedData: Partial<PDFMetadata>
     throw new Error('Failed to update PDF');
   }
 
+  revalidatePath(`/studio/slicers`);
   return data;
 }
-
 
 export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Slicer; linkedPdfs: PDFMetadata[] } | null> {
   const supabase = createClient()
@@ -358,68 +357,27 @@ export async function getAnnotations(slicerId: string): Promise<ProcessingRules 
   return null;
 }
 
-const deserializeProcessedOutput = (output: Json): ProcessedPageOutput[] => {
-  if (typeof output !== "object" || output === null || !("data" in output)) {
-    throw new Error("Invalid output format");
-  }
-
-  return {
-    ...output,
-    data: (output.data as Array<unknown>).map((page) => {
-      if (typeof page !== "object" || page === null || !("extractedSectionTexts" in page)) {
-        throw new Error("Invalid page format");
-      }
-
-      return {
-        ...page,
-        extractedSectionTexts: (page.extractedSectionTexts as Array<unknown>).map((text) => {
-          if (typeof text !== "object" || text === null || !("transform" in text)) {
-            throw new Error("Invalid text format");
-          }
-
-          return {
-            ...text,
-            transform: (text.transform as Array<unknown>).map((num) => {
-              if (typeof num !== "number") {
-                throw new Error("Invalid transform value");
-              }
-              return num;
-            }),
-          };
-        }),
-      };
-    }),
-  };
-};
-
-
-export async function getProcessedOutput(pdfId: string): Promise<ProcessedText | null> {
-  const supabase = createClient()
+export async function getProcessedOutput(pdfId: string): Promise<ProcessedOutput[]> {
+  const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
     throw new Error('Authentication failed');
   }
 
-  const { data: result, error } = await supabase
+  const { data, error } = await supabase
     .from('outputs')
     .select('*')
-    .eq('pdf_id', pdfId)
-    .eq('user_id', user.id)
-    .single();
+    .eq('pdf_id', pdfId);
 
   if (error) {
     console.error('Error fetching processed output:', error);
-    return null;
+    throw new Error('Failed to fetch processed output');
   }
 
-  if (!result || !result.data) return null;
+  if (!data || data.length === 0) return [];
 
-  const { data: PageOutputJson, ...rest } = result;
-  const deserializedOutput = deserializeProcessedOutput(PageOutputJson);
-
-  console.log(deserializedOutput);
-  return { ...rest, data: deserializedOutput };
+  return data as ProcessedOutput[];
 }
 
 export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
@@ -460,54 +418,17 @@ export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
   return { success: true };
 }
 
-export async function saveProcessedOutput(pdfId: string, slicerId: string, output: ProcessedPageOutput[]) {
+export async function saveProcessedOutput(output: TablesInsert<'outputs'>): Promise<Tables<'outputs'>> {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-
   if (authError || !user) {
     throw new Error("Authentication failed");
   }
 
-  // Check if the output already exists for the given PDF and slicer
-  const { data: existingOutput, error: fetchError } = await supabase
-    .from("outputs")
-    .select("*")
-    .eq("pdf_id", pdfId)
-    .eq("slicer_id", slicerId)
-    .single();
-
-  if (fetchError && fetchError.code !== "PGRST116") { // PGRST116 is the code for "No rows found"
-    console.error("Error fetching existing output:", fetchError);
-    throw new Error("Failed to fetch existing output");
-  }
-
-  if (existingOutput) {
-    // Update the existing output
-    const { data: updatedOutput, error: updateError } = await supabase
-      .from("outputs")
-      .update({
-        data: output,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", existingOutput.id)
-      .single();
-
-    if (updateError) {
-      console.error("Error updating existing output:", updateError);
-      throw new Error("Failed to update existing output");
-    }
-
-    return updatedOutput;
-  }
-
   const { data, error } = await supabase
     .from("outputs")
-    .upsert({
-      pdf_id: pdfId,
-      slicer_id: slicerId,
-      data: output,
-      output_type: "processed_text", // Assuming the output type is "processed_text"
-    })
+    .insert(output)
+    .select()
     .single();
 
   if (error) {
@@ -515,5 +436,5 @@ export async function saveProcessedOutput(pdfId: string, slicerId: string, outpu
     throw new Error("Failed to save processed output");
   }
 
-  return data;
+  return data as Tables<'outputs'>;
 }

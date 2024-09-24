@@ -70,7 +70,7 @@ const PDFDetails = () => {
 
   return (
     <PDFViewerProvider>
-      <div className="flex-1 bg-gray-800 flex flex-col min-h-0 text-white">
+      <main className="flex-1 bg-gray-800 flex flex-col min-h-0 text-white">
         <header className="h-[3rem] px-4 py-2 flex-shrink-0 flex-grow-0 border-b border-gray-600/30 flex justify-between items-center">
           <h1 className="text-xl">{`PDFs > ${pdfDetails.file_name}`}</h1>
           <DropdownMenu>
@@ -114,8 +114,7 @@ const PDFDetails = () => {
 
           <PDFLab pdfDetails={pdfDetails} slicerIds={slicerIds ?? []} />
         </div>
-
-      </div >
+      </main>
     </PDFViewerProvider>
   );
 };

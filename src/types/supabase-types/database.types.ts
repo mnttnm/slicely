@@ -1,6 +1,4 @@
-Need to install the following packages:
-supabase@1.200.3
-Ok to proceed? (y) export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -40,9 +38,9 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          page_number: number | null
+          page_number: number
           pdf_id: string
-          section_info: Json | null
+          section_info: Json 
           slicer_id: string
           text_content: string
           updated_at: string | null
@@ -50,7 +48,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
-          page_number?: number | null
+          page_number: number
           pdf_id: string
           section_info?: Json | null
           slicer_id: string
@@ -60,7 +58,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
-          page_number?: number | null
+          page_number?: number
           pdf_id?: string
           section_info?: Json | null
           slicer_id?: string

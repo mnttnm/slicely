@@ -6,9 +6,9 @@ import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
 
 interface ExtractedText {
   id: string;
-  pageNumber: number;
+  page_number: number;
   text: string;
-  rectangleInfo: {
+  rectangle_info: {
     left: number;
     top: number;
     width: number;
@@ -29,7 +29,7 @@ function ExtractedTextView({ slicedTexts, processingRules }: ExtractedTextViewPr
 
   const filteredTexts = showAllPages
     ? slicedTexts
-    : slicedTexts.filter((item) => item.pageNumber === pageNumber);
+    : slicedTexts.filter((item) => item.page_number === pageNumber);
 
   const reversedTexts = [...filteredTexts].reverse();
 
@@ -49,12 +49,12 @@ function ExtractedTextView({ slicedTexts, processingRules }: ExtractedTextViewPr
         ) : reversedTexts.length > 0 ? (
           reversedTexts.map((item) => (
             <section key={item.id} className="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">Page: {item.pageNumber}</h2>
+              <h2 className="text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">Page: {item.page_number}</h2>
               <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                <p>Position: (L: {item.rectangleInfo.left.toFixed(2)}, T: {item.rectangleInfo.top.toFixed(2)})</p>
-                <p>Size: {item.rectangleInfo.width.toFixed(2)} x {item.rectangleInfo.height.toFixed(2)}</p>
+                <p>Position: (L: {item.rectangle_info.left.toFixed(2)}, T: {item.rectangle_info.top.toFixed(2)})</p>
+                <p>Size: {item.rectangle_info.width.toFixed(2)} x {item.rectangle_info.height.toFixed(2)}</p>
               </div>
-              {processingRules?.skipped_pages?.includes(item.pageNumber) ? (
+              {processingRules?.skipped_pages?.includes(item.page_number) ? (
                 <p className="text-gray-600 dark:text-gray-400">Not extracted as page is excluded</p>
               ) : (
                   <p className="text-sm text-gray-900 dark:text-gray-200">{item.text}</p>
