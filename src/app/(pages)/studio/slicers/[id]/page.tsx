@@ -326,7 +326,7 @@ const SlicerPage = () => {
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
         </TabsContent>
         <TabsContent value="explore" className="flex-1 overflow-hidden">
-          <Explore slicerID={slicer.id} />
+          <Explore slicerId={slicer.id} />
         </TabsContent>
       </Tabs >
     </div >

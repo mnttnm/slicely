@@ -1,20 +1,74 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { MessageSquare, Search, Info } from "lucide-react";
-import { FilterProvider, useFilter } from "@/app/context/filter-context";
+import { FilterProvider } from "@/app/context/filter-context";
+import { searchOutputs, getInitialOutputs } from "@/server/actions/studio/actions";
+import { ProcessedOutputWithMetadata } from "@/app/types";
+import { Spinner } from "@/app/components/ui/spinner";
 
-function ExploreContent() {
+function ExploreContent({ slicerId }: { slicerId: string }) {
   const [mode, setMode] = useState<"search" | "chat">("search");
   const [query, setQuery] = useState("");
   const [showMetadata, setShowMetadata] = useState<string | null>(null);
-  const { results } = useFilter();
+  const [results, setResults] = useState<ProcessedOutputWithMetadata[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+
+  const fetchResults = useCallback(async (searchQuery: string, pageNum: number) => {
+    setIsLoading(true);
+    try {
+      const { results: searchResults, total } = await searchOutputs(slicerId, searchQuery, pageNum);
+      setResults(prevResults => pageNum === 1 ? searchResults : [...prevResults, ...searchResults]);
+      setTotalResults(total);
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [slicerId]);
 
   const handleSearch = () => {
-    // Implement search functionality here
+    if (query.trim()) {
+      setPage(1);
+      fetchResults(query, 1);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  useEffect(() => {
+    if (!query.trim()) {
+      const fetchInitialOutputs = async () => {
+        setIsLoading(true);
+        try {
+          const initialResults = await getInitialOutputs(slicerId);
+          setResults(initialResults);
+          setTotalResults(initialResults.length);
+        } catch (error) {
+          console.error("Error fetching initial outputs:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchInitialOutputs();
+    }
+  }, [query, slicerId]);
+
+  const handleLoadMore = () => {
+    if (!isLoading && results.length < totalResults) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchResults(query, nextPage);
+    }
   };
 
   return (
@@ -43,16 +97,19 @@ function ExploreContent() {
               placeholder={mode === "search" ? "Search PDFs..." : "Ask a question..."}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
-          <Button onClick={handleSearch}>{mode === "search" ? "Search" : "Ask"}</Button>
+          <Button onClick={handleSearch} disabled={!query.trim()}>
+            {mode === "search" ? "Search" : "Ask"}
+          </Button>
         </div>
       </header>
       <main className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-4 space-y-4">
-            <h2 className="text-sm font-semibold">Search Results ({results.length})</h2>
+            <h2 className="text-sm font-semibold">Search Results ({totalResults})</h2>
             {results.map((result) => (
               <div key={result.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
                 <div className="flex justify-between items-center">
@@ -85,6 +142,16 @@ function ExploreContent() {
                 <p className="text-sm mb-2 text-gray-800 dark:text-gray-200">{result.text_content}</p>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-center items-center py-4">
+                <Spinner />
+              </div>
+            )}
+            {!isLoading && results.length < totalResults && (
+              <Button onClick={handleLoadMore} className="w-full">
+                Load More
+              </Button>
+            )}
           </div>
         </ScrollArea>
       </main>
@@ -92,10 +159,14 @@ function ExploreContent() {
   );
 }
 
-export default function Explore({ slicerID }: { slicerID: string }) {
+export default function Explore({ slicerId }: { slicerId: string }) {
+  if (!slicerId) {
+    return <div>Error: No slicer ID provided</div>;
+  }
+
   return (
-    <FilterProvider slicerID={slicerID}>
-      <ExploreContent />
+    <FilterProvider slicerID={slicerId}>
+      <ExploreContent slicerId={slicerId} />
     </FilterProvider>
   );
 }

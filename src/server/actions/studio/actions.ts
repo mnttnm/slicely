@@ -292,7 +292,7 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
 
   const processingRules = typeof slicerDetailsWithoutPdfSlicers.processing_rules === 'string'
     ? deserializeProcessingRules(slicerDetailsWithoutPdfSlicers.processing_rules)
-    : slicerDetailsWithoutPdfSlicers.processing_rules;
+    : slicerDetailsWithoutPdfSlicers.processing_rules as ProcessingRules;
 
   if (!processingRules) {
     throw new Error('Processing rules not found');
@@ -371,7 +371,7 @@ export async function getProcessedOutput(pdfId: string): Promise<ProcessedOutput
 
   const { data, error } = await supabase
     .from('outputs')
-    .select('*')
+    .select('*, tsv')
     .eq('pdf_id', pdfId);
 
   if (error) {
@@ -392,10 +392,15 @@ export async function getProcessedOutputForSlicer(slicerId: string): Promise<Pro
     throw new Error("Authentication failed");
   }
 
+  if (!slicerId) {
+    throw new Error("No slicer ID provided");
+  }
+
   const { data, error } = await supabase
     .from("outputs")
     .select(`
       *,
+      tsv,
       pdfs (
         file_name
       )
@@ -407,9 +412,7 @@ export async function getProcessedOutputForSlicer(slicerId: string): Promise<Pro
     throw new Error("Failed to fetch processed output for slicer");
   }
 
-  if (!data || data.length === 0) return [];
-
-  return data as ProcessedOutputWithMetadata[];
+  return data as ProcessedOutputWithMetadata[] || [];
 }
 
 
@@ -470,4 +473,67 @@ export async function saveProcessedOutput(output: TablesInsert<'outputs'>): Prom
   }
 
   return data as Tables<'outputs'>;
+}
+
+export async function searchOutputs(slicerId: string, query: string, page: number = 1, pageSize: number = 5): Promise<{ results: ProcessedOutputWithMetadata[], total: number }> {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Authentication failed");
+  }
+
+  const offset = (page - 1) * pageSize;
+
+  const { data, error, count } = await supabase
+    .from("outputs")
+    .select(`
+      *,
+      tsv,
+      pdfs (
+        file_name
+      )
+    `, { count: 'exact' })
+    .eq("slicer_id", slicerId)
+    .textSearch('tsv', query)
+    .range(offset, offset + pageSize - 1);
+
+  if (error) {
+    console.error("Error searching outputs:", error);
+    throw new Error("Failed to search outputs");
+  }
+
+  return {
+    results: data as ProcessedOutputWithMetadata[],
+    total: count ?? 0
+  };
+}
+
+export async function getInitialOutputs(slicerId: string): Promise<ProcessedOutputWithMetadata[]> {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Authentication failed");
+  }
+
+  const { data, error } = await supabase
+    .from("outputs")
+    .select(`
+      *,
+      tsv,
+      pdfs (
+        file_name
+      )
+    `)
+    .eq("slicer_id", slicerId)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  if (error) {
+    console.error("Error fetching initial outputs:", error);
+    throw new Error("Failed to fetch initial outputs");
+  }
+
+  return data as ProcessedOutputWithMetadata[];
 }

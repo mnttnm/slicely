@@ -40,9 +40,10 @@ export type Database = {
           id: string
           page_number: number
           pdf_id: string
-          section_info: Json 
+          section_info: Json
           slicer_id: string
           text_content: string
+          tsv: unknown | null
           updated_at: string | null
         }
         Insert: {
@@ -50,9 +51,10 @@ export type Database = {
           id?: string
           page_number: number
           pdf_id: string
-          section_info?: Json | null
+          section_info: Json
           slicer_id: string
           text_content: string
+          tsv?: unknown | null
           updated_at?: string | null
         }
         Update: {
@@ -60,9 +62,10 @@ export type Database = {
           id?: string
           page_number?: number
           pdf_id?: string
-          section_info?: Json | null
+          section_info?: Json
           slicer_id?: string
           text_content?: string
+          tsv?: unknown | null
           updated_at?: string | null
         }
         Relationships: [

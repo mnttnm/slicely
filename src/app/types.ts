@@ -53,6 +53,7 @@ export type ProcessedOutput = {
   text_content: string;
   created_at?: string;
   updated_at?: string;
+  tsv: unknown;
 };
 
 
