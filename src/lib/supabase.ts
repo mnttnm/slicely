@@ -10,13 +10,12 @@ const openai = new OpenAI();
 
 async function generateEmbedding(query: string) {
   const embedding = await openai.embeddings.create({
-    model: "text-embedding-ada-002",
+    model: "text-embedding-3-small",
     input: query,
     encoding_format: "float",
   });
 
   return embedding;
-
 }
 
 export async function searchVectorStore(query: string, slicerId: string, match_count: number = 5) {
