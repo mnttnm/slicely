@@ -54,12 +54,13 @@ export type ProcessedOutput = {
   created_at?: string;
   updated_at?: string;
   tsv: unknown;
+  embeddings?: string;
 };
 
 
 export interface ProcessedOutputWithMetadata extends ProcessedOutput {
   pdfs: {
-    file_name: string;
+    file_name: string | null;
   }
 }
 

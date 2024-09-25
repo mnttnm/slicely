@@ -485,7 +485,8 @@ export async function searchOutputs(slicerId: string, query: string, page: numbe
 
   const offset = (page - 1) * pageSize;
 
-  const { data, error, count } = await supabase
+
+  let query_builder = supabase
     .from("outputs")
     .select(`
       *,
@@ -494,8 +495,13 @@ export async function searchOutputs(slicerId: string, query: string, page: numbe
         file_name
       )
     `, { count: 'exact' })
-    .eq("slicer_id", slicerId)
-    .textSearch('tsv', query)
+    .eq("slicer_id", slicerId);
+
+  if (query.trim()) {
+    query_builder = query_builder.textSearch('tsv', query);
+  }
+
+  const { data, error, count } = await query_builder
     .range(offset, offset + pageSize - 1);
 
   if (error) {
@@ -509,7 +515,7 @@ export async function searchOutputs(slicerId: string, query: string, page: numbe
   };
 }
 
-export async function getInitialOutputs(slicerId: string): Promise<ProcessedOutputWithMetadata[]> {
+export async function getInitialOutputs(slicerId: string, page: number = 1, pageSize: number = 10) {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -517,23 +523,25 @@ export async function getInitialOutputs(slicerId: string): Promise<ProcessedOutp
     throw new Error("Authentication failed");
   }
 
-  const { data, error } = await supabase
-    .from("outputs")
+  const offset = (page - 1) * pageSize;
+
+  const { data, error, count } = await supabase
+    .from('outputs')
     .select(`
       *,
       tsv,
       pdfs (
         file_name
       )
-    `)
-    .eq("slicer_id", slicerId)
-    .order('created_at', { ascending: false })
-    .limit(5);
+    `, { count: 'exact' })
+    .eq('slicer_id', slicerId)
+    .range(offset, offset + pageSize - 1)
+    .order('created_at', { ascending: false });
 
   if (error) {
-    console.error("Error fetching initial outputs:", error);
-    throw new Error("Failed to fetch initial outputs");
+    console.error('Error fetching initial outputs:', error);
+    throw error;
   }
 
-  return data as ProcessedOutputWithMetadata[];
+  return { results: data || [], total: count || 0 };
 }
