@@ -1,34 +1,23 @@
 import { createClient } from '@supabase/supabase-js'
-import OpenAI from "openai";
-
 import dotenv from "dotenv";
+import { generateEmbedding } from '../src/lib/embeddingUtils';
 
 // Load environment variables from .env file
 dotenv.config({ path: '.env.local' });
 
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const openAIApiKey = process.env.OPENAI_API_KEY!;
-
-console.log("Supabase URL:", supabaseUrl);
-console.log("Supabase Key:", supabaseKey);
-console.log("OpenAI API Key:", openAIApiKey);
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 console.log('Generating embeddings...');
-
-const openai = new OpenAI({
-  apiKey: openAIApiKey,
-});
 
 async function generateEmbeddings() {
   console.log('Fetching all outputs from Supabase...');
   const { data: outputs, error } = await supabase
     .from('outputs')
     .select('*')
-    .order('created_at', { ascending: false }).limit(1);
+    .order('created_at', { ascending: false });
 
   console.log('Query result:', { outputCount: outputs?.length, error });
 
@@ -46,15 +35,11 @@ async function generateEmbeddings() {
 
   for (const output of outputs) {
     try {
-      const embedding = await openai.embeddings.create({
-        model: "text-embedding-ada-002",
-        input: output.text_content,
-        encoding_format: "float",
-      });
+      const embedding = await generateEmbedding(output.text_content);
 
       const { error: updateError } = await supabase
         .from('outputs')
-        .update({ embedding: embedding.data[0].embedding })
+        .update({ embedding: embedding })
         .eq('id', output.id);
 
       if (updateError) {

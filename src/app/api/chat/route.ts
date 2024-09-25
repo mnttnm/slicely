@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     console.log("Context:", context);
 
     const messages = [
-      { role: "system", content: "You are a helpful AI assistant. Use the provided context to answer the user's question." },
+      { role: "system", content: "You are a helpful AI assistant. Use the provided context to answer the user's question. Keep your answers concise and to the point." },
       { role: "user", content: `Context: ${context}\n\nQuestion: ${question}` }
     ];
 
