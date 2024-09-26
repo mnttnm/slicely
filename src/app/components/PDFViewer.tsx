@@ -131,10 +131,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   return (
     <div className="relative w-1/2 h-full flex justify-center">
       <div className="flex flex-col h-full w-full">
-        {/* <header className="flex items-center space-x-2 border-b p-2 border-gray-300">
-          <FileIcon className="h-4 w-4 flex justify-center items-center" />
-          <h2 className="text-lg font-medium">{`Slicer: ${slicerId}`}</h2>
-        </header> */}
         {pdfUrl ? (
           <div className="relative flex justify-center items-start flex-grow overflow-auto">
             <div className="relative">
@@ -144,6 +140,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 onDocumentLoadSuccess={onDocumentLoadSuccess}
                 onPageRenderSuccess={onPageRenderSuccess}
                 skippedPages={processingRules?.skipped_pages || []}
+                password={""}
               />
               {pageDimensions && (
                 <div

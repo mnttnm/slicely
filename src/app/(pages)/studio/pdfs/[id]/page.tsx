@@ -104,6 +104,7 @@ const PDFDetails = () => {
               onDocumentLoadSuccess={handleDocumentLoadSuccess}
               onPageRenderSuccess={() => { }}
               skippedPages={[]}
+              password={""}
             />
             <PDFNavigation
               currentPage={currentPage}
