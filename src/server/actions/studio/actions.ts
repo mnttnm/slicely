@@ -292,7 +292,10 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
 
   const processingRules = typeof slicerDetailsWithoutPdfSlicers.processing_rules === 'string'
     ? deserializeProcessingRules(slicerDetailsWithoutPdfSlicers.processing_rules)
-    : slicerDetailsWithoutPdfSlicers.processing_rules as ProcessingRules;
+    : {
+      annotations: [],
+      skipped_pages: []
+    }
 
   if (!processingRules) {
     throw new Error('Processing rules not found');
