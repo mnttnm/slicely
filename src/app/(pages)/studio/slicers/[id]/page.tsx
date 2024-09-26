@@ -3,19 +3,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import PDFViewer from '@/app/components/PDFViewer';
-import { PDFViewerProvider } from '@/app/contexts/PDFViewerContext';
+import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
 import SlicerSettings from '@/app/components/SlicerSettings';
 import { Slicer, ProcessingRules, ExtractedText, FabricRect, PDFMetadata } from '@/app/types';
-import { getSlicerDetails } from '@/server/actions/studio/actions';
+import { getSignedPdfUrl, getSlicerDetails } from '@/server/actions/studio/actions';
 import { useTextExtraction } from '@/app/hooks/useTextExtraction';
-import { pdfjs } from "react-pdf";
 import { serializeFabricRect } from '@/app/utils/fabricHelper';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { LinkedPdfs } from '@/app/components/linked-pdfs';
 import { TablesInsert } from '@/types/supabase-types/database.types';
 import { linkPdfToSlicer } from "@/server/actions/studio/actions";
 import Explore from "@/app/components/Explore";
-
 
 const SlicerPage = () => {
   const { id } = useParams();
@@ -29,9 +27,36 @@ const SlicerPage = () => {
     annotations: [],
     skipped_pages: []
   });
-  const [pdfDocument, setPdfDocument] = useState<pdfjs.PDFDocumentProxy | null>(null);
+
+  const { pdfDocument } = usePDFViewer();
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
-  const [activeTab, setActiveTab] = useState<"details" | "linkedPdfs" | "explore">("details");
+
+  useEffect(() => {
+
+    // once slicer detail are fetched and the pdfdocument is loaded
+    // pdfviewer, extract text for the initial annotations
+    // and set the extracted texts in the state
+    const extractTextFn = async (slicer: Slicer) => {
+      const extractedTexts: ExtractedText[] = [];
+      for (const annotation of slicer.processing_rules.annotations) {
+        for (const rect of annotation.rectangles) {
+          const extractedText = await extractTextFromRectangle(rect, annotation.page);
+          extractedTexts.push({
+            id: rect.id,
+            page_number: annotation.page,
+            text: extractedText || "",
+            rectangle_info: rect
+          });
+        }
+      }
+
+      setExtractedTexts(extractedTexts);
+    }
+
+    if (pdfDocument && slicer && slicer?.processing_rules) {
+      extractTextFn(slicer);
+    }
+  }, [pdfDocument, slicer, extractTextFromRectangle]);
 
   // Add this effect to update slicer when processingRules changes
   useEffect(() => {
@@ -47,23 +72,20 @@ const SlicerPage = () => {
     });
   }, [processingRules]);
 
-  // Update this useEffect to extract text when pdfDocument is available
-  const extractTexts = useCallback(async () => {
-    if (!pdfDocument) return;
-    const updatedTexts = await Promise.all(
-      extractedTexts.map(async (text) => ({
-        ...text,
-        text: await extractTextFromRectangle(text.rectangle_info as FabricRect, text.page_number) || '',
-      }))
-    );
-    setExtractedTexts(updatedTexts);
-  }, [pdfDocument, extractTextFromRectangle]);
+  const fetchLinkedPdfs = useCallback(async () => {
+    if (!id || typeof id !== 'string') return;
+    try {
+      const result = await getSlicerDetails(id);
+      if (result) {
+        const { linkedPdfs } = result;
+        setLinkedPdfs(linkedPdfs);
+      }
+    } catch (err) {
+      console.error('Error fetching linked PDFs:', err);
+    }
+  }, [id]);
 
-  useEffect(() => {
-    extractTexts();
-  }, [extractTexts]);
-
-  const fetchSlicerDetails = async () => {
+  const fetchSlicerDetails = useCallback(async () => {
     if (!id || typeof id !== 'string') return;
 
     setIsLoading(true);
@@ -75,21 +97,10 @@ const SlicerPage = () => {
         const { slicerDetails, linkedPdfs } = result;
         const pdfUrl = linkedPdfs[0].file_path ?? null;
         setSlicer(slicerDetails);
-        setPdfUrl(pdfUrl);
+        const signedPdfUrl = await getSignedPdfUrl(pdfUrl);
+        setPdfUrl(signedPdfUrl);
         setProcessingRules(slicerDetails.processing_rules);
         setLinkedPdfs(linkedPdfs);
-
-        // Initialize extractedTexts based on the fetched slicer details
-        const initialExtractedTexts: ExtractedText[] = slicerDetails.processing_rules.annotations.flatMap(
-          (annotation) =>
-            annotation.rectangles.map((rect) => ({
-              id: rect.id,
-              page_number: annotation.page,
-              text: '', // We'll need to extract the text later
-              rectangle_info: rect,
-            }))
-        );
-        setExtractedTexts(initialExtractedTexts);
       }
     } catch (err) {
       console.error('Error fetching slicer:', err);
@@ -97,11 +108,11 @@ const SlicerPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchSlicerDetails();
-  }, []);
+  }, [fetchSlicerDetails]);
 
   const updateSlicerDetails = useCallback((updatedSlicer: Partial<Slicer>) => {
     setSlicer(prev => {
@@ -126,34 +137,39 @@ const SlicerPage = () => {
           return {
             annotations: [
               {
-                page: payload.pageNumber!,
+                page: payload.pageNumber,
                 rectangles: [serializedRect]
               }
             ],
             skipped_pages: []
           };
-        } else {
-          const pageAnnotation = prev.annotations.find(annotation => annotation.page === payload.pageNumber);
-          if (pageAnnotation) {
-            const updatedRectangles = [...pageAnnotation.rectangles, serializedRect];
-            return {
-              ...prev,
-              annotations: prev.annotations.map(annotation => annotation.page === payload.pageNumber ? {
-                ...annotation,
-                rectangles: updatedRectangles as FabricRect[]
-              } : annotation)
-            };
-          } else {
-            return {
-              ...prev,
-              annotations: [...prev.annotations, {
-                page: payload.pageNumber!,
-                rectangles: [serializedRect]
-              }]
-            };
-          }
         }
 
+        const pageAnnotation = prev.annotations.find(annotation => annotation.page === payload.pageNumber);
+        if (pageAnnotation) {
+          return {
+            ...prev,
+            annotations: prev.annotations.map(annotation =>
+              annotation.page === payload.pageNumber
+                ? {
+                  ...annotation,
+                  rectangles: [...annotation.rectangles, serializedRect]
+                }
+                : annotation
+            )
+          };
+        }
+
+        return {
+          ...prev,
+          annotations: [
+            ...prev.annotations,
+            {
+              page: payload.pageNumber,
+              rectangles: [serializedRect]
+            }
+          ]
+        };
       });
 
       // set the extracted text for the page
@@ -201,7 +217,7 @@ const SlicerPage = () => {
         annotations: prev.annotations.filter(annotation => annotation.page !== pageNumber)
       };
     });
-    setExtractedTexts(prev => prev.filter(text => text.pageNumber !== pageNumber));
+    setExtractedTexts(prev => prev.filter(text => text.page_number !== pageNumber));
   }, []);
 
   const onClearAllPages = useCallback(() => {
@@ -221,24 +237,22 @@ const SlicerPage = () => {
   }, []);
 
   const onPageExclude = useCallback((pageNumber: number) => {
-    if (!pdfDocument) return;
     setProcessingRules(prev => {
       return {
         ...prev,
         skipped_pages: [...prev.skipped_pages, pageNumber]
       };
     });
-  }, [pdfDocument]);
+  }, []);
 
   const onPageInclude = useCallback((pageNumber: number) => {
-    if (!pdfDocument) return;
     setProcessingRules(prev => {
       return {
         ...prev,
         skipped_pages: prev.skipped_pages.filter(page => page !== pageNumber)
       };
     });
-  }, [pdfDocument]);
+  }, []);
 
   const onPageExcludeAll = useCallback(() => {
     if (!pdfDocument) return;
@@ -260,22 +274,19 @@ const SlicerPage = () => {
     });
   }, []);
 
-
   const onUploadSuccess = async (pdf: TablesInsert<"pdfs">) => {
     if (!slicer || !pdf.id) return;
     try {
       await linkPdfToSlicer(slicer.id, pdf.id);
-      // Refresh the slicer details to include the newly linked PDF
-      await fetchSlicerDetails();
+      await fetchLinkedPdfs();
     } catch (error) {
       console.error("Error linking PDF to slicer:", error);
-      // Handle the error (e.g., show an error message to the user)
     }
   };
 
-  const refreshLinkedPdfs = async () => {
-    await fetchSlicerDetails();
-  };
+  const refreshLinkedPdfs = useCallback(async () => {
+    await fetchLinkedPdfs();
+  }, [fetchLinkedPdfs]);
 
   if (isLoading) {
     return <div className="h-full flex items-center justify-center">Loading...</div>;
@@ -291,17 +302,17 @@ const SlicerPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <Tabs defaultValue="explore" className="flex flex-col h-full">
+      <Tabs defaultValue="slicerStudio" className="flex flex-col h-full">
         <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
           <TabsTrigger value="slicerStudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
           <TabsTrigger value="linkedPdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>
           <TabsTrigger value="explore" className="px-4 py-2">Explore</TabsTrigger>
         </TabsList>
         <TabsContent value="slicerStudio" className="flex-1 overflow-hidden">
-          <PDFViewerProvider>
             <div className="flex h-full">
-              <PDFViewer
-                url={pdfUrl}
+              <div className="flex-1">
+                <PDFViewer
+                  url={pdfUrl}
                 processingRules={processingRules}
                 onRectangleUpdate={onRectangleUpdate}
                 onClearPage={onClearPage}
@@ -310,17 +321,16 @@ const SlicerPage = () => {
                 onPageInclude={onPageInclude}
                 onPageExcludeAll={onPageExcludeAll}
                 onPageIncludeAll={onPageIncludeAll}
-                onPdfDocumentUpdate={setPdfDocument}
-              />
-              <div className="w-1/2 border-l border-gray-200 dark:border-gray-700">
+                />
+              </div>
+              <div className="flex-1 border-l border-gray-200 dark:border-gray-700">
                 <SlicerSettings
                   slicerObject={slicer}
                   extractedTexts={extractedTexts}
                   onUpdateSlicer={updateSlicerDetails}
                 />
               </div>
-            </div>
-          </PDFViewerProvider>
+          </div>
         </TabsContent>
         <TabsContent value="linkedPdfs" className="flex-1 overflow-hidden">
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />

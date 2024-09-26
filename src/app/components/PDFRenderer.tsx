@@ -1,14 +1,17 @@
-import { Document, Page } from "react-pdf";
+import { Document, Page, pdfjs } from "react-pdf";
 import { useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
 import { Spinner } from "@/app/components/ui/spinner";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+
 interface PDFRendererProps {
   url: string;
   pageNumber: number;
-  onDocumentLoadSuccess: ({ numPages }: { numPages: number }) => void;
+  onDocumentLoadSuccess: (document: pdfjs.PDFDocumentProxy) => void;
   onPageRenderSuccess: (page: any) => void;
   skippedPages: number[];
   password?: string;
@@ -79,7 +82,7 @@ function PDFRenderer({
       ) : (
         <Document
           file={fileProperties}
-          onLoadSuccess={onDocumentLoadSuccess}
+            onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={handleLoadError}
           loading={<Spinner />}
           className="overflow-y-hidden"

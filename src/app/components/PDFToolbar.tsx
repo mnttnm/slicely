@@ -92,13 +92,6 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
             onClick={clearAnnotationFromCurrentPage}
           />
 
-          {/* Extract Text */}
-          {/* <ToolbarButton
-            icon={<FileText className="h-5 w-5" />}
-            tooltip="Extract Text"
-            onClick={extractTextFromRectangle}
-          /> */}
-
           <div className="h-px bg-gray-400/50 my-2" />
 
 

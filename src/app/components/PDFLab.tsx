@@ -11,7 +11,7 @@ const PDFLab: React.FC<{ pdfDetails: Tables<'pdfs'>; slicerIds: string[] }> = ({
   const [activeTab, setActiveTab] = useState('processed-output');
 
   return (
-    <Tabs className="w-1/2 flex flex-col h-[100%]" value={activeTab} onValueChange={setActiveTab}>
+    <Tabs className="flex flex-col h-[100%]" value={activeTab} onValueChange={setActiveTab}>
       {/* <header className="flex justify-between items-center p-2">
         <h2 className="text-2xl">PDF Lab</h2>
       </header> */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import * as fabric from 'fabric';
 import PDFToolbar from './PDFToolbar';
 import PDFRenderer from './PDFRenderer';
@@ -9,7 +9,6 @@ import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
 import { ProcessingRules } from '@/app/types';
 import { useAnnotations } from "@/app/hooks/useAnnotations";
 import { FabricRect } from '../types';
-import { pdfjs } from 'react-pdf';
 import { serializeFabricRect } from '@/app/utils/fabricHelper';
 
 interface PDFViewerProps {
@@ -18,33 +17,29 @@ interface PDFViewerProps {
   onClearPage: (pageNumber: number) => void;
   onClearAllPages: () => void;
   processingRules: ProcessingRules | null;
-  onPdfDocumentUpdate: (pdfDocument: pdfjs.PDFDocumentProxy) => void;
   onPageExclude: (pageNumber: number) => void;
   onPageInclude: (pageNumber: number) => void;
   onPageExcludeAll: () => void;
   onPageIncludeAll: () => void;
+  showToolbar?: boolean;
 }
-
 const PDFViewer: React.FC<PDFViewerProps> = ({
   url,
   onRectangleUpdate,
   onClearPage,
   onClearAllPages,
   processingRules,
-  onPdfDocumentUpdate,
   onPageExclude,
   onPageInclude,
   onPageExcludeAll,
   onPageIncludeAll,
+  showToolbar = true,
 }) => {
-
   const {
     numPages,
     pageNumber,
     pageDimensions,
     isRectangleMode,
-    pdfDocument,
-    pdfUrl,
     skippedPages,
     togglePageSkip,
     onDocumentLoadSuccess,
@@ -52,13 +47,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     previousPage,
     nextPage,
     toggleRectangleMode,
-    fetchSignedPdfUrl,
     includeAllPages,
     excludeAllPages,
     jumpToPage,
   } = usePDFViewer();
 
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+
 
   const {
     deleteSelectedObject,
@@ -82,18 +77,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const handleClearAllPages = useCallback(() => {
     onClearAllPages();
   }, [onClearAllPages]);
-
-  useEffect(() => {
-    if (url) {
-      fetchSignedPdfUrl(url);
-    }
-  }, [url, fetchSignedPdfUrl]);
-
-  useEffect(() => {
-    if (pdfDocument) {
-      onPdfDocumentUpdate(pdfDocument);
-    }
-  }, [pdfDocument, onPdfDocumentUpdate]);
 
 
   const handleRectangleCreated = useCallback(async (rect: FabricRect) => {
@@ -129,13 +112,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   }, []);
 
   return (
-    <div className="relative w-1/2 h-full flex justify-center">
-      <div className="flex flex-col h-full w-full">
-        {pdfUrl ? (
+    <>
+      <div className="relative flex flex-col h-full w-full">
+        {url ? (
           <div className="relative flex justify-center items-start flex-grow overflow-auto">
             <div className="relative">
               <PDFRenderer
-                url={pdfUrl}
+                url={url}
                 pageNumber={pageNumber}
                 onDocumentLoadSuccess={onDocumentLoadSuccess}
                 onPageRenderSuccess={onPageRenderSuccess}
@@ -167,23 +150,25 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         )}
       </div>
 
-      <PDFToolbar
-        isRectangleMode={isRectangleMode}
-        pageNumber={pageNumber}
-        numPages={numPages}
-        toggleRectangleMode={toggleRectangleMode}
-        deleteSelectedObject={handleAnnotationDelete}
-        clearCurrentPage={handleClearCurrentPage}
-        clearAllPages={handleClearAllPages}
-        previousPage={previousPage}
-        nextPage={nextPage}
-        isPageSkipped={skippedPages.includes(pageNumber)}
-        togglePageSkip={handlePageToggle}
-        includeAllPages={handlePageIncludeAll}
-        excludeAllPages={handlePageExcludeAll}
-        jumpToPage={jumpToPage}
-      />
-    </div>
+      {showToolbar && (
+        <PDFToolbar
+          isRectangleMode={isRectangleMode}
+          pageNumber={pageNumber}
+          numPages={numPages}
+          toggleRectangleMode={toggleRectangleMode}
+          deleteSelectedObject={handleAnnotationDelete}
+          clearCurrentPage={handleClearCurrentPage}
+          clearAllPages={handleClearAllPages}
+          previousPage={previousPage}
+          nextPage={nextPage}
+          isPageSkipped={skippedPages.includes(pageNumber)}
+          togglePageSkip={handlePageToggle}
+          includeAllPages={handlePageIncludeAll}
+          excludeAllPages={handlePageExcludeAll}
+          jumpToPage={jumpToPage}
+        />
+      )}
+    </>
   );
 };
 

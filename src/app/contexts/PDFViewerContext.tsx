@@ -1,8 +1,9 @@
+'use client'
 import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 import { pdfjs } from 'react-pdf';
 import { getSignedPdfUrl } from '@/server/actions/studio/actions';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PDFViewerContextType {
   numPages: number | null;
@@ -13,7 +14,7 @@ interface PDFViewerContextType {
   pdfUrl: string | null;
   skippedPages: number[];
   togglePageSkip: (pageNumber: number) => void;
-  onDocumentLoadSuccess: (data: { numPages: number }) => void;
+  onDocumentLoadSuccess: (document: pdfjs.PDFDocumentProxy) => void;
   onPageRenderSuccess: (page: any) => void;
   previousPage: () => void;
   nextPage: () => void;
@@ -36,13 +37,11 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [skippedPages, setSkippedPages] = useState<number[]>([]);
 
-  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  const onDocumentLoadSuccess = useCallback((document: pdfjs.PDFDocumentProxy) => {
+    setPdfDocument(document);
+    setNumPages(document.numPages);
     setPageNumber(1);
-    if (pdfUrl) {
-      pdfjs.getDocument(pdfUrl).promise.then(setPdfDocument);
-    }
-  }, [pdfUrl]);
+  }, []);
 
   const togglePageSkip = useCallback((pageNumber: number) => {
     setSkippedPages(prevSkippedPages => {

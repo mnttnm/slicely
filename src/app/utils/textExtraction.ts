@@ -1,3 +1,4 @@
+"use server";
 import { PDFPageProxy } from "pdfjs-dist";
 import { FabricRect } from "@/app/types";
 

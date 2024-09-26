@@ -26,7 +26,6 @@ function ExtractedTextView({ slicedTexts, processingRules }: ExtractedTextViewPr
   const [showAllPages, setShowAllPages] = useState(false);
 
   const isPageExcluded = processingRules?.skipped_pages?.includes(pageNumber);
-
   const filteredTexts = showAllPages
     ? slicedTexts
     : slicedTexts.filter((item) => item.page_number === pageNumber);
@@ -62,7 +61,7 @@ function ExtractedTextView({ slicedTexts, processingRules }: ExtractedTextViewPr
             </section>
           ))
         ) : (
-          <p className="text-gray-600 dark:text-gray-400">No annotations for this page</p>
+              <p className="text-gray-600 dark:text-gray-400">No content extracted</p>
         )}
       </div>
     </div>
