@@ -94,7 +94,7 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
                   id: pageOutput.id,
                   page_number: pageOutput.page_number,
                   text: pageOutput.text_content,
-                  rectangle_info: pageOutput.section_info.metadata.rectangleInfo
+                  rectangle_info: pageOutput.section_info.metadata.rectangle_info
                 }
               })}
               processingRules={null} // You might want to pass the actual processing rules here if available

@@ -13,9 +13,9 @@ export interface PDFMetadata {
 
 export interface ExtractedText {
   id: string;
-  pageNumber: number;
+  page_number: number;  // Changed from pageNumber
   text: string;
-  rectangleInfo: {
+  rectangle_info: {     // Changed from rectangleInfo
     left: number;
     top: number;
     width: number;
@@ -42,6 +42,9 @@ export type Slicer = {
   llm_prompt: string | null; // Prompt for the language model (optional)
   output_mode: string | null; // Mode of output, default is 'text' (optional)
   webhook_url: string | null; // URL for webhook (optional)
+  pdf_password: string | null; // Changed from 'password' to 'pdf_password'
+  created_at: string | null;
+  updated_at: string | null;
 };
 
 export type ProcessedOutput = {
@@ -54,7 +57,7 @@ export type ProcessedOutput = {
   created_at?: string;
   updated_at?: string;
   tsv: unknown;
-  embeddings?: string;
+  embeddings?: number[];
 };
 
 

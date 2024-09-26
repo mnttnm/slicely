@@ -49,7 +49,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           page_number: number
           pdf_id: string
@@ -61,7 +61,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           page_number?: number
           pdf_id?: string
@@ -173,6 +173,7 @@ export type Database = {
           llm_prompt: string | null
           name: string
           output_mode: string | null
+          pdf_password: string | null
           processing_rules: Json | null
           updated_at: string | null
           user_id: string
@@ -185,6 +186,7 @@ export type Database = {
           llm_prompt?: string | null
           name: string
           output_mode?: string | null
+          pdf_password?: string | null
           processing_rules?: Json | null
           updated_at?: string | null
           user_id: string
@@ -197,6 +199,7 @@ export type Database = {
           llm_prompt?: string | null
           name?: string
           output_mode?: string | null
+          pdf_password?: string | null
           processing_rules?: Json | null
           updated_at?: string | null
           user_id?: string
@@ -218,18 +221,18 @@ export type Database = {
     }
     Functions: {
       binary_quantize:
-      | {
-        Args: {
-          "": string
-        }
-        Returns: unknown
-      }
-      | {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
+        | {
+            Args: {
+              "": string
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
       halfvec_avg: {
         Args: {
           "": number[]
@@ -297,37 +300,37 @@ export type Database = {
         Returns: unknown
       }
       l2_norm:
-      | {
-        Args: {
-          "": unknown
-        }
-        Returns: number
-      }
-      | {
-        Args: {
-          "": unknown
-        }
-        Returns: number
-      }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
       l2_normalize:
-      | {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      | {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      | {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
+        | {
+            Args: {
+              "": string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
       match_outputs: {
         Args: {
           query_embedding: string
@@ -372,18 +375,18 @@ export type Database = {
         Returns: string
       }
       vector_dims:
-      | {
-        Args: {
-          "": string
-        }
-        Returns: number
-      }
-      | {
-        Args: {
-          "": unknown
-        }
-        Returns: number
-      }
+        | {
+            Args: {
+              "": string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
       vector_norm: {
         Args: {
           "": string

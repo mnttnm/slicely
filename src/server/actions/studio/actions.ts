@@ -1,10 +1,11 @@
 'use server';
 
-import { PDFMetadata, ProcessingRules, Slicer, ProcessedOutput, ProcessedOutputWithMetadata } from '@/app/types';
+import { PDFMetadata, ProcessingRules, Slicer, ProcessedOutput, ProcessedOutputWithMetadata, SectionInfo } from '@/app/types';
 import { createClient } from '@/server/services/supabase/server';
 import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 import { serializeProcessingRules, deserializeProcessingRules } from '@/app/utils/fabricHelper';
 import { revalidatePath } from 'next/cache';
+import { hashPassword, verifyPassword } from '@/server/utils/passwordUtils';
 
 export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'>> {
   const supabase = createClient()
@@ -162,13 +163,16 @@ export async function getSlicers(): Promise<Tables<'slicers'>[]> {
   return slicers;
 }
 
-export async function createSlicer({ name, description, fileId }: { name: string; description: string; fileId: string }) {
+export async function createSlicer({ name, description, fileId, password }: { name: string; description: string; fileId: string; password?: string }) {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
     throw new Error('Authentication failed');
   }
+
+  // Hash the password if provided
+  const hashedPassword = password ? await hashPassword(password) : null;
 
   // Create the new slicer
   const { data: newSlicer, error } = await supabase
@@ -177,6 +181,7 @@ export async function createSlicer({ name, description, fileId }: { name: string
       name,
       description,
       user_id: user.id,
+      pdf_password: hashedPassword,
     })
     .select()
     .single();
@@ -224,9 +229,28 @@ export async function updateSlicer(slicerId: string, slicer: Slicer) {
 
   const serializedProcessingRules = serializeProcessingRules(slicer.processing_rules);
 
+  // Check if the password has changed
+  let updatedPassword = slicer.pdf_password;
+  if (slicer.pdf_password && slicer.pdf_password !== '') {
+    // Only hash the password if it has changed
+    const { data: currentSlicer } = await supabase
+      .from('slicers')
+      .select('pdf_password')
+      .eq('id', slicerId)
+      .single();
+
+    if (currentSlicer && slicer.pdf_password !== currentSlicer.pdf_password) {
+      updatedPassword = await hashPassword(slicer.pdf_password);
+    }
+  }
+
   const { data, error } = await supabase
     .from('slicers')
-    .update({ ...slicer, processing_rules: serializedProcessingRules })
+    .update({ 
+      ...slicer, 
+      processing_rules: serializedProcessingRules,
+      pdf_password: updatedPassword
+    })
     .eq('id', slicerId)
     .eq('user_id', user.id)
     .single();
@@ -305,7 +329,7 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
     slicerDetails: {
       ...slicerDetailsWithoutPdfSlicers,
       processing_rules: processingRules
-    },
+    } as Slicer,
     linkedPdfs: linkedPdfs as PDFMetadata[]
   };
 }
@@ -384,7 +408,10 @@ export async function getProcessedOutput(pdfId: string): Promise<ProcessedOutput
 
   if (!data || data.length === 0) return [];
 
-  return data as ProcessedOutput[];
+  return data.map(item => ({
+    ...item,
+    section_info: item.section_info as SectionInfo
+  })) as ProcessedOutput[];
 }
 
 export async function getProcessedOutputForSlicer(slicerId: string): Promise<ProcessedOutputWithMetadata[]> {
@@ -415,7 +442,11 @@ export async function getProcessedOutputForSlicer(slicerId: string): Promise<Pro
     throw new Error("Failed to fetch processed output for slicer");
   }
 
-  return data as ProcessedOutputWithMetadata[] || [];
+  return (data || []).map(item => ({
+    ...item,
+    section_info: item.section_info as SectionInfo,
+    pdfs: item.pdfs as { file_name: string | null }
+  })) as ProcessedOutputWithMetadata[];
 }
 
 
@@ -488,7 +519,6 @@ export async function searchOutputs(slicerId: string, query: string, page: numbe
 
   const offset = (page - 1) * pageSize;
 
-
   let query_builder = supabase
     .from("outputs")
     .select(`
@@ -512,8 +542,14 @@ export async function searchOutputs(slicerId: string, query: string, page: numbe
     throw new Error("Failed to search outputs");
   }
 
+  const results = (data || []).map(item => ({
+    ...item,
+    section_info: item.section_info as SectionInfo,
+    pdfs: item.pdfs as { file_name: string | null }
+  })) as ProcessedOutputWithMetadata[];
+
   return {
-    results: data as ProcessedOutputWithMetadata[],
+    results,
     total: count ?? 0
   };
 }
@@ -546,5 +582,38 @@ export async function getInitialOutputs(slicerId: string, page: number = 1, page
     throw error;
   }
 
-  return { results: data || [], total: count || 0 };
+  const results = (data || []).map(item => ({
+    ...item,
+    section_info: item.section_info as SectionInfo,
+    pdfs: item.pdfs as { file_name: string | null }
+  })) as ProcessedOutputWithMetadata[];
+
+  return { results, total: count || 0 };
+}
+
+// Add a function to verify the password
+export async function verifyPdfPassword(slicerId: string, password: string): Promise<boolean> {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Authentication failed');
+  }
+
+  const { data: slicer, error } = await supabase
+    .from('slicers')
+    .select('pdf_password')
+    .eq('id', slicerId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error || !slicer) {
+    throw new Error('Failed to fetch slicer');
+  }
+
+  if (!slicer.pdf_password) {
+    return true; // No password set, consider it valid
+  }
+
+  return verifyPassword(password, slicer.pdf_password);
 }

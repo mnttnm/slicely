@@ -53,7 +53,7 @@ const SlicerPage = () => {
     const updatedTexts = await Promise.all(
       extractedTexts.map(async (text) => ({
         ...text,
-        text: await extractTextFromRectangle(text.rectangleInfo as FabricRect, text.pageNumber) || '',
+        text: await extractTextFromRectangle(text.rectangle_info as FabricRect, text.page_number) || '',
       }))
     );
     setExtractedTexts(updatedTexts);
@@ -84,9 +84,9 @@ const SlicerPage = () => {
           (annotation) =>
             annotation.rectangles.map((rect) => ({
               id: rect.id,
-              pageNumber: annotation.page,
+              page_number: annotation.page,
               text: '', // We'll need to extract the text later
-              rectangleInfo: rect,
+              rectangle_info: rect,
             }))
         );
         setExtractedTexts(initialExtractedTexts);
@@ -161,9 +161,9 @@ const SlicerPage = () => {
 
       const newExtractedText: ExtractedText = {
         id: payload.id,
-        pageNumber: payload.pageNumber,
+        page_number: payload.pageNumber,
         text: extractedText || '',
-        rectangleInfo: payload.rect
+        rectangle_info: payload.rect
       };
 
       setExtractedTexts(prev => {

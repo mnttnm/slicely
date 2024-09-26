@@ -39,7 +39,7 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
         section_info: {
           type: "annotation_output",
           metadata: {
-            rectangleInfo: {
+            rectangle_info: {
               id: rect.id,
               left: rect.left,
               top: rect.top,
