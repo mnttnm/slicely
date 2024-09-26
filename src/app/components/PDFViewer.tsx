@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback } from 'react';
 import * as fabric from 'fabric';
 import PDFToolbar from './PDFToolbar';
 import PDFRenderer from './PDFRenderer';
@@ -22,6 +22,7 @@ interface PDFViewerProps {
   onPageExcludeAll: () => void;
   onPageIncludeAll: () => void;
   showToolbar?: boolean;
+  pdf_password?: string;
 }
 const PDFViewer: React.FC<PDFViewerProps> = ({
   url,
@@ -34,6 +35,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   onPageExcludeAll,
   onPageIncludeAll,
   showToolbar = true,
+  pdf_password
 }) => {
   const {
     numPages,
@@ -123,7 +125,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 onDocumentLoadSuccess={onDocumentLoadSuccess}
                 onPageRenderSuccess={onPageRenderSuccess}
                 skippedPages={processingRules?.skipped_pages || []}
-                password={""}
+                password={pdf_password}
               />
               {pageDimensions && (
                 <div

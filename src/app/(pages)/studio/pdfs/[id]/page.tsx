@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { PDFViewerProvider, usePDFViewer } from '@/app/contexts/PDFViewerContext';
+import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
 import { getPdfDetails } from '@/server/actions/studio/actions';
 import { Tables } from '@/types/supabase-types/database.types';
 import PDFLab from '@/app/components/PDFLab';

@@ -32,7 +32,6 @@ const SlicerPage = () => {
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
 
   useEffect(() => {
-
     // once slicer detail are fetched and the pdfdocument is loaded
     // pdfviewer, extract text for the initial annotations
     // and set the extracted texts in the state
@@ -321,6 +320,7 @@ const SlicerPage = () => {
                 onPageInclude={onPageInclude}
                 onPageExcludeAll={onPageExcludeAll}
                 onPageIncludeAll={onPageIncludeAll}
+                pdf_password={slicer.pdf_password ?? undefined}
                 />
               </div>
               <div className="flex-1 border-l border-gray-200 dark:border-gray-700">
