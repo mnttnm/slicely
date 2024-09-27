@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
-import { getPdfDetails } from '@/server/actions/studio/actions';
+import { getPdfDetails, getSlicerDetails } from '@/server/actions/studio/actions';
 import { Tables } from '@/types/supabase-types/database.types';
 import PDFLab from '@/app/components/PDFLab';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
@@ -19,6 +19,7 @@ const PDFDetails = () => {
   const [slicerIds, setSlicerIds] = useState<string[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pdfPassword, setPdfPassword] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const fetchPdfDetails = async () => {
@@ -34,6 +35,12 @@ const PDFDetails = () => {
           setPdfDetails(pdfDetails);
           setPdfUrl(pdfUrl);
           setSlicerIds(slicer_ids);
+
+          // fetch password from attached slicer
+          const slicerData = await getSlicerDetails(slicer_ids[0]);
+          if (slicerData) {
+            setPdfPassword(slicerData.slicerDetails?.pdf_password ?? undefined);
+          }
         }
       } catch (err) {
         console.error('Error fetching slicer:', err);
@@ -95,7 +102,7 @@ const PDFDetails = () => {
       <main className="flex-1 bg-gray-800 flex flex-col min-h-0 text-white">
         <div className="flex-1 flex min-h-0">
           <div className="relative flex-1">
-            <PDFViewer showToolbar={false} url={pdfUrl} onRectangleUpdate={() => { }} onClearPage={() => { }} onClearAllPages={() => { }} processingRules={null} onPageExclude={() => { }} onPageInclude={() => { }} onPageExcludeAll={() => { }} onPageIncludeAll={() => { }} />
+            <PDFViewer pdf_password={pdfPassword} showToolbar={false} url={pdfUrl} onRectangleUpdate={() => { }} onClearPage={() => { }} onClearAllPages={() => { }} processingRules={null} onPageExclude={() => { }} onPageInclude={() => { }} onPageExcludeAll={() => { }} onPageIncludeAll={() => { }} />
             <PDFNavigation currentPage={pageNumber ?? 1} numPages={numPages ?? 1} onPageChange={jumpToPage} />
           </div>
           <div className=" flex-1">

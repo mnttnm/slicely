@@ -36,7 +36,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   onPageIncludeAll,
   showToolbar = true,
   pdf_password
-  pdf_password
 }) => {
   const {
     numPages,
@@ -126,7 +125,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 onDocumentLoadSuccess={onDocumentLoadSuccess}
                 onPageRenderSuccess={onPageRenderSuccess}
                 skippedPages={processingRules?.skipped_pages || []}
-                password={pdf_password}
                 password={pdf_password}
               />
               {pageDimensions && (

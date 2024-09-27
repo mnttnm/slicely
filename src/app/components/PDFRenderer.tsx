@@ -14,7 +14,7 @@ interface PDFRendererProps {
   onDocumentLoadSuccess: (document: pdfjs.PDFDocumentProxy) => void;
   onPageRenderSuccess: (page: any) => void;
   skippedPages: number[];
-  password: string | null;
+  password?: string;
 }
 
 function PDFRenderer({
@@ -26,7 +26,7 @@ function PDFRenderer({
   password: initialPassword,
 }: PDFRendererProps) {
   const [loadError, setLoadError] = useState<Error | null>(null);
-  const [password, setPassword] = useState<string | null>(initialPassword);
+  const [password, setPassword] = useState<string | undefined>(initialPassword);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
 
   const handleLoadError = (error: Error) => {
