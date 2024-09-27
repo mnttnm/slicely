@@ -6,6 +6,7 @@ import { Tables, TablesInsert } from '@/types/supabase-types/database.types';
 import { serializeProcessingRules, deserializeProcessingRules } from '@/app/utils/fabricHelper';
 import { revalidatePath } from 'next/cache';
 import { hashPassword, verifyPassword } from '@/server/utils/passwordUtils';
+import { generateEmbedding } from '@/lib/embeddingUtils';
 
 export async function uploadPdf(formData: FormData): Promise<TablesInsert<'pdfs'>> {
   const supabase = createClient()
@@ -495,6 +496,10 @@ export async function saveProcessedOutput(output: TablesInsert<'outputs'>): Prom
     throw new Error("Authentication failed");
   }
 
+  // Generate embedding for the output text
+  const embedding = await generateEmbedding(output.text_content);
+  // Add the embedding to the output object
+  output.embedding = embedding;
   const { data, error } = await supabase
     .from("outputs")
     .insert(output)

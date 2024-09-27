@@ -16,7 +16,7 @@ async function generateEmbeddings() {
   console.log('Fetching all outputs from Supabase...');
   const { data: outputs, error } = await supabase
     .from('outputs')
-    .select('*')
+    .select('id, text_content')
     .order('created_at', { ascending: false });
 
   console.log('Query result:', { outputCount: outputs?.length, error });

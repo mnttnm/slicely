@@ -17,7 +17,7 @@ import {
 } from "./ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { ProcessPdf } from "@/services/pdfProcessingService";
-import { saveProcessedOutput, updatePDF } from "@/server/actions/studio/actions";
+import { getSlicerDetails, saveProcessedOutput, updatePDF } from "@/server/actions/studio/actions";
 
 interface LinkedPdfsProps {
   linkedPdfs: PDFMetadata[];
@@ -79,8 +79,25 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
     }
 
     try {
-      const result = await ProcessPdf(pdf, slicerId);
-      await saveProcessedOutput(pdf.id, slicerId, result);
+      const { slicerDetails } = await getSlicerDetails(slicerId as string) ?? {};
+
+      if (!slicerDetails) {
+        alert(`No slicer associated with PDF ${pdf.file_name}. Please link a slicer first.`);
+        return;
+      }
+
+      const result = await ProcessPdf({ ...pdf, password: slicerDetails.pdf_password ?? undefined }, slicerId as string);
+
+      // TODO: Currently it generates a new output every time,
+      // so, even if the PDF is already processed, it will generate a new output.
+      // We need to check if the output already exists in the database.
+      // If it exists, we need to update the output.
+      // Or while showing the output, we can show a timeline of the outputs.
+      // If it doesn't exist, we need to insert the output.
+      result.forEach(async (output) => {
+        await saveProcessedOutput(output);
+      });
+
       const updatedData: Partial<PDFMetadata> = {
         file_processing_status: "processed",
       };

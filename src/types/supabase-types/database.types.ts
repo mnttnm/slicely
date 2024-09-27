@@ -37,7 +37,7 @@ export type Database = {
       outputs: {
         Row: {
           created_at: string | null
-          embedding: string | null
+          embedding: number[] | null
           id: string
           page_number: number
           pdf_id: string
@@ -49,7 +49,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           page_number: number
           pdf_id: string
@@ -61,7 +61,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           page_number?: number
           pdf_id?: string
