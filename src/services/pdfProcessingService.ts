@@ -8,13 +8,14 @@ import { TablesInsert } from "@/types/supabase-types/database.types";
 await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
 
 export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<ProcessedOutput[]> {
-  console.log("Processing PDF", pdf, slicerId);
-
   // 1. Get the signed URL for the PDF
   const pdfUrl = await getSignedPdfUrl(pdf.file_path);
 
   // 2. Load the PDF document
-  const pdfDocument = await getDocument(pdfUrl).promise;
+  const pdfDocument = await getDocument({
+    url: pdfUrl,
+    password: pdf.password,
+  }).promise;
 
   // 3. Get the processing rules for the slicer
   const processingRules = await getAnnotations(slicerId);
@@ -51,15 +52,11 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
         text_content: text,
       };
 
-      await saveProcessedOutput(processedOutput);
-
       return processedOutput as ProcessedOutput;
     });
 
     const extractedSectionTexts = await Promise.all(extractionPromises);
     processedOutput.push(...extractedSectionTexts);
   }
-
-  console.log("processedOutput", JSON.stringify(processedOutput));
   return processedOutput;
 }

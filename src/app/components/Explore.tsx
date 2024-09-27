@@ -51,7 +51,6 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [slicerId, toast]);
 
   const fetchInitialOutputs = useCallback(async (pageNum: number = 1) => {
-    console.log("this use effect is running 12 ");
     setIsLoading(true);
     try {
       const { results: initialResults, total } = await getInitialOutputs(slicerId, pageNum);

@@ -311,7 +311,7 @@ const SlicerPage = () => {
             <div className="flex h-full">
               <div className="flex-1">
                 <PDFViewer
-                  url={pdfUrl}
+                url={pdfUrl}
                 processingRules={processingRules}
                 onRectangleUpdate={onRectangleUpdate}
                 onClearPage={onClearPage}

@@ -9,6 +9,7 @@ export interface PDFMetadata {
   file_processing_status: string;
   is_template: boolean | null;
   last_processed_at: string | null;
+  password?: string;
 }
 
 export interface ExtractedText {
