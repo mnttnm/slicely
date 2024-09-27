@@ -10,7 +10,7 @@ export const useAnnotations = (
       const activeObject = fabricCanvasRef.current.getActiveObject();
       const id = activeObject?.get("id");
       if (activeObject) {
-        if (activeObject.type === 'rect') {
+        if (activeObject.type === "rect") {
           fabricCanvasRef.current.remove(activeObject);
         }
       }

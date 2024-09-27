@@ -1,19 +1,18 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import PDFViewer from '@/app/components/PDFViewer';
-import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
-import SlicerSettings from '@/app/components/SlicerSettings';
-import { Slicer, ProcessingRules, ExtractedText, FabricRect, PDFMetadata } from '@/app/types';
-import { getSignedPdfUrl, getSlicerDetails } from '@/server/actions/studio/actions';
-import { useTextExtraction } from '@/app/hooks/useTextExtraction';
-import { serializeFabricRect } from '@/app/utils/fabricHelper';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
-import { LinkedPdfs } from '@/app/components/linked-pdfs';
-import { TablesInsert } from '@/types/supabase-types/database.types';
-import { linkPdfToSlicer } from "@/server/actions/studio/actions";
 import Explore from "@/app/components/Explore";
+import { LinkedPdfs } from "@/app/components/linked-pdfs";
+import PDFViewer from "@/app/components/pdf-viewer";
+import SlicerSettings from "@/app/components/slicer-settings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
+import { useTextExtraction } from "@/app/hooks/use-text-extraction";
+import { ExtractedText, FabricRect, PDFMetadata, ProcessingRules, Slicer } from "@/app/types";
+import { serializeFabricRect } from "@/app/utils/fabric-helper";
+import { getSignedPdfUrl, getSlicerDetails, linkPdfToSlicer } from "@/server/actions/studio/actions";
+import { TablesInsert } from "@/types/supabase-types/database.types";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 const SlicerPage = () => {
   const { id } = useParams();
@@ -50,7 +49,7 @@ const SlicerPage = () => {
       }
 
       setExtractedTexts(extractedTexts);
-    }
+    };
 
     if (pdfDocument && slicer && slicer?.processing_rules) {
       extractTextFn(slicer);
@@ -72,7 +71,7 @@ const SlicerPage = () => {
   }, [processingRules]);
 
   const fetchLinkedPdfs = useCallback(async () => {
-    if (!id || typeof id !== 'string') return;
+    if (!id || typeof id !== "string") return;
     try {
       const result = await getSlicerDetails(id);
       if (result) {
@@ -80,12 +79,12 @@ const SlicerPage = () => {
         setLinkedPdfs(linkedPdfs);
       }
     } catch (err) {
-      console.error('Error fetching linked PDFs:', err);
+      console.error("Error fetching linked PDFs:", err);
     }
   }, [id]);
 
   const fetchSlicerDetails = useCallback(async () => {
-    if (!id || typeof id !== 'string') return;
+    if (!id || typeof id !== "string") return;
 
     setIsLoading(true);
     setError(null);
@@ -102,8 +101,8 @@ const SlicerPage = () => {
         setLinkedPdfs(linkedPdfs);
       }
     } catch (err) {
-      console.error('Error fetching slicer:', err);
-      setError('Failed to fetch slicer details. Please try again.');
+      console.error("Error fetching slicer:", err);
+      setError("Failed to fetch slicer details. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +176,7 @@ const SlicerPage = () => {
       const newExtractedText: ExtractedText = {
         id: payload.id,
         page_number: payload.pageNumber,
-        text: extractedText || '',
+        text: extractedText || "",
         rectangle_info: payload.rect
       };
 

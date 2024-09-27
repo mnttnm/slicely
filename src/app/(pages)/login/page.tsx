@@ -1,8 +1,8 @@
-import { login, signup } from "@/server/actions/login/actions"
-import { Button } from "@/app/components/ui/button"
-import { Input } from "@/app/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card"
-import GoogleSignInButton from "@/app/components/GoogleSignInButton"
+import GoogleSignInButton from "@/app/components/google-signin-button";
+import { Button } from "@/app/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
+import { login, signup } from "@/server/actions/login/actions";
 
 export default function LoginPage() {
   return (
@@ -35,5 +35,5 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Button } from "@/app/components/ui/button";
-import { Tables } from '@/types/supabase-types/database.types';
-import CreateSlicerDrawer from './CreateSlicerDrawer';
-import { ProcessPdf } from "@/services/pdfProcessingService";
-import ExtractedTextView from './ExtractedTextView';
-import { getProcessedOutput } from '@/server/actions/studio/actions';
-import { ProcessedOutput } from '@/app/types';
+import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { ProcessedOutput } from "@/app/types";
+import { getProcessedOutput } from "@/server/actions/studio/actions";
+import { ProcessPdf } from "@/services/pdf-processing-service";
+import { Tables } from "@/types/supabase-types/database.types";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import CreateSlicerDrawer from "./create-slicer-drawer";
+import ExtractedTextView from "./extracted-text-view";
 
 interface ProcessedOutputComponentProps {
-  pdfDetails: Tables<'pdfs'>;
+  pdfDetails: Tables<"pdfs">;
   slicerIds: string[];
 }
 
@@ -30,7 +30,7 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
           setOutput(data);
         }
       } catch (error) {
-        console.error('Error fetching processed output:', error);
+        console.error("Error fetching processed output:", error);
       } finally {
         setLoading(false);
       }
@@ -87,19 +87,19 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
         </div>
       ) : (
         // Render the output here
-          <ScrollArea className="h-full w-full rounded-md border p-4">
-            <ExtractedTextView
-              slicedTexts={output.map(pageOutput => {
-                return {
-                  id: pageOutput.id,
-                  page_number: pageOutput.page_number,
-                  text: pageOutput.text_content,
-                  rectangle_info: pageOutput.section_info.metadata.rectangle_info
-                }
-              })}
-              processingRules={null} // You might want to pass the actual processing rules here if available
-            />
-          </ScrollArea> 
+        <ScrollArea className="h-full w-full rounded-md border p-4">
+          <ExtractedTextView
+            slicedTexts={output.map(pageOutput => {
+              return {
+                id: pageOutput.id,
+                page_number: pageOutput.page_number,
+                text: pageOutput.text_content,
+                rectangle_info: pageOutput.section_info.metadata.rectangle_info
+              };
+            })}
+            processingRules={null} // You might want to pass the actual processing rules here if available
+          />
+        </ScrollArea>
       )}
       <CreateSlicerDrawer
         open={isSlicerDrawerOpen}

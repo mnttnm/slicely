@@ -1,6 +1,5 @@
-"use client"
+"use client";
 
-import * as React from "react"
 import {
   CommandDialog,
   CommandEmpty,
@@ -8,43 +7,44 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/app/components/ui/command"
-import { useFileUpload } from "@/app/hooks/useFileUpload"
-import { useTheme } from "next-themes"
+} from "@/app/components/ui/command";
+import { useFileUpload } from "@/app/hooks/use-file-upload";
+import { useTheme } from "next-themes";
+import * as React from "react";
 
 export function CommandMenu() {
-  const [open, setOpen] = React.useState(false)
-  const { uploadFile } = useFileUpload()
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
-  const { setTheme, theme } = useTheme()
+  const [open, setOpen] = React.useState(false);
+  const { uploadFile } = useFileUpload();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { setTheme, theme } = useTheme();
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpen((open) => !open)
+        e.preventDefault();
+        setOpen((open) => !open);
       }
-    }
+    };
 
-    document.addEventListener("keydown", down)
-    return () => document.removeEventListener("keydown", down)
-  }, [])
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const runCommand = React.useCallback((command: () => unknown) => {
-    setOpen(false)
-    command()
-  }, [])
+    setOpen(false);
+    command();
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
     if (file) {
-      uploadFile(file)
+      uploadFile(file);
     }
-  }
+  };
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
-  }
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   return (
     <>
@@ -55,7 +55,7 @@ export function CommandMenu() {
           <CommandGroup heading="Actions">
             <CommandItem
               onSelect={() => runCommand(() => {
-                fileInputRef.current?.click()
+                fileInputRef.current?.click();
               })}
             >
               Upload PDF
@@ -75,5 +75,5 @@ export function CommandMenu() {
         className="hidden"
       />
     </>
-  )
+  );
 }

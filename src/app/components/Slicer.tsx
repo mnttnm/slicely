@@ -1,6 +1,6 @@
-import { Card, CardHeader, CardTitle } from "@/app/components/ui/card"
-import { FileIcon, LockIcon } from "lucide-react"
-import Link from "next/link"
+import { Card, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { FileIcon, LockIcon } from "lucide-react";
+import Link from "next/link";
 
 interface SlicerProps {
   id: string
@@ -19,5 +19,5 @@ export function Slicer({ id, fileName, pdf_password }: SlicerProps) {
         </CardHeader>
       </Card>
     </Link>
-  )
+  );
 }

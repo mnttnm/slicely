@@ -1,11 +1,11 @@
-'use client'
+"use client";
 
-import React from 'react';
+import { Navbar } from "@/app/components/navbar";
+import { ThemeToggle } from "@/app/components/theme-toggle";
+import { UserProfileMenu } from "@/app/components/user-profile-menu";
+import { useUser } from "@/app/hooks/use-user";
 import Link from "next/link";
-import { useUser } from "../hooks/useUser";
-import { UserProfileMenu } from "@/app/components/UserProfileMenu";
-import Navbar from "@/app/components/Navbar";
-import { ThemeToggle } from "@/app/components/ThemeToggle";
+import React from "react";
 
 const Header = React.memo(() => {
   const { user } = useUser();
@@ -34,6 +34,6 @@ const Header = React.memo(() => {
   );
 });
 
-Header.displayName = 'Header';
+Header.displayName = "Header";
 
-export default Header;
+export { Header };

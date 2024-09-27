@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import Image from "next/image";
 import { Button } from "@/app/components/ui/button";
-import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu";
-import { useUser } from "@/app/hooks/useUser";
+import { useUser } from "@/app/hooks/use-user";
 import { logout } from "@/server/actions/login/actions";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export function UserProfileMenu() {
   const router = useRouter();
@@ -35,10 +35,10 @@ export function UserProfileMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onSelect={() => router.push('/profile')}>
+        <DropdownMenuItem onSelect={() => router.push("/profile")}>
           Profile
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => router.push('/settings')}>
+        <DropdownMenuItem onSelect={() => router.push("/settings")}>
           Settings
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={handleLogout}>

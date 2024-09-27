@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { ProcessingRules } from '@/app/types';
-import { Switch } from "@/app/components/ui/switch";
 import { Label } from "@/app/components/ui/label";
-import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
+import { Switch } from "@/app/components/ui/switch";
+import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
+import { ProcessingRules } from "@/app/types";
+import { useState } from "react";
 
 interface ExtractedText {
   id: string;
@@ -56,12 +56,12 @@ function ExtractedTextView({ slicedTexts, processingRules }: ExtractedTextViewPr
               {processingRules?.skipped_pages?.includes(item.page_number) ? (
                 <p className="text-gray-600 dark:text-gray-400">Not extracted as page is excluded</p>
               ) : (
-                  <p className="text-sm text-gray-900 dark:text-gray-200">{item.text}</p>
+                <p className="text-sm text-gray-900 dark:text-gray-200">{item.text}</p>
               )}
             </section>
           ))
         ) : (
-              <p className="text-gray-600 dark:text-gray-400">No content extracted</p>
+          <p className="text-gray-600 dark:text-gray-400">No content extracted</p>
         )}
       </div>
     </div>

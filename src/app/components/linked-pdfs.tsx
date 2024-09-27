@@ -1,27 +1,26 @@
 "use client";
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import { PDFMetadata } from "@/app/types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import UploadButton from "@/app/components/UploadButton";
-import { useUser } from "@/app/hooks/useUser";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
+import UploadButton from "@/app/components/upload-button";
+import { useUser } from "@/app/hooks/use-user";
+import { PDFMetadata } from "@/app/types";
+import { getSlicerDetails, saveProcessedOutput, updatePDF } from "@/server/actions/studio/actions";
+import { ProcessPdf } from "@/services/pdf-processing-service";
 import { TablesInsert } from "@/types/supabase-types/database.types";
+import { Eye, MoreVertical, Play } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "./ui/button";
-import { Eye, Play, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { useRouter } from "next/navigation";
-import { ProcessPdf } from "@/services/pdfProcessingService";
-import { getSlicerDetails, saveProcessedOutput, updatePDF } from "@/server/actions/studio/actions";
 
 interface LinkedPdfsProps {
   linkedPdfs: PDFMetadata[];
-  onUploadSuccess: (pdf: TablesInsert<'pdfs'>) => void;
+  onUploadSuccess: (pdf: TablesInsert<"pdfs">) => void;
   onRefresh: () => void; // Add this prop
 }
 
@@ -179,8 +178,8 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
                   />
                 </TableCell>
                 <TableCell className="font-medium">{pdf.file_name}</TableCell>
-                <TableCell>{pdf.updated_at ?? 'N/A'}</TableCell>
-                <TableCell>{pdf.file_processing_status ?? 'N/A'}</TableCell>
+                <TableCell>{pdf.updated_at ?? "N/A"}</TableCell>
+                <TableCell>{pdf.file_processing_status ?? "N/A"}</TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     <Button

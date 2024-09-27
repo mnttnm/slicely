@@ -8,7 +8,7 @@ const LoginButton = () => {
         Login
       </Button>
     </Link>
-  )
-}
+  );
+};
 
 export default LoginButton;

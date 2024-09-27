@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useRef } from "react";
 import { Button, ButtonProps } from "@/app/components/ui/button";
-import { Upload } from "lucide-react";
-import { useFileUpload } from "@/app/hooks/useFileUpload";
+import { useFileUpload } from "@/app/hooks/use-file-upload";
 import { TablesInsert } from "@/types/supabase-types/database.types";
+import { Upload } from "lucide-react";
+import { useRef } from "react";
 
 interface UploadButtonProps extends ButtonProps {
-  onSuccess?: (pdf: TablesInsert<'pdfs'>) => void;
+  onSuccess?: (pdf: TablesInsert<"pdfs">) => void;
   accept?: string;
   buttonText?: string;
   isTemplate?: boolean;

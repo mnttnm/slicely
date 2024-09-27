@@ -1,11 +1,11 @@
 "use server";
 
-import { PDFMetadata, ProcessedOutput, FabricRect } from "@/app/types";
-import { getSignedPdfUrl, getAnnotations, saveProcessedOutput } from "@/server/actions/studio/actions";
-import { extractTextFromRectangle } from "@/app/utils/textExtraction";
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { FabricRect, PDFMetadata, ProcessedOutput } from "@/app/types";
+import { extractTextFromRectangle } from "@/app/utils/text-extraction";
+import { getAnnotations, getSignedPdfUrl } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
-await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
 
 export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<ProcessedOutput[]> {
   // 1. Get the signed URL for the PDF
@@ -33,7 +33,7 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
     const extractionPromises = rectangles.map(async (rect: FabricRect) => {
       const text = await extractTextFromRectangle(pageObj, rect);
       // Save each extracted text to the database
-      const processedOutput: TablesInsert<'outputs'> = {
+      const processedOutput: TablesInsert<"outputs"> = {
         pdf_id: pdf.id,
         slicer_id: slicerId,
         page_number: page,

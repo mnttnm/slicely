@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useRef, useCallback } from 'react';
-import * as fabric from 'fabric';
-import PDFToolbar from './PDFToolbar';
-import PDFRenderer from './PDFRenderer';
-import { AnnotationCanvas } from './AnnotationCanvas';
-import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
-import { ProcessingRules } from '@/app/types';
-import { useAnnotations } from "@/app/hooks/useAnnotations";
-import { FabricRect } from '../types';
-import { serializeFabricRect } from '@/app/utils/fabricHelper';
+import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
+import { useAnnotations } from "@/app/hooks/use-annotations";
+import { ProcessingRules } from "@/app/types";
+import { serializeFabricRect } from "@/app/utils/fabric-helper";
+import * as fabric from "fabric";
+import { useCallback, useRef } from "react";
+import { FabricRect } from "../types";
+import { AnnotationCanvas } from "./annotation-canvas";
+import PDFRenderer from "./pdf-renderer";
+import PDFToolbar from "./pdf-toolbar";
 
 interface PDFViewerProps {
   url: string;

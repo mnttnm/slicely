@@ -1,33 +1,33 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { generateEmbedding } from '../src/lib/embeddingUtils';
+import { generateEmbedding } from "../src/lib/embedding-utils";
 
 // Load environment variables from .env file
-dotenv.config({ path: '.env.local' });
+dotenv.config({ path: ".env.local" });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-console.log('Generating embeddings...');
+console.log("Generating embeddings...");
 
 async function generateEmbeddings() {
-  console.log('Fetching all outputs from Supabase...');
+  console.log("Fetching all outputs from Supabase...");
   const { data: outputs, error } = await supabase
-    .from('outputs')
-    .select('id, text_content')
-    .order('created_at', { ascending: false });
+    .from("outputs")
+    .select("id, text_content")
+    .order("created_at", { ascending: false });
 
-  console.log('Query result:', { outputCount: outputs?.length, error });
+  console.log("Query result:", { outputCount: outputs?.length, error });
 
   if (error) {
-    console.error('Error fetching outputs:', error);
+    console.error("Error fetching outputs:", error);
     return;
   }
 
   if (!outputs || outputs.length === 0) {
-    console.log('No outputs found');
+    console.log("No outputs found");
     return;
   }
 
@@ -38,9 +38,9 @@ async function generateEmbeddings() {
       const embedding = await generateEmbedding(output.text_content);
 
       const { error: updateError } = await supabase
-        .from('outputs')
+        .from("outputs")
         .update({ embedding: embedding })
-        .eq('id', output.id);
+        .eq("id", output.id);
 
       if (updateError) {
         console.error(`Error updating embedding for output ${output.id}:`, updateError);
@@ -52,7 +52,7 @@ async function generateEmbeddings() {
     }
   }
 
-  console.log('Finished generating embeddings.');
+  console.log("Finished generating embeddings.");
 }
 
 generateEmbeddings().catch(console.error);

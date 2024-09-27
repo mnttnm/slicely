@@ -1,13 +1,13 @@
-import { useState } from "react";
 import { useToast } from "@/app/hooks/use-toast";
 import { uploadPdf } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
+import { useState } from "react";
 
-export const useFileUpload = (onSuccess?: (pdf: TablesInsert<'pdfs'>) => void) => {
+export const useFileUpload = (onSuccess?: (pdf: TablesInsert<"pdfs">) => void) => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
-  const uploadFile = async (file: File, isTemplate: boolean = false) => {
+  const uploadFile = async (file: File, isTemplate = false) => {
     if (!file) return;
 
     setIsUploading(true);

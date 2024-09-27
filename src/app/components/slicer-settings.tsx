@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
 import { Input } from "@/app/components/ui/input";
-import { Textarea } from "@/app/components/ui/textarea";
-import ExtractedTextView from './ExtractedTextView';
-import { ExtractedText, Slicer } from '@/app/types';
-import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { updateSlicer } from "@/server/actions/studio/actions";
+import { Textarea } from "@/app/components/ui/textarea";
 import { useToast } from "@/app/hooks/use-toast";
-import { Label } from './ui/label';
-import { CardContent, CardHeader, CardTitle, Card } from './ui/card';
+import { ExtractedText, Slicer } from "@/app/types";
+import { updateSlicer } from "@/server/actions/studio/actions";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import ExtractedTextView from "./extracted-text-view";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Label } from "./ui/label";
 
 interface SlicerRulesProps {
   slicerObject: Slicer;
@@ -65,7 +65,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
               <div className="space-y-2">
                 <Label>Skipped Pages</Label>
                 <p className="max-h-20 overflow-y-auto">
-                  {slicerObject.processing_rules?.skipped_pages?.join(', ')}
+                  {slicerObject.processing_rules?.skipped_pages?.join(", ")}
                 </p>
               </div>
               <div className="space-y-2">
@@ -74,7 +74,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
                   {slicerObject.processing_rules?.annotations.map((annotation, index) => (
                     <div key={index} className="flex items-center space-x-2 mb-2">
                       <span>{`page ${annotation.page}: `}</span>
-                      <span>{annotation.rectangles.map(rect => `${rect.top},${rect.left},${rect.width},${rect.height}`).join(' ')}</span>
+                      <span>{annotation.rectangles.map(rect => `${rect.top},${rect.left},${rect.width},${rect.height}`).join(" ")}</span>
                     </div>
                   ))}
                 </div>
@@ -83,7 +83,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={slicerObject.description || ''}
+                  value={slicerObject.description || ""}
                   onChange={(e) => onUpdateSlicer({ ...slicerObject, description: e.target.value })}
                 />
               </div>
@@ -91,7 +91,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
                 <Label htmlFor="llm_prompt">LLM Prompt</Label>
                 <Textarea
                   id="llm_prompt"
-                  value={slicerObject.llm_prompt || ''}
+                  value={slicerObject.llm_prompt || ""}
                   onChange={(e) => onUpdateSlicer({ ...slicerObject, llm_prompt: e.target.value })}
                 />
               </div>
@@ -99,7 +99,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
                 <Label htmlFor="output_mode">Output Mode</Label>
                 <Input
                   id="output_mode"
-                  value={slicerObject.output_mode || ''}
+                  value={slicerObject.output_mode || ""}
                   onChange={(e) => onUpdateSlicer({ ...slicerObject, output_mode: e.target.value })}
                 />
               </div>
@@ -109,7 +109,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
                   <Input
                     id="pdf_password"
                     type={showPassword ? "text" : "password"}
-                    value={slicerObject.pdf_password || ''}
+                    value={slicerObject.pdf_password || ""}
                     onChange={handlePasswordChange}
                     className="pr-10"
                   />

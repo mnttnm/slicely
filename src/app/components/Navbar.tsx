@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import React from 'react';
-import Link from "next/link";
-import { usePathname } from 'next/navigation';
 import { cn } from "@/app/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import React from "react";
 
 interface NavLinkProps {
   href: string;
@@ -35,4 +35,4 @@ const Navbar = () => (
   </nav>
 );
 
-export default Navbar;
+export { Navbar };

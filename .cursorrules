@@ -9,7 +9,7 @@ For refactoring tasks, describe the current code structure and the desired outco
 When addressing errors, provide details about the error message and the surrounding code context.
 
 ## Code Style and Structure
-
+- Every new code that you generate it should adhere to eslint and prettier rules define in .eslintrc.json and .prettierrc.json files
 - Use TypeScript for all code; prefer interfaces over types
 - Follow functional and declarative programming patterns; avoid classes
 - Use the "function" keyword for pure functions and component definitions

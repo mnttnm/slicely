@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { usePDFViewer } from '@/app/contexts/PDFViewerContext';
-import { getPdfDetails, getSlicerDetails } from '@/server/actions/studio/actions';
-import { Tables } from '@/types/supabase-types/database.types';
-import PDFLab from '@/app/components/PDFLab';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
-import { Button } from '@/app/components/ui/button';
-import { MoreVertical, Settings, Download, Database } from 'lucide-react';
-import PDFViewer from '@/app/components/PDFViewer';
-import PDFNavigation from '@/app/components/PDFNavigation';
+import PDFLab from "@/app/components/pdf-lab";
+import PDFNavigation from "@/app/components/pdf-navigation";
+import PDFViewer from "@/app/components/pdf-viewer";
+import { Button } from "@/app/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu";
+import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
+import { getPdfDetails, getSlicerDetails } from "@/server/actions/studio/actions";
+import { Tables } from "@/types/supabase-types/database.types";
+import { Database, Download, MoreVertical, Settings } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const PDFDetails = () => {
   const { id } = useParams();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [pdfDetails, setPdfDetails] = useState<Tables<'pdfs'> | null>(null);
+  const [pdfDetails, setPdfDetails] = useState<Tables<"pdfs"> | null>(null);
   const [slicerIds, setSlicerIds] = useState<string[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +23,7 @@ const PDFDetails = () => {
 
   useEffect(() => {
     const fetchPdfDetails = async () => {
-      if (!id || typeof id !== 'string') return;
+      if (!id || typeof id !== "string") return;
 
       setIsLoading(true);
       setError(null);
@@ -43,8 +43,8 @@ const PDFDetails = () => {
           }
         }
       } catch (err) {
-        console.error('Error fetching slicer:', err);
-        setError('Failed to fetch slicer details. Please try again.');
+        console.error("Error fetching slicer:", err);
+        setError("Failed to fetch slicer details. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -54,7 +54,7 @@ const PDFDetails = () => {
   }, [id]);
 
   const handleSaveToDB = () => {
-    console.log('Save to DB');
+    console.log("Save to DB");
   };
 
   const { numPages, pageNumber, jumpToPage } = usePDFViewer();
@@ -84,11 +84,11 @@ const PDFDetails = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => { console.log('Configure Slicer') }}>
+            <DropdownMenuItem onSelect={() => { console.log("Configure Slicer"); }}>
               <Settings className="mr-2 h-4 w-4" />
               Configure Slicer
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => { console.log('Export') }}>
+            <DropdownMenuItem onSelect={() => { console.log("Export"); }}>
               <Download className="mr-2 h-4 w-4" />
               Export
             </DropdownMenuItem>
@@ -102,7 +102,21 @@ const PDFDetails = () => {
       <main className="flex-1 bg-gray-800 flex flex-col min-h-0 text-white">
         <div className="flex-1 flex min-h-0">
           <div className="relative flex-1">
-            <PDFViewer pdf_password={pdfPassword} showToolbar={false} url={pdfUrl} onRectangleUpdate={() => { }} onClearPage={() => { }} onClearAllPages={() => { }} processingRules={null} onPageExclude={() => { }} onPageInclude={() => { }} onPageExcludeAll={() => { }} onPageIncludeAll={() => { }} />
+            <PDFViewer pdf_password={pdfPassword} showToolbar={false} url={pdfUrl} onRectangleUpdate={() => {
+              console.log("Rectangle updated");
+            }} onClearPage={() => {
+              console.log("Clear page");
+            }} onClearAllPages={() => {
+              console.log("Clear all pages");
+            }} processingRules={null} onPageExclude={() => {
+              console.log("Page exclude");
+            }} onPageInclude={() => {
+              console.log("Page include");
+            }} onPageExcludeAll={() => {
+              console.log("Page exclude all");
+            }} onPageIncludeAll={() => {
+              console.log("Page include all");
+            }} />
             <PDFNavigation currentPage={pageNumber ?? 1} numPages={numPages ?? 1} onPageChange={jumpToPage} />
           </div>
           <div className=" flex-1">

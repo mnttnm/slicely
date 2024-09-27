@@ -1,7 +1,7 @@
-'use client'
-import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
-import { pdfjs } from 'react-pdf';
-import { getSignedPdfUrl } from '@/server/actions/studio/actions';
+"use client";
+import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from "react";
+import { pdfjs } from "react-pdf";
+import { getSignedPdfUrl } from "@/server/actions/studio/actions";
 
 // pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -74,7 +74,7 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
       const signedUrl = await getSignedPdfUrl(url);
       setPdfUrl(signedUrl);
     } catch (error) {
-      console.error('Error fetching signed PDF URL:', error);
+      console.error("Error fetching signed PDF URL:", error);
     }
   }, []);
 
@@ -149,7 +149,7 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
 export const usePDFViewer = () => {
   const context = useContext(PDFViewerContext);
   if (context === undefined) {
-    throw new Error('usePDFViewer must be used within a PDFViewerProvider');
+    throw new Error("usePDFViewer must be used within a PDFViewerProvider");
   }
   return context;
 };

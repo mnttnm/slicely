@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { Slicer } from "@/app/components/slicer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
-import Link from 'next/link';
-import UploadButton from '@/app/components/UploadButton';
-import { getUserPDFs, getSlicers } from '@/server/actions/studio/actions';
-import { Slicer } from "@/app/components/Slicer";
-import { useUser } from "@/app/hooks/useUser";
-import { Tables } from '@/types/supabase-types/database.types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import UploadButton from "@/app/components/upload-button";
+import { useUser } from "@/app/hooks/use-user";
+import { getSlicers, getUserPDFs } from "@/server/actions/studio/actions";
+import { Tables } from "@/types/supabase-types/database.types";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const StudioPage = () => {
-  const [pdfs, setPdfs] = useState<(Tables<'pdfs'> & { slicer_ids: string[] })[]>([]);
-  const [slicers, setSlicers] = useState<Tables<'slicers'>[]>([]);
+  const [pdfs, setPdfs] = useState<(Tables<"pdfs"> & { slicer_ids: string[] })[]>([]);
+  const [slicers, setSlicers] = useState<Tables<"slicers">[]>([]);
   const { user, loading } = useUser();
 
   const fetchData = async () => {
@@ -78,7 +78,7 @@ const StudioPage = () => {
               {pdfs.map((pdf) => (
                 <TableRow key={pdf.id} className="hover:bg-neutral-200 dark:hover:bg-neutral-800">
                   <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
-                  <TableCell className="text-gray-500">{pdf.created_at ? new Date(pdf.created_at).toLocaleString() : 'N/A'}</TableCell>
+                  <TableCell className="text-gray-500">{pdf.created_at ? new Date(pdf.created_at).toLocaleString() : "N/A"}</TableCell>
                   <TableCell className="text-gray-500">
                     {pdf.slicer_ids && pdf.slicer_ids.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
@@ -88,9 +88,9 @@ const StudioPage = () => {
                           </Link>
                         ))}
                       </div>
-                    ) : 'N/A'}
+                    ) : "N/A"}
                   </TableCell>
-                  <TableCell className="text-gray-500">{pdf.is_template ? 'Yes' : 'No'}</TableCell>
+                  <TableCell className="text-gray-500">{pdf.is_template ? "Yes" : "No"}</TableCell>
                   <TableCell className="text-gray-500">
                     <Link href={`/studio/pdfs/${pdf.id}`}>
                       View

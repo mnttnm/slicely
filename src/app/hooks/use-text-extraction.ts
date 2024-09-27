@@ -34,11 +34,11 @@ export const useTextExtraction = (
           );
         })
         .map((item: any) => item.str)
-        .join(' ');
+        .join(" ");
 
       return extractedText;
     } catch (error) {
-      console.error('Error extracting text:', error);
+      console.error("Error extracting text:", error);
     }
   }, [pdfDocument]);
 

@@ -1,11 +1,11 @@
+import { CommandMenu } from "@/app/components/command-menu";
+import { Header } from "@/app/components/header";
+import { ThemeProvider } from "@/app/components/theme-provider";
+import { Toaster } from "@/app/components/ui/toaster";
+import { PDFProvider } from "@/app/contexts/pdf-context";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import Header from "@/app/components/Header";
-import { PDFProvider } from '@/app/contexts/PDFContext';
-import { CommandMenu } from "@/app/components/CommandMenu";
-import { Toaster } from "@/app/components/ui/toaster";
-import { ThemeProvider } from "@/app/components/ThemeProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",

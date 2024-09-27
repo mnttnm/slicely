@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Button } from "@/app/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
@@ -72,7 +72,7 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
           {/* Include Section */}
           <ToolbarButton
             icon={<Square className="h-5 w-5" />}
-            tooltip={`${isRectangleMode ? 'Disable' : 'Enable'} Section Extraction`}
+            tooltip={`${isRectangleMode ? "Disable" : "Enable"} Section Extraction`}
             onClick={toggleRectangleMode}
             active={isRectangleMode}
           />
@@ -113,7 +113,7 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
 
           {/* Page Number */}
           <div className="text-center text-sm text-white font-medium">
-            {pageNumber} / {numPages || '--'}
+            {pageNumber} / {numPages || "--"}
           </div>
 
           {/* Next Page */}
@@ -182,7 +182,7 @@ interface ToolbarButtonProps {
   onClick: () => void;
   active?: boolean;
   disabled?: boolean;
-  variant?: 'default' | 'destructive';
+  variant?: "default" | "destructive";
 }
 
 const ToolbarButton: React.FC<ToolbarButtonProps> = ({
@@ -191,16 +191,16 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   onClick,
   active = false,
   disabled = false,
-  variant = 'default',
+  variant = "default",
 }) => (
   <Tooltip>
     <TooltipTrigger asChild>
       <Button
-        variant={active ? 'secondary' : variant}
+        variant={active ? "secondary" : variant}
         size="icon"
         onClick={onClick}
         disabled={disabled}
-        className={`transition-all duration-200 ${active ? 'bg-white text-gray-800' : 'bg-gray-700/50 text-white hover:bg-gray-600/50'
+        className={`transition-all duration-200 ${active ? "bg-white text-gray-800" : "bg-gray-700/50 text-white hover:bg-gray-600/50"
           }`}
       >
         {icon}

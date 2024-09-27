@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 import { Button } from "@/app/components/ui/button";
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PDFNavigationProps {
   currentPage: number;

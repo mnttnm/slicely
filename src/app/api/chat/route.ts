@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { searchVectorStore } from '@/lib/supabase';
-import { getChatCompletion } from '@/lib/openai';
+import { NextResponse } from "next/server";
+import { searchVectorStore } from "@/lib/supabase";
+import { getChatCompletion } from "@/lib/openai";
 
 export async function POST(request: Request) {
   const { question, slicerId } = await request.json();
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const context = relevantDocuments.map((doc) => doc.text_content).join('\n\n');
+    const context = relevantDocuments.map((doc) => doc.text_content).join("\n\n");
 
     console.log("Context:", context);
 

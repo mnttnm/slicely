@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Upload } from 'lucide-react'; // Import the Upload icon
 import { Button } from "@/app/components/ui/button";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from "@/app/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/app/components/ui/drawer";
 import { Input } from "@/app/components/ui/input";
-import { Textarea } from "@/app/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { Label } from "@/app/components/ui/label";
-import { createSlicer, getUserPDFs, uploadPdf } from '@/server/actions/studio/actions';
-import { Tables } from '@/types/supabase-types/database.types';
-import { toast } from '../hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { Textarea } from "@/app/components/ui/textarea";
+import { createSlicer, getUserPDFs, uploadPdf } from "@/server/actions/studio/actions";
+import { Tables } from "@/types/supabase-types/database.types";
+import { Upload } from "lucide-react"; // Import the Upload icon
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "../hooks/use-toast";
 
 interface CreateSlicerDrawerProps {
   open: boolean;
@@ -24,15 +24,15 @@ interface CreateSlicerDrawerProps {
 const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
   open,
   onOpenChange,
-  defaultName = '',
-  defaultDescription = '',
+  defaultName = "",
+  defaultDescription = "",
   defaultFileId = null
 }) => {
   const [name, setName] = useState(defaultName);
   const [description, setDescription] = useState(defaultDescription);
   const [selectedFile, setSelectedFile] = useState<string | null>(defaultFileId);
   const [uploadedFile, setUploadedFile] = useState<{ id: string; name: string } | null>(null);
-  const [userPDFs, setUserPDFs] = useState<Tables<'pdfs'>[]>([]);
+  const [userPDFs, setUserPDFs] = useState<Tables<"pdfs">[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
 
@@ -42,7 +42,7 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
         const pdfs = await getUserPDFs();
         setUserPDFs(pdfs);
       } catch (error) {
-        console.error('Failed to fetch user PDFs:', error);
+        console.error("Failed to fetch user PDFs:", error);
       }
     };
 
@@ -58,13 +58,13 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
     setIsUploading(true);
     try {
       const formData = new FormData();
-      formData.append('pdf', file);
+      formData.append("pdf", file);
       const newPdf = await uploadPdf(formData);
       setUserPDFs([...userPDFs, newPdf]);
       setSelectedFile(newPdf.id.toString());
       setUploadedFile({ id: newPdf.id.toString(), name: file.name });
     } catch (error) {
-      console.error('Failed to upload PDF:', error);
+      console.error("Failed to upload PDF:", error);
       // Handle error (e.g., show error message to user)
     } finally {
       setIsUploading(false);
@@ -72,17 +72,17 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
   };
 
   const handleSave = async () => {
-    if (!selectedFile || selectedFile === 'no-selection') {
+    if (!selectedFile || selectedFile === "no-selection") {
       toast({
-        title: 'No file selected',
-        description: 'Please select a file to create a slicer.',
+        title: "No file selected",
+        description: "Please select a file to create a slicer.",
       });
       return;
     }
     try {
       const fileToUse = uploadedFile || userPDFs.find(pdf => pdf.id.toString() === selectedFile);
       if (!fileToUse) {
-        throw new Error('No valid file selected');
+        throw new Error("No valid file selected");
       }
       const slicerName = name ?? uploadedFile?.name ?? userPDFs.find(pdf => pdf.id.toString() === selectedFile)?.file_name ?? `Slicer  ${new Date().toISOString()}`;
       const slicerDescription = description || `Description for ${slicerName}`;
@@ -94,12 +94,12 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
       onOpenChange(false);
       router.push(`/studio/slicers/${newSlicer.id}`);
     } catch (error) {
-      console.error('Failed to create slicer:', error);
+      console.error("Failed to create slicer:", error);
       // Handle error (e.g., show error message to user)
     }
   };
 
-  const isFileSelected = selectedFile && selectedFile !== 'no-selection';
+  const isFileSelected = selectedFile && selectedFile !== "no-selection";
 
 
   const handleCancel = () => {
@@ -140,7 +140,7 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
               <Select
                 onValueChange={(value) => {
                   setSelectedFile(value);
-                  if (value === 'no-selection') {
+                  if (value === "no-selection") {
                     setUploadedFile(null);
                   }
                 }}
@@ -167,7 +167,7 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
                 <Button variant="outline" disabled={isUploading} className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
-                  {isUploading ? 'Uploading...' : (
+                  {isUploading ? "Uploading..." : (
                     <>
                       <Upload className="w-4 h-4 mr-2" />
                       Upload New

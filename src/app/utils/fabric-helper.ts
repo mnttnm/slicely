@@ -1,5 +1,5 @@
-import { FabricRect, PageAnnotation, ProcessingRules } from '@/app/types';
-import { Json } from '@/types/supabase-types/database.types';
+import { FabricRect, PageAnnotation, ProcessingRules } from "@/app/types";
+import { Json } from "@/types/supabase-types/database.types";
 
 const defaultRectValues: Partial<FabricRect> = {
   fillRule: "nonzero",

@@ -1,14 +1,14 @@
-'use client';
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+"use client";
+import ProcessedOutput from "@/app/components/processed-output";
 import { Button } from "@/app/components/ui/button";
-import { FileText, MessageSquare } from 'lucide-react';
-import ChatComponent from './ChatComponent';
-import ProcessedOutputComponent from './ProcessedOutputComponent';
-import { Tables } from '@/types/supabase-types/database.types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { Tables } from "@/types/supabase-types/database.types";
+import { FileText, MessageSquare } from "lucide-react";
+import React, { useState } from "react";
+import ChatComponent from "./chat-component";
 
-const PDFLab: React.FC<{ pdfDetails: Tables<'pdfs'>; slicerIds: string[] }> = ({ pdfDetails, slicerIds }) => {
-  const [activeTab, setActiveTab] = useState('processed-output');
+const PDFLab: React.FC<{ pdfDetails: Tables<"pdfs">; slicerIds: string[] }> = ({ pdfDetails, slicerIds }) => {
+  const [activeTab, setActiveTab] = useState("processed-output");
 
   return (
     <Tabs className="flex flex-col h-[100%]" value={activeTab} onValueChange={setActiveTab}>
@@ -17,7 +17,7 @@ const PDFLab: React.FC<{ pdfDetails: Tables<'pdfs'>; slicerIds: string[] }> = ({
       </header> */}
       <main className="flex-1 p-2">
         <TabsContent value="processed-output" className="h-full">
-          <ProcessedOutputComponent pdfDetails={pdfDetails} slicerIds={slicerIds} />
+          <ProcessedOutput pdfDetails={pdfDetails} slicerIds={slicerIds} />
         </TabsContent>
         <TabsContent value="chat" className="h-full">
           <ChatComponent />

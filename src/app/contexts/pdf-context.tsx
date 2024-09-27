@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface PDF {
   id: string;
@@ -24,8 +24,8 @@ export const PDFProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     // Load PDFs and currentPDF from local storage on component mount
-    const storedPDFs = localStorage.getItem('pdfs');
-    const storedCurrentPDF = localStorage.getItem('currentPDF');
+    const storedPDFs = localStorage.getItem("pdfs");
+    const storedCurrentPDF = localStorage.getItem("currentPDF");
     if (storedPDFs) {
       setPDFs(JSON.parse(storedPDFs).map((pdf: PDF) => ({
         ...pdf,
@@ -40,12 +40,12 @@ export const PDFProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addPDF = (pdf: PDF) => {
     const updatedPDFs = [...pdfs, pdf];
     setPDFs(updatedPDFs);
-    localStorage.setItem('pdfs', JSON.stringify(updatedPDFs));
+    localStorage.setItem("pdfs", JSON.stringify(updatedPDFs));
   };
 
   const updateCurrentPDF = (pdf: PDF | null) => {
     setCurrentPDF(pdf);
-    localStorage.setItem('currentPDF', JSON.stringify(pdf));
+    localStorage.setItem("currentPDF", JSON.stringify(pdf));
   };
 
   return (
@@ -58,7 +58,7 @@ export const PDFProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 export const usePDFContext = () => {
   const context = useContext(PDFContext);
   if (context === undefined) {
-    throw new Error('usePDFContext must be used within a PDFProvider');
+    throw new Error("usePDFContext must be used within a PDFProvider");
   }
   return context;
 };

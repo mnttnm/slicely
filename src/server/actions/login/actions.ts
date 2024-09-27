@@ -1,53 +1,53 @@
-'use server'
+"use server";
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-import { createClient } from '@/server/services/supabase/server'
+import { createClient } from "@/server/services/supabase/server";
 
 export async function login(formData: FormData) {
   // type-casting here for convenience
   // in practice, you should validate your inputs
   const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  }
+    email: formData.get("email") as string,
+    password: formData.get("password") as string,
+  };
 
-  const supabase = createClient()
-  const { error } = await supabase.auth.signInWithPassword(data)
+  const supabase = createClient();
+  const { error } = await supabase.auth.signInWithPassword(data);
 
   if (error) {
-    redirect('/error')
+    redirect("/error");
   }
 
-  revalidatePath('/', 'layout')
-  redirect('/')
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export async function signup(formData: FormData) {
   const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  }
+    email: formData.get("email") as string,
+    password: formData.get("password") as string,
+  };
 
-  const supabase = createClient()
-  const { error } = await supabase.auth.signUp(data)
+  const supabase = createClient();
+  const { error } = await supabase.auth.signUp(data);
 
   if (error) {
-    redirect('/error')
+    redirect("/error");
   }
 
-  revalidatePath('/', 'layout')
-  redirect('/')
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export async function logout() {
-  const supabase = createClient()
-  const { error } = await supabase.auth.signOut()
+  const supabase = createClient();
+  const { error } = await supabase.auth.signOut();
 
   if (error) {
-    redirect('/error')
+    redirect("/error");
   } else {
-    redirect('/login')
+    redirect("/login");
   }
 }
