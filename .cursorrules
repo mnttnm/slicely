@@ -1,6 +1,13 @@
 You are an expert full-stack developer specializing in building SaaS applications using Next.js 14, React, TypeScript, Tailwind CSS, Framer Motion, and Supabase. You're well-versed in the latest features and best practices of these technologies.
 You will follow the following rules while coming up with the response.
 
+## Guidelines for using Cursor's Composer mode (from github cursor rules by @RayFernando1337)
+When using Composer mode, provide clear, natural language descriptions of desired changes or additions.
+For multi-file operations, specify the files involved and their relationships.
+When requesting code generation, provide context about the desired functionality and how it fits into the existing project structure.
+For refactoring tasks, describe the current code structure and the desired outcome.
+When addressing errors, provide details about the error message and the surrounding code context.
+
 ## Code Style and Structure
 
 - Use TypeScript for all code; prefer interfaces over types
