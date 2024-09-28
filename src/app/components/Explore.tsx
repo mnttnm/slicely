@@ -1,18 +1,19 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { MessageSquare, Search, Info } from "lucide-react";
-import { FilterProvider } from "@/app/context/filter-context";
-import { searchOutputs, getInitialOutputs } from "@/server/actions/studio/actions";
-import { ProcessedOutputWithMetadata } from "@/app/types";
 import { Spinner } from "@/app/components/ui/spinner";
+import { FilterProvider } from "@/app/context/filter-context";
 import { useToast } from "@/app/hooks/use-toast";
+import { PDFMetadata, ProcessedOutputWithMetadata, Slicer } from "@/app/types";
+import { getInitialOutputs, getSlicerDetails, searchOutputs } from "@/server/actions/studio/actions";
+import { createMessages, getContextForQuery, getContextForSlicer, processWithLLM } from "@/utils/explore-utils";
+import { Info, MessageSquare, Search } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 function ExploreContent({ slicerId }: { slicerId: string }) {
-  const [mode, setMode] = useState<"search" | "chat">("chat");
+  const [mode, setMode] = useState<"search" | "chat">("search");
   const [query, setQuery] = useState("");
   const [showMetadata, setShowMetadata] = useState<string | null>(null);
   const [results, setResults] = useState<ProcessedOutputWithMetadata[]>([]);
@@ -23,6 +24,9 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [totalResults, setTotalResults] = useState<number>(0);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [processedOutput, setProcessedOutput] = useState<string | null>(null);
+  const [slicer, setSlicer] = useState<Slicer | null>(null);
+  const [linkedPdfs, setLinkedPdfs] = useState<PDFMetadata[]>([]);
 
   const fetchResults = useCallback(async (searchQuery: string, pageNum: number) => {
     setIsLoading(true);
@@ -98,8 +102,32 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     }
   }, [query, mode, fetchInitialOutputs]);
 
+  const processInitialOutputs = useCallback(async () => {
+    if (!slicer) return;
+    setIsLoading(true);
+    try {
+      console.log("Processing initial outputs for slicer:", slicerId);
+      const context = await getContextForSlicer(slicerId);
+      console.log("Context retrieved:", `${context.substring(0, 100)}...`);
+      const messages = createMessages(context, slicer.llm_prompt || "Summarize the following content and provide insights:");
+      console.log("Messages created:", messages);
+      const result = await processWithLLM(messages);
+      console.log("Processed result:", result);
+      setProcessedOutput(result);
+    } catch (error) {
+      console.error("Error processing initial outputs:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process initial outputs. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [slicerId, slicer, toast]);
+
   const handleChat = async () => {
-    if (!query.trim()) return;
+    if (!query.trim() || !slicer) return;
 
     const userMessage = { role: "user", content: query };
     setChatHistory(prev => [...prev, userMessage]);
@@ -107,21 +135,23 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: query, slicerId }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to get chat response");
+      console.log("Fetching context for query:", query, "slicerId:", slicerId);
+      const context = await getContextForQuery(query, slicerId);
+      console.log("Context received:", context);
+      if (context === "No relevant information found.") {
+        throw new Error("No relevant information found");
       }
-
-      const data = await response.json();
-      const botMessage = { role: "assistant", content: data.answer };
+      const messages = createMessages(context, "Answer the following question based on the provided context:", query);
+      console.log("Messages created:", JSON.stringify(messages, null, 2));
+      const answer = await processWithLLM(messages);
+      console.log("LLM answer received:", answer);
+      const botMessage = { role: "assistant", content: answer };
       setChatHistory(prev => [...prev, botMessage]);
     } catch (error) {
       console.error("Error in chat:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      const botMessage = { role: "assistant", content: `I'm sorry, but an error occurred: ${errorMessage}` };
+      setChatHistory(prev => [...prev, botMessage]);
       toast({
         title: "Error",
         description: "Failed to get a response. Please try again.",
@@ -138,6 +168,40 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     }
   }, [chatHistory]);
 
+  const fetchSlicerDetails = useCallback(async () => {
+    try {
+      const result = await getSlicerDetails(slicerId);
+      if (result) {
+        setSlicer(result.slicerDetails);
+        setLinkedPdfs(result.linkedPdfs);
+      } else {
+        throw new Error("Failed to fetch slicer details");
+      }
+    } catch (error) {
+      console.error("Error fetching slicer details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch slicer details. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [slicerId, toast]);
+
+  useEffect(() => {
+    fetchSlicerDetails();
+  }, [fetchSlicerDetails]);
+
+  useEffect(() => {
+    if (slicer) {
+      console.log("Slicer loaded, processing initial outputs");
+      // processInitialOutputs();
+    }
+  }, [slicer, processInitialOutputs]);
+
+  useEffect(() => {
+    console.log("Processed output updated:", processedOutput);
+  }, [processedOutput]);
+  d;
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <header className="flex items-center justify-between w-full p-4">
@@ -147,14 +211,18 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
               <Button
                 variant="ghost"
                 className={`rounded-none ${mode === "search" ? "bg-muted" : ""}`}
-                onClick={() => setMode("search")}
+                onClick={() => {
+                  setMode("search");
+                }}
               >
                 <Search className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
                 className={`rounded-none ${mode === "chat" ? "bg-muted" : ""}`}
-                onClick={() => setMode("chat")}
+                onClick={() => {
+                  setMode("chat");
+                }}
               >
                 <MessageSquare className="h-4 w-4" />
               </Button>
@@ -178,82 +246,86 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
         </div>
       </header>
       <main className="flex-1 overflow-hidden flex">
-        {mode === "chat" ? (
-          <div className="flex-1 flex flex-col">
-            <ScrollArea className="flex-1" ref={chatContainerRef}>
-              <div className="p-4 space-y-4">
-                {chatHistory.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`p-2 rounded-lg ${message.role === "user" ? "bg-primary text-primary-foreground ml-auto" : "bg-muted"
-                    }`}
-                  >
-                    {message.content}
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-center items-center py-4">
-                    <Spinner />
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col">
-            <ScrollArea className="flex-1">
-              <div className="p-4 space-y-4">
-                {results.length > 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    Showing {results.length} out of {totalResults} results
-                  </p>
-                )}
-                {results.map((result) => (
-                  <div key={result.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-md font-medium text-gray-900 dark:text-gray-100">
-                        {result.pdfs.file_name} - Page {result.page_number}
-                      </h3>
-                      <Button
-                        variant="ghost"
-                        className="text-xs text-muted-foreground"
-                        onClick={() => setShowMetadata(showMetadata === result.id ? null : result.id)}
-                      >
-                        <Info className="h-4 w-4" />
-                      </Button>
+        <div className="flex-1 flex flex-col">
+          <ScrollArea className="flex-1">
+            <div className="p-4 space-y-4">
+              {isLoading && (
+                <div className="flex justify-center items-center py-4">
+                  <Spinner />
+                  <span className="ml-2">Processing outputs...</span>
+                </div>
+              )}
+              {processedOutput && (
+                <div className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+                  <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    Processed Output
+                  </h3>
+                  <p className="text-sm text-gray-800 dark:text-gray-200">{processedOutput}</p>
+                </div>
+              )}
+              {mode === "chat" ? (
+                // Render chat history
+                <div className="space-y-4">
+                  {chatHistory.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`p-2 rounded-lg ${message.role === "user" ? "bg-primary text-primary-foreground ml-auto" : "bg-muted"
+                        }`}
+                    >
+                      {message.content}
                     </div>
-                    {result.updated_at && (
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Updated: {new Date(result.updated_at).toLocaleString()}
-                      </p>
-                    )}
-                    {showMetadata === result.id && (
-                      <div className="text-xs text-muted-foreground mb-2">
-                        <p>Type: {result.section_info.type}</p>
-                        {Object.entries(result.section_info.metadata).map(([key, value]) => (
-                          <p key={key}>
-                            {key}: {JSON.stringify(value)}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-sm mb-2 text-gray-800 dark:text-gray-200">{result.text_content}</p>
-                  </div>
-                ))}
-                  {isLoading && (
-                    <div className="flex justify-center items-center py-4">
-                      <Spinner />
-                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Render search results
+                <>
+                  {results.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Showing {results.length} out of {totalResults} results
+                    </p>
                   )}
+                  {results.map((result) => (
+                    <div key={result.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-md font-medium text-gray-900 dark:text-gray-100">
+                          {result.pdfs.file_name} - Page {result.page_number}
+                        </h3>
+                        <Button
+                          variant="ghost"
+                          className="text-xs text-muted-foreground"
+                          onClick={() => setShowMetadata(showMetadata === result.id ? null : result.id)}
+                        >
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {result.updated_at && (
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Updated: {new Date(result.updated_at).toLocaleString()}
+                        </p>
+                      )}
+                      {showMetadata === result.id && (
+                        <div className="text-xs text-muted-foreground mb-2">
+                          <p>Type: {result.section_info.type}</p>
+                          {Object.entries(result.section_info.metadata).map(([key, value]) => (
+                            <p key={key}>
+                              {key}: {JSON.stringify(value)}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-sm mb-2 text-gray-800 dark:text-gray-200">{result.text_content}</p>
+                    </div>
+                  ))}
                   {hasMore && !isLoading && (
                     <div className="flex justify-center">
                       <Button onClick={handleLoadMore}>Load More</Button>
                     </div>
                   )}
-                </div>
-              </ScrollArea>
+                </>
+              )}
             </div>
-        )}
+          </ScrollArea>
+        </div>
       </main>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { FabricRect, PDFMetadata, ProcessedOutput } from "@/app/types";
 import { extractTextFromRectangle } from "@/app/utils/text-extraction";
+import { getChatCompletion } from "@/lib/openai";
 import { getAnnotations, getSignedPdfUrl } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -32,7 +33,25 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
 
     const extractionPromises = rectangles.map(async (rect: FabricRect) => {
       const text = await extractTextFromRectangle(pageObj, rect);
-      // Save each extracted text to the database
+
+      // Apply annotation-level rule if exists
+      const annotationRule = processingRules.annotation_rules.find(r => r.annotation_id === rect.id);
+      let processedText = text;
+      if (annotationRule) {
+        processedText = await getChatCompletion([{ role: "user", content: text }]);
+      }
+
+      // Apply page-level rule if exists
+      const pageRule = processingRules.page_rules.find(r => r.page_number === page);
+      if (pageRule) {
+        processedText = await getChatCompletion([{ role: "user", content: processedText }]);
+      }
+
+      // Apply file-level rule if exists
+      if (processingRules.file_rule) {
+        processedText = await getChatCompletion([{ role: "user", content: processedText }]);
+      }
+
       const processedOutput: TablesInsert<"outputs"> = {
         pdf_id: pdf.id,
         slicer_id: slicerId,
@@ -49,7 +68,7 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
             }
           }
         },
-        text_content: text,
+        text_content: processedText,
       };
 
       return processedOutput as ProcessedOutput;
@@ -58,5 +77,6 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
     const extractedSectionTexts = await Promise.all(extractionPromises);
     processedOutput.push(...extractedSectionTexts);
   }
+
   return processedOutput;
 }

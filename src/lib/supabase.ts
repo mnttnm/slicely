@@ -1,30 +1,32 @@
-import { createClient } from "@supabase/supabase-js";
-import { generateEmbedding } from "./embedding-utils";
+"use server";
+import { generateEmbedding } from "@/lib/embedding-utils"; // Make sure this import is correct
+import { createClient } from "@/server/services/supabase/server";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+// const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+// const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export const searchVectorStore = async (query: string, slicerId: string, match_count = 5) => {
-  const embedding = await generateEmbedding(query);
+export async function searchVectorStore(query: string, slicerId: string) {
+  const supabase = createClient();
+  try {
+    const embedding = await generateEmbedding(query);
 
-  console.log("Searching for:", query);
-  console.log("Slicer ID:", slicerId);
-
-  const { data: documents, error } = await supabase
-    .rpc("match_outputs", {
-      query_embedding: embedding,
-      match_threshold: 0.5,
-      match_count: match_count,
-      p_slicer_id: slicerId
+    const { data, error } = await supabase.rpc("match_outputs", {
+      query_embedding: JSON.stringify(embedding),
+      p_slicer_id: slicerId,
+      match_threshold: 0.3, // TODO: make this configurable, this is very low for now
+      match_count: 5
     });
 
-  if (error) {
-    console.error("Error in vector search:", error);
+    if (error) {
+      console.error("Error in match_outputs RPC:", error);
+      throw error;
+    }
+
+    console.log("match_outputs count:", data.length);
+    return data;
+  } catch (error) {
+    console.error("Error in searchVectorStore:", error);
     throw error;
   }
-
-  console.log("Search results:", documents);
-  return documents;
-};
+}

@@ -9,11 +9,11 @@ const nextConfig = {
       test: /\.pdf$/,
       use: [
         {
-          loader: 'file-loader',
+          loader: "file-loader",
           options: {
-            name: '[name].[ext]',
-            publicPath: '/_next/static/files',
-            outputPath: `${isServer ? '../' : ''}static/files`,
+            name: "[name].[ext]",
+            publicPath: "/_next/static/files",
+            outputPath: `${isServer ? "../" : ""}static/files`,
           },
         },
       ],
@@ -24,11 +24,11 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
       },
     ],
   }
-}
+};
 
 export default nextConfig;
