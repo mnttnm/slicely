@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { getChatCompletion } from "@/lib/openai";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const { messages } = await request.json();
@@ -9,7 +9,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    console.log("Received messages in chat API:", messages);
     const answer = await getChatCompletion(messages);
     console.log("Chat completion response:", answer);
     return NextResponse.json({ answer });

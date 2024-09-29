@@ -192,16 +192,15 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [fetchSlicerDetails]);
 
   useEffect(() => {
-    if (slicer) {
-      console.log("Slicer loaded, processing initial outputs");
-      // processInitialOutputs();
+    if (slicer && mode === "chat") {
+      processInitialOutputs();
     }
-  }, [slicer, processInitialOutputs]);
+  }, [slicer, processInitialOutputs, mode]);
 
   useEffect(() => {
     console.log("Processed output updated:", processedOutput);
   }, [processedOutput]);
-  d;
+
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <header className="flex items-center justify-between w-full p-4">

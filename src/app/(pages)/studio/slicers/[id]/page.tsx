@@ -1,6 +1,6 @@
 "use client";
 
-import Explore from "@/app/components/Explore";
+import Explore from "@/app/components/explore";
 import { LinkedPdfs } from "@/app/components/linked-pdfs";
 import PDFViewer from "@/app/components/pdf-viewer";
 import SlicerSettings from "@/app/components/slicer-settings";
