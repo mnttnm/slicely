@@ -1,5 +1,5 @@
 "use server";
-import { getChatCompletion } from "@/lib/openai";
+import { chatCompletion } from "@/lib/openai";
 import { searchVectorStore } from "@/lib/supabase";
 import { getInitialOutputs } from "@/server/actions/studio/actions";
 
@@ -43,8 +43,8 @@ export async function processWithLLM(messages: { role: string; content: string }
   }
 
   try {
-    const answer = await getChatCompletion(messages);
-    console.log("Chat completion response:", answer);
+    const answer = await chatCompletion(messages);
+    console.log("Chat completion response:", JSON.stringify(answer, null, 2));
     return answer;
   } catch (error) {
     console.error("Error in processWithLLM:", error);

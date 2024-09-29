@@ -2,7 +2,7 @@
 
 import { FabricRect, PDFMetadata, ProcessedOutput } from "@/app/types";
 import { extractTextFromRectangle } from "@/app/utils/text-extraction";
-import { getChatCompletion } from "@/lib/openai";
+import { chatCompletion } from "@/lib/openai";
 import { getAnnotations, getSignedPdfUrl } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -35,21 +35,24 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
       const text = await extractTextFromRectangle(pageObj, rect);
 
       // Apply annotation-level rule if exists
-      const annotationRule = processingRules.annotation_rules.find(r => r.annotation_id === rect.id);
+      const annotationRule = processingRules.annotations.find(r => r.id === rect.id);
       let processedText = text;
       if (annotationRule) {
-        processedText = await getChatCompletion([{ role: "user", content: text }]);
+        const result = await chatCompletion([{ role: "user", content: text }]);
+        processedText = JSON.parse(result as string).content;
       }
 
       // Apply page-level rule if exists
-      const pageRule = processingRules.page_rules.find(r => r.page_number === page);
+      const pageRule = processingRules.annotations.find(r => r.page === page);
       if (pageRule) {
-        processedText = await getChatCompletion([{ role: "user", content: processedText }]);
+        const result = await chatCompletion([{ role: "user", content: processedText }]);
+        processedText = JSON.parse(result as string).content;
       }
 
       // Apply file-level rule if exists
       if (processingRules.file_rule) {
-        processedText = await getChatCompletion([{ role: "user", content: processedText }]);
+        const result = await chatCompletion([{ role: "user", content: processedText }]);
+        processedText = JSON.parse(result as string).content;
       }
 
       const processedOutput: TablesInsert<"outputs"> = {

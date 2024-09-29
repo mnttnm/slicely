@@ -16,6 +16,7 @@ use @/app/hooks/ as location to use existing hooks and create new hooks
 - Favor named exports for components
 - Implement responsive design with Tailwind CSS, ensuring compatibility across various device sizes
 - Make sure to use semicolons and double quotes
+- If the implementation requires a specific library, explicitly callout it and provide instructions on how to install it
 
 ## React and Next.js Best Practices
 - Prioritize React Server Components (RSC) and Next.js SSR features

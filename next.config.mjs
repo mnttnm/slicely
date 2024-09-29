@@ -28,7 +28,10 @@ const nextConfig = {
         hostname: "lh3.googleusercontent.com",
       },
     ],
-  }
+  },
+  experimental: {
+    serverComponentsExternalPackages: ["openai"],
+  },
 };
 
 export default nextConfig;
