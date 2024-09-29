@@ -16,7 +16,7 @@ export async function getContextForQuery(query: string, slicerId: string) {
       console.warn("No relevant documents found for the query");
       return "No relevant information found.";
     }
-    return relevantDocuments.map((doc: any) => doc.text_content).join("\n\n");
+    return relevantDocuments.map((doc: any) => doc.text_content).join("\n");
   } catch (error) {
     console.error("Error in getContextForQuery:", error);
     throw error;
@@ -26,12 +26,8 @@ export async function getContextForQuery(query: string, slicerId: string) {
 export async function createMessages(context: string, instruction: string, query?: string) {
   const messages = [
     { role: "system", content: "You are a helpful AI assistant. Process the following content according to the given instructions." },
-    { role: "user", content: `Instructions: ${instruction}\n Context: ${context}` }
+    { role: "user", content: `Instructions(Question): ${query || instruction}\n Context: ${context}` }
   ];
-
-  if (query) {
-    messages.push({ role: "user", content: `Question: ${query}` });
-  }
 
   return messages;
 }

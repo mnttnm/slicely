@@ -65,8 +65,10 @@ export const chatCompletion = async (messages: any[]) => {
     content: "You are an AI assistant responding to queries about PDF content. Use the output_formatter function to structure your responses. Always provide both a formatted_response (choosing the most appropriate type from single_value, chart, table, or text) and a raw_response. The raw_response should be a comprehensive textual answer to the user's query. The formatted_response should represent the same information in a structured format suitable for visualization or display.",
   };
 
+  console.log("llm prompt messages", [systemMessage, ...messages]);
+
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4o-mini",
     messages: [systemMessage, ...messages],
     tools: [zodFunction({ name: "output_formatter", parameters: OutputFormatter })],
   });

@@ -15,7 +15,7 @@ export async function searchVectorStore(query: string, slicerId: string) {
       query_embedding: JSON.stringify(embedding),
       p_slicer_id: slicerId,
       match_threshold: 0.3, // TODO: make this configurable, this is very low for now
-      match_count: 5
+      match_count: 15
     });
 
     if (error) {
