@@ -2,6 +2,7 @@
 
 import { Button } from "@/app/components/ui/button";
 import { ChartDisplay } from "@/app/components/ui/chart-display";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/app/components/ui/collapsible";
 import { Input } from "@/app/components/ui/input";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { SingleValueDisplay } from "@/app/components/ui/single-value-display";
@@ -14,7 +15,7 @@ import { LLMPrompt, PDFMetadata, ProcessedOutputWithMetadata, Slicer } from "@/a
 import { FormattedResponse } from "@/lib/openai";
 import { getInitialOutputs, getSlicerDetails, searchOutputs } from "@/server/actions/studio/actions";
 import { createMessages, getContextForQuery, getContextForSlicer, processWithLLM } from "@/utils/explore-utils";
-import { Info, MessageSquare, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, MessageSquare, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ChatMessage {
@@ -86,8 +87,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const { toast } = useToast();
   const [processedOutput, setProcessedOutput] = useState<ProcessedOutput[] | null>(null);
   const [slicer, setSlicer] = useState<Slicer | null>(null);
-  const [linkedPdfs, setLinkedPdfs] = useState<PDFMetadata[]>([]);
+  const [setLinkedPdfs] = useState<PDFMetadata[]>([]);
   const [initialDataFetched, setInitialDataFetched] = useState(false);
+  const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
+  const [isPreviousDataExpanded, setIsPreviousDataExpanded] = useState(false);
 
   const fetchResults = useCallback(async (searchQuery: string, pageNum: number) => {
     setIsLoading(true);
@@ -175,6 +178,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
 
       const processedOutputs = await Promise.all(slicer.llm_prompts.map(async (promptObj: LLMPrompt) => {
         const messages = await createMessages(context, promptObj.prompt);
+        console.log("Messages created:", JSON.stringify(messages, null, 2));
         console.log("Messages created for prompt:", promptObj.id);
         const result = await processWithLLM(messages);
         return { id: promptObj.id, output: result };
@@ -210,7 +214,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       if (context === "No relevant information found.") {
         throw new Error("No relevant information found");
       }
-      const messages = await createMessages(context, "Answer the following question based on the provided context:", query);
+      const messages = await createMessages(context, "", query);
       console.log("Messages created:", JSON.stringify(messages, null, 2));
       const answer = await processWithLLM(messages);
       console.log("LLM answer received:", answer);
@@ -289,6 +293,49 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     console.log("Processed output updated:", processedOutput);
   }, [processedOutput]);
 
+
+  // Modify the useEffect to expand only the latest message
+  useEffect(() => {
+    if (chatHistory.length > 0) {
+      setExpandedMessages(new Set([chatHistory.length - 1]));
+    }
+  }, [chatHistory]);
+
+  const renderChatMessage = (message: ChatMessage) => (
+    <div
+      className={`p-2 rounded-lg ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+        }`}
+    >
+      <p className="font-semibold">{message.role === "user" ? "You" : "Assistant"}</p>
+      {message.role === "user" ? (
+        <p>{message.content as string}</p>
+      ) : (
+        <>
+          {typeof message.content === "string" ? (
+            <p>{message.content}</p>
+          ) : (
+            message.content
+          )}
+          {message.rawContent && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              <p>Confidence: {message.rawContent.confidence}</p>
+              {message.rawContent.follow_up_questions && message.rawContent.follow_up_questions.length > 0 && (
+                <div>
+                  <p>Follow-up questions:</p>
+                  <ul>
+                    {message.rawContent.follow_up_questions.map((question, qIndex) => (
+                      <li key={qIndex}>{question}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <header className="flex items-center justify-between w-full p-4">
@@ -320,7 +367,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   mode === "search" ? handleSearch() : handleChat();
                 }
@@ -342,69 +389,66 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
                   <span className="ml-2">Processing outputs...</span>
                 </div>
               )}
-              {mode === "chat" && processedOutput && (
+              {mode === "chat" && (
                 <div className="space-y-4">
-                  {processedOutput.map((output) => (
-                    <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-                      <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
-                        Processed Output for Prompt {output.id}
-                      </h3>
-                      {renderProcessedOutput(output.output)}
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        <p>Confidence: {output.output.confidence}</p>
-                        {output.output.follow_up_questions && output.output.follow_up_questions.length > 0 && (
-                          <div>
-                            <p>Follow-up questions:</p>
-                            <ul>
-                              {output.output.follow_up_questions.map((question: string, qIndex: number) => (
-                                <li key={qIndex}>{question}</li>
-                              ))}
-                            </ul>
-                          </div>
+                  {chatHistory.length > 0 && (
+                    <Collapsible
+                      open={isPreviousDataExpanded}
+                      onOpenChange={setIsPreviousDataExpanded}
+                      className="w-full"
+                    >
+                      <CollapsibleTrigger className="flex items-center justify-center w-full p-2 bg-purple-600 text-white rounded-lg">
+                        <span>Earlier Messages {" "}</span>
+                        {isPreviousDataExpanded ? (
+                          <ChevronUp className="h-4 w-4 ml-2" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 ml-2" />
                         )}
-                      </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="space-y-4 mt-2">
+                          {processedOutput && processedOutput.map((output) => (
+                            <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+                              <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                Processed Output for Prompt {output.id}
+                              </h3>
+                              {renderProcessedOutput(output.output)}
+                            </div>
+                          ))}
+                          {chatHistory.slice(0, -2).map((message, index) => (
+                            <div key={index}>{renderChatMessage(message)}</div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                  {processedOutput && chatHistory.length === 0 && (
+                    <div className="space-y-4">
+                      {processedOutput.map((output) => (
+                        <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+                          <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+                            Processed Output for Prompt {output.id}
+                          </h3>
+                          {renderProcessedOutput(output.output)}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  {chatHistory.length > 0 && (
+                    <div className="space-y-4">
+                      {/* Render the last query */}
+                      {chatHistory.length >= 2 && (
+                        <div className="text-right bg-gray-200 p-2 rounded-lg">
+                          {renderChatMessage(chatHistory[chatHistory.length - 2])}
+                        </div>
+                      )}
+                      {/* Render the last response */}
+                      {renderChatMessage(chatHistory[chatHistory.length - 1])}
+                    </div>
+                  )}
                 </div>
               )}
-              {mode === "chat" ? (
-                <div className="space-y-4">
-                  {chatHistory.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`p-2 rounded-lg ${message.role === "user" ? "bg-primary text-primary-foreground ml-auto" : "bg-muted"}`}
-                    >
-                      {message.role === "user" ? (
-                        <p>{message.content as string}</p>
-                      ) : (
-                        <>
-                          {typeof message.content === "string" ? (
-                            <p>{message.content}</p>
-                          ) : (
-                            message.content
-                          )}
-                          {message.rawContent && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                              <p>Confidence: {message.rawContent.confidence}</p>
-                              {message.rawContent.follow_up_questions && message.rawContent.follow_up_questions.length > 0 && (
-                                <div>
-                                  <p>Follow-up questions:</p>
-                                  <ul>
-                                    {message.rawContent.follow_up_questions.map((question, qIndex) => (
-                                      <li key={qIndex}>{question}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                // Render search results
+              {mode === "search" && (
                 <>
                   {results.length > 0 && (
                     <p className="text-sm text-muted-foreground">
