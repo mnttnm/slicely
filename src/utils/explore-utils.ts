@@ -1,5 +1,8 @@
+"use server";
+import { getChatCompletion } from "@/lib/openai";
 import { searchVectorStore } from "@/lib/supabase";
 import { getInitialOutputs } from "@/server/actions/studio/actions";
+
 
 export async function getContextForSlicer(slicerId: string, limit = 100) {
   const { results } = await getInitialOutputs(slicerId, 1, limit);
@@ -20,7 +23,7 @@ export async function getContextForQuery(query: string, slicerId: string) {
   }
 }
 
-export function createMessages(context: string, instruction: string, query?: string) {
+export async function createMessages(context: string, instruction: string, query?: string) {
   const messages = [
     { role: "system", content: "You are a helpful AI assistant. Process the following content according to the given instructions." },
     { role: "user", content: `Instructions: ${instruction}\n Context: ${context}` }
@@ -33,18 +36,18 @@ export function createMessages(context: string, instruction: string, query?: str
   return messages;
 }
 
-export async function processWithLLM(messages: any[]) {
-  const response = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages }),
-  });
 
-  if (!response.ok) {
-    console.error("Error from chat API:", response.status, response.statusText);
-    throw new Error("Failed to process with LLM");
+export async function processWithLLM(messages: { role: string; content: string }[]) {
+  if (!messages || !Array.isArray(messages)) {
+    throw new Error("Invalid messages format");
   }
 
-  const data = await response.json();
-  return data.answer;
+  try {
+    const answer = await getChatCompletion(messages);
+    console.log("Chat completion response:", answer);
+    return answer;
+  } catch (error) {
+    console.error("Error in processWithLLM:", error);
+    throw new Error("Failed to process with LLM");
+  }
 }

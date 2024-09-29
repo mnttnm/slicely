@@ -1,3 +1,4 @@
+"use server";
 export async function getChatCompletion(messages: { role: string; content: string }[]) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -6,7 +7,7 @@ export async function getChatCompletion(messages: { role: string; content: strin
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: messages,
       temperature: 0.7,
     })

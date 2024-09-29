@@ -37,7 +37,7 @@ export type Database = {
       outputs: {
         Row: {
           created_at: string | null
-          embedding: number[] | null
+          embedding: string | null
           id: string
           page_number: number
           pdf_id: string
@@ -49,7 +49,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           page_number: number
           pdf_id: string
@@ -61,7 +61,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           page_number?: number
           pdf_id?: string
@@ -170,7 +170,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
-          llm_prompt: string | null
+          llm_prompts: Json | null
           name: string
           output_mode: string | null
           pdf_password: string | null
@@ -183,7 +183,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
-          llm_prompt?: string | null
+          llm_prompts?: Json | null
           name: string
           output_mode?: string | null
           pdf_password?: string | null
@@ -196,7 +196,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
-          llm_prompt?: string | null
+          llm_prompts?: Json | null
           name?: string
           output_mode?: string | null
           pdf_password?: string | null
@@ -233,6 +233,25 @@ export type Database = {
             }
             Returns: unknown
           }
+      get_context: {
+        Args: {
+          query_embedding: string
+          p_slicer_id: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          id: string
+          pdf_id: string
+          slicer_id: string
+          created_at: string
+          updated_at: string
+          page_number: number
+          section_info: Json
+          text_content: string
+          similarity: number
+        }[]
+      }
       halfvec_avg: {
         Args: {
           "": number[]

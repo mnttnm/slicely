@@ -13,6 +13,7 @@ import { getSignedPdfUrl, getSlicerDetails, linkPdfToSlicer } from "@/server/act
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { LLMPrompt } from "@/app/types";
 
 const SlicerPage = () => {
   const { id } = useParams();

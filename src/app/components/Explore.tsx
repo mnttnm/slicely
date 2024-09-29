@@ -6,7 +6,7 @@ import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Spinner } from "@/app/components/ui/spinner";
 import { FilterProvider } from "@/app/context/filter-context";
 import { useToast } from "@/app/hooks/use-toast";
-import { PDFMetadata, ProcessedOutputWithMetadata, Slicer } from "@/app/types";
+import { LLMPrompt, PDFMetadata, ProcessedOutputWithMetadata, Slicer } from "@/app/types";
 import { getInitialOutputs, getSlicerDetails, searchOutputs } from "@/server/actions/studio/actions";
 import { createMessages, getContextForQuery, getContextForSlicer, processWithLLM } from "@/utils/explore-utils";
 import { Info, MessageSquare, Search } from "lucide-react";
@@ -24,7 +24,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [totalResults, setTotalResults] = useState<number>(0);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const [processedOutput, setProcessedOutput] = useState<string | null>(null);
+  const [processedOutput, setProcessedOutput] = useState<{ id: string; output: string }[] | null>(null);
   const [slicer, setSlicer] = useState<Slicer | null>(null);
   const [linkedPdfs, setLinkedPdfs] = useState<PDFMetadata[]>([]);
 
@@ -109,11 +109,16 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       console.log("Processing initial outputs for slicer:", slicerId);
       const context = await getContextForSlicer(slicerId);
       console.log("Context retrieved:", `${context.substring(0, 100)}...`);
-      const messages = createMessages(context, slicer.llm_prompt || "Summarize the following content and provide insights:");
-      console.log("Messages created:", messages);
-      const result = await processWithLLM(messages);
-      console.log("Processed result:", result);
-      setProcessedOutput(result);
+
+      const processedOutputs = await Promise.all(slicer.llm_prompts.map(async (promptObj: LLMPrompt) => {
+        const messages = await createMessages(context, promptObj.prompt);
+        console.log("Messages created for prompt:", promptObj.id);
+        const result = await processWithLLM(messages);
+        return { id: promptObj.id, output: result };
+      }));
+
+      console.log("Processed results:", processedOutputs);
+      setProcessedOutput(processedOutputs);
     } catch (error) {
       console.error("Error processing initial outputs:", error);
       toast({
@@ -141,7 +146,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       if (context === "No relevant information found.") {
         throw new Error("No relevant information found");
       }
-      const messages = createMessages(context, "Answer the following question based on the provided context:", query);
+      const messages = await createMessages(context, "Answer the following question based on the provided context:", query);
       console.log("Messages created:", JSON.stringify(messages, null, 2));
       const answer = await processWithLLM(messages);
       console.log("LLM answer received:", answer);
@@ -255,11 +260,15 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
                 </div>
               )}
               {processedOutput && (
-                <div className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-                  <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    Processed Output
-                  </h3>
-                  <p className="text-sm text-gray-800 dark:text-gray-200">{processedOutput}</p>
+                <div className="space-y-4">
+                  {processedOutput.map((output) => (
+                    <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+                      <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        Processed Output for Prompt {output.id}
+                      </h3>
+                      <p className="text-sm text-gray-800 dark:text-gray-200">{output.output}</p>
+                    </div>
+                  ))}
                 </div>
               )}
               {mode === "chat" ? (

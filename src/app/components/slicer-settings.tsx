@@ -4,9 +4,9 @@ import { Input } from "@/app/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Textarea } from "@/app/components/ui/textarea";
 import { useToast } from "@/app/hooks/use-toast";
-import { ExtractedText, Slicer } from "@/app/types";
+import { ExtractedText, LLMPrompt, Slicer } from "@/app/types";
 import { updateSlicer } from "@/server/actions/studio/actions";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Plus, X } from "lucide-react";
 import { useState } from "react";
 import ExtractedTextView from "./extracted-text-view";
 import { Button } from "./ui/button";
@@ -22,6 +22,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
   const [showPassword, setShowPassword] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
   const { toast } = useToast();
+  const [newPrompt, setNewPrompt] = useState("");
 
   const saveSlicer = async () => {
     try {
@@ -43,6 +44,22 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdateSlicer({ ...slicerObject, pdf_password: e.target.value });
     setPasswordChanged(true);
+  };
+
+  const addLLMPrompt = () => {
+    if (newPrompt.trim()) {
+      const updatedPrompts: LLMPrompt[] = [
+        ...(slicerObject.llm_prompts || []),
+        { id: crypto.randomUUID(), prompt: newPrompt.trim() }
+      ];
+      onUpdateSlicer({ ...slicerObject, llm_prompts: updatedPrompts });
+      setNewPrompt("");
+    }
+  };
+
+  const removeLLMPrompt = (id: string) => {
+    const updatedPrompts = slicerObject.llm_prompts.filter(prompt => prompt.id !== id);
+    onUpdateSlicer({ ...slicerObject, llm_prompts: updatedPrompts });
   };
 
   return (
@@ -88,12 +105,43 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="llm_prompt">LLM Prompt</Label>
-                <Textarea
-                  id="llm_prompt"
-                  value={slicerObject.llm_prompt || ""}
-                  onChange={(e) => onUpdateSlicer({ ...slicerObject, llm_prompt: e.target.value })}
-                />
+                <Label htmlFor="llm_prompts">LLM Prompts</Label>
+                {slicerObject.llm_prompts?.map((prompt, index) => (
+                  <div key={prompt.id} className="flex items-center space-x-2">
+                    <Textarea
+                      value={prompt.prompt}
+                      onChange={(e) => {
+                        const updatedPrompts = [...slicerObject.llm_prompts];
+                        updatedPrompts[index].prompt = e.target.value;
+                        onUpdateSlicer({ ...slicerObject, llm_prompts: updatedPrompts });
+                      }}
+                      className="flex-grow"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeLLMPrompt(prompt.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center space-x-2">
+                  <Textarea
+                    value={newPrompt}
+                    onChange={(e) => setNewPrompt(e.target.value)}
+                    placeholder="Enter a new LLM prompt"
+                    className="flex-grow"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={addLLMPrompt}
+                    disabled={!newPrompt.trim()}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="output_mode">Output Mode</Label>

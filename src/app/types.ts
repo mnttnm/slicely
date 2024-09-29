@@ -34,13 +34,18 @@ export interface ProcessingRules {
   skipped_pages: number[];         // Array of page numbers to skip
 };
 
-export type Slicer = {
+export interface LLMPrompt {
+  id: string;
+  prompt: string;
+}
+
+export interface Slicer {
   id: string;
   user_id: string;    // ID of the user who created the slicer
   name: string;       // Name of the slicer
   description: string | null; // Description of the slicer (optional)
   processing_rules: ProcessingRules; // Processing rules associated with the slicer (optional)
-  llm_prompt: string | null; // Prompt for the language model (optional)
+  llm_prompts: LLMPrompt[]; // Changed from llm_prompt to llm_prompts
   output_mode: string | null; // Mode of output, default is 'text' (optional)
   webhook_url: string | null; // URL for webhook (optional)
   pdf_password: string | null; // Changed from 'password' to 'pdf_password'
