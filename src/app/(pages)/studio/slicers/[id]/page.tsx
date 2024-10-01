@@ -303,7 +303,7 @@ const SlicerPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
+      <header className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-2 flex justify-between items-center">
         <div className="w-1/3"></div> {/* Placeholder for left side */}
         <Breadcrumb className="flex-1 flex justify-center">
           <BreadcrumbList>
@@ -326,13 +326,13 @@ const SlicerPage = () => {
         </Breadcrumb>
         <div className="w-1/3"></div> {/* Placeholder for right side */}
       </header>
-      <Tabs defaultValue="slicerStudio" className="flex flex-col h-full">
+      <Tabs defaultValue="explore" className="flex flex-col flex-grow overflow-hidden">
         <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
           <TabsTrigger value="slicerStudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
           <TabsTrigger value="linkedPdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>
           <TabsTrigger value="explore" className="px-4 py-2">Explore</TabsTrigger>
         </TabsList>
-        <TabsContent value="slicerStudio" className="flex-1 overflow-hidden">
+        <TabsContent value="slicerStudio" className="flex-grow overflow-hidden">
           <div className="flex h-full">
             <div className="flex-1">
               <PDFViewer
@@ -357,14 +357,14 @@ const SlicerPage = () => {
             </div>
           </div>
         </TabsContent>
-        <TabsContent value="linkedPdfs" className="flex-1 overflow-hidden">
+        <TabsContent value="linkedPdfs" className="flex-grow overflow-hidden">
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
         </TabsContent>
-        <TabsContent value="explore" className="flex-1 overflow-hidden">
+        <TabsContent value="explore" className="flex-grow overflow-hidden">
           <Explore slicerId={slicer.id} />
         </TabsContent>
-      </Tabs >
-    </div >
+      </Tabs>
+    </div>
   );
 };
 

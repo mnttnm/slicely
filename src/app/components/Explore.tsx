@@ -334,7 +334,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
 
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
-      <header className="flex items-center justify-between w-full p-4">
+      <header className="flex items-center justify-between w-full p-2">
         <div className="flex items-center space-x-2 w-full">
           <div className="flex-1 flex items-center border rounded-lg overflow-hidden">
             <div className="flex border-r">
@@ -375,128 +375,128 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
           </Button>
         </div>
       </header>
-      <main className="flex-1 overflow-hidden flex">
-        <div className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
-              {isLoading && (
-                <div className="flex justify-center items-center py-4">
-                  <Spinner />
-                  <span className="ml-2">Processing outputs...</span>
-                </div>
-              )}
-              {mode === "chat" && (
-                <div className="space-y-4">
-                  {chatHistory.length > 0 && (
-                    <Collapsible
-                      open={isPreviousDataExpanded}
-                      onOpenChange={setIsPreviousDataExpanded}
-                      className="w-full"
-                    >
-                      <CollapsibleTrigger className="flex items-center justify-center w-full p-2 bg-purple-600 text-white rounded-lg">
-                        <span>Earlier Messages {" "}</span>
-                        {isPreviousDataExpanded ? (
-                          <ChevronUp className="h-4 w-4 ml-2" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 ml-2" />
-                        )}
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="space-y-4 mt-2">
-                          {processedOutput && processedOutput.map((output) => (
-                            <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-                              <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
-                                Processed Output for Prompt {output.id}
-                              </h3>
-                              {renderProcessedOutput(output.output)}
-                            </div>
-                          ))}
-                          {chatHistory.slice(0, -2).map((message, index) => (
-                            <div key={index}>{renderChatMessage(message)}</div>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
-                  {processedOutput && chatHistory.length === 0 && (
-                    <div className="space-y-4">
-                      {processedOutput.map((output) => (
-                        <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-                          <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
-                            Processed Output for Prompt {output.id}
-                          </h3>
-                          {renderProcessedOutput(output.output)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {chatHistory.length > 0 && (
-                    <div className="space-y-4">
-                      {/* Render the last query */}
-                      {chatHistory.length >= 2 && (
-                        <div className="text-right bg-gray-200 p-2 rounded-lg">
-                          {renderChatMessage(chatHistory[chatHistory.length - 2])}
-                        </div>
+      <main className="flex-1 overflow-hidden flex flex-col">
+        <ScrollArea className="flex-1">
+          <div className="p-2 space-y-4 overflow-hidden">
+            {isLoading && (
+              <div className="flex justify-center items-center py-4">
+                <Spinner />
+                <span className="ml-2">Processing outputs...</span>
+              </div>
+            )}
+            {mode === "chat" && (
+              <div className="space-y-4">
+                {chatHistory.length > 0 && (
+                  <Collapsible
+                    open={isPreviousDataExpanded}
+                    onOpenChange={setIsPreviousDataExpanded}
+                    className="w-full"
+                  >
+                    <CollapsibleTrigger className="flex items-center justify-center w-full p-2 bg-purple-600 text-white rounded-lg">
+                      <span>Earlier Messages {" "}</span>
+                      {isPreviousDataExpanded ? (
+                        <ChevronUp className="h-4 w-4 ml-2" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 ml-2" />
                       )}
-                      {/* Render the last response */}
-                      {renderChatMessage(chatHistory[chatHistory.length - 1])}
-                    </div>
-                  )}
-                </div>
-              )}
-              {mode === "search" && (
-                <>
-                  {results.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      Showing {results.length} out of {totalResults} results
-                    </p>
-                  )}
-                  {results.map((result) => (
-                    <div key={result.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-md font-medium text-gray-900 dark:text-gray-100">
-                          {result.pdfs.file_name} - Page {result.page_number}
-                        </h3>
-                        <Button
-                          variant="ghost"
-                          className="text-xs text-muted-foreground"
-                          onClick={() => setShowMetadata(showMetadata === result.id ? null : result.id)}
-                        >
-                          <Info className="h-4 w-4" />
-                        </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="space-y-4 mt-2">
+                        {processedOutput && processedOutput.map((output) => (
+                          <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+                            <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+                              Processed Output for Prompt {output.id}
+                            </h3>
+                            {renderProcessedOutput(output.output)}
+                          </div>
+                        ))}
+                        {chatHistory.slice(0, -2).map((message, index) => (
+                          <div key={index}>{renderChatMessage(message)}</div>
+                        ))}
                       </div>
-                      {result.updated_at && (
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Updated: {new Date(result.updated_at).toLocaleString()}
-                        </p>
-                      )}
-                      {showMetadata === result.id && (
-                        <div className="text-xs text-muted-foreground mb-2">
-                          <p>Type: {result.section_info.type}</p>
-                          {Object.entries(result.section_info.metadata).map(([key, value]) => (
-                            <p key={key}>
-                              {key}: {JSON.stringify(value)}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-sm mb-2 text-gray-800 dark:text-gray-200">{result.text_content}</p>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                {processedOutput && chatHistory.length === 0 && (
+                  <div className="space-y-4">
+                    {processedOutput.map((output) => (
+                      <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+                        <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          Processed Output for Prompt {output.id}
+                        </h3>
+                        {renderProcessedOutput(output.output)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {chatHistory.length > 0 && (
+                  <div className="space-y-4">
+                    {/* Render the last query */}
+                    {chatHistory.length >= 2 && (
+                      <div className="text-right bg-gray-200 p-2 rounded-lg">
+                        {renderChatMessage(chatHistory[chatHistory.length - 2])}
+                      </div>
+                    )}
+                    {/* Render the last response */}
+                    {renderChatMessage(chatHistory[chatHistory.length - 1])}
+                  </div>
+                )}
+              </div>
+            )}
+            {mode === "search" && (
+              <>
+                {results.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Showing {results.length} out of {totalResults} results
+                  </p>
+                )}
+                {results.map((result) => (
+                  <div key={result.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-md font-medium text-gray-900 dark:text-gray-100">
+                        {result.pdfs.file_name} - Page {result.page_number}
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        className="text-xs text-muted-foreground"
+                        onClick={() => setShowMetadata(showMetadata === result.id ? null : result.id)}
+                      >
+                        <Info className="h-4 w-4" />
+                      </Button>
                     </div>
-                  ))}
-                  {hasMore && !isLoading && (
-                    <div className="flex justify-center">
-                      <Button onClick={handleLoadMore}>Load More</Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+                    {result.updated_at && (
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Updated: {new Date(result.updated_at).toLocaleString()}
+                      </p>
+                    )}
+                    {showMetadata === result.id && (
+                      <div className="text-xs text-muted-foreground mb-2">
+                        <p>Type: {result.section_info.type}</p>
+                        {Object.entries(result.section_info.metadata).map(([key, value]) => (
+                          <p key={key}>
+                            {key}: {JSON.stringify(value)}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-sm mb-2 text-gray-800 dark:text-gray-200">{result.text_content}</p>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </ScrollArea>
+        {hasMore && !isLoading && mode === "search" && (
+          <div className="flex justify-center p-4">
+            <Button onClick={handleLoadMore}>Load More</Button>
+          </div>
+        )}
       </main>
     </div>
   );
-} export default function Explore({ slicerId }: { slicerId: string }) {
+}
+
+export default function Explore({ slicerId }: { slicerId: string }) {
   if (!slicerId) {
     return <div>Error: No slicer ID provided</div>;
   }
