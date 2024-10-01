@@ -87,9 +87,9 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const { toast } = useToast();
   const [processedOutput, setProcessedOutput] = useState<ProcessedOutput[] | null>(null);
   const [slicer, setSlicer] = useState<Slicer | null>(null);
-  const [setLinkedPdfs] = useState<PDFMetadata[]>([]);
+  const [, setLinkedPdfs] = useState<PDFMetadata[]>([]);
   const [initialDataFetched, setInitialDataFetched] = useState(false);
-  const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
+  const [, setExpandedMessages] = useState<Set<number>>(new Set());
   const [isPreviousDataExpanded, setIsPreviousDataExpanded] = useState(false);
 
   const fetchResults = useCallback(async (searchQuery: string, pageNum: number) => {
@@ -288,10 +288,6 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       processInitialOutputs();
     }
   }, [slicer, processInitialOutputs, mode, processedOutput]);
-
-  useEffect(() => {
-    console.log("Processed output updated:", processedOutput);
-  }, [processedOutput]);
 
 
   // Modify the useEffect to expand only the latest message
