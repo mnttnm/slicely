@@ -4,6 +4,7 @@ import Explore from "@/app/components/explore";
 import { LinkedPdfs } from "@/app/components/linked-pdfs";
 import PDFViewer from "@/app/components/pdf-viewer";
 import SlicerSettings from "@/app/components/slicer-settings";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/app/components/ui/breadcrumb";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
 import { useTextExtraction } from "@/app/hooks/use-text-extraction";
@@ -11,7 +12,7 @@ import { ExtractedText, FabricRect, PDFMetadata, ProcessingRules, Slicer } from 
 import { serializeFabricRect } from "@/app/utils/fabric-helper";
 import { getSignedPdfUrl, getSlicerDetails, linkPdfToSlicer } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 const SlicerPage = () => {
@@ -29,6 +30,8 @@ const SlicerPage = () => {
 
   const { pdfDocument } = usePDFViewer();
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
+
+  const router = useRouter();
 
   useEffect(() => {
     // once slicer detail are fetched and the pdfdocument is loaded
@@ -300,6 +303,29 @@ const SlicerPage = () => {
 
   return (
     <div className="flex flex-col h-full">
+      <header className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
+        <div className="w-1/3"></div> {/* Placeholder for left side */}
+        <Breadcrumb className="flex-1 flex justify-center">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink onClick={() => router.push("/studio")}>
+                Studio
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink onClick={() => router.push("/studio?tab=slicers")}>
+                Slicers
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{slicer?.name || "Slicer Details"}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <div className="w-1/3"></div> {/* Placeholder for right side */}
+      </header>
       <Tabs defaultValue="slicerStudio" className="flex flex-col h-full">
         <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
           <TabsTrigger value="slicerStudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
