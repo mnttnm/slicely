@@ -33,27 +33,17 @@ const Content = z.discriminatedUnion("response_type", [
   z.object({ response_type: z.literal("text"), content: TextContent }),
 ]);
 
+export type FormattedResponse = z.infer<typeof Content>;
+
 const OutputFormatter = z.object({
   formatted_response: Content,
   raw_response: z.string(),
   confidence: z.number(),
   follow_up_questions: z.array(z.string()),
+  context_object_ids: z.array(z.string()),
 });
 
-// New TypeScript type based on the Zod schema
-export type FormattedResponse = {
-  formatted_response: {
-    response_type: "single_value" | "chart" | "table" | "text";
-    content:
-    | { value: number; unit?: string }
-    | { chart_type: "bar" | "line"; data: Array<{ x: string; y: number }>; x_label: string; y_label: string }
-    | { headers: string[]; rows: Array<Array<string | number>> }
-    | { text: string };
-  };
-  raw_response: string;
-  confidence: number;
-  follow_up_questions: string[];
-};
+export type LLMResponse = z.infer<typeof OutputFormatter>;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -62,7 +52,14 @@ const openai = new OpenAI({
 export const chatCompletion = async (messages: any[]) => {
   const systemMessage = {
     role: "system",
-    content: "You are an AI assistant responding to queries about PDF content. Use the output_formatter function to structure your responses. Always provide both a formatted_response (choosing the most appropriate type from single_value, chart, table, or text) and a raw_response. The raw_response should be a comprehensive textual answer to the user's query. The formatted_response should represent the same information in a structured format suitable for visualization or display.",
+    content: `You are an AI assistant responding to queries about PDF content. 
+Use the output_formatter function to structure your responses. 
+Always provide both a formatted_response (choosing the most appropriate type from single_value, chart, table, or text) 
+and a raw_response. The raw_response should be a comprehensive textual answer to the user's query. 
+The formatted_response should represent the same information in a structured format suitable for visualization
+or display. Additionally, include the context_object_ids array with the {id} of the context objects that are most relevant
+in context of the generated response. These IDs are in the format <context_id>{id}</context_id> in the provided context, do not include the 
+<context_id> tags in the context_object_ids array.`,
   };
 
   console.log("llm prompt messages", [systemMessage, ...messages]);
@@ -76,7 +73,8 @@ export const chatCompletion = async (messages: any[]) => {
   const functionCall = response.choices[0].message.tool_calls?.[0];
 
   if (functionCall && functionCall.function.name === "output_formatter") {
-    return JSON.parse(functionCall.function.arguments);
+    const result = JSON.parse(functionCall.function.arguments);
+    return result as LLMResponse;
   } else {
     throw new Error("Unexpected response format from OpenAI API");
   }

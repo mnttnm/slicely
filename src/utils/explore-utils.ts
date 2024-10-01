@@ -9,14 +9,25 @@ export async function getContextForSlicer(slicerId: string, limit = 100) {
   return results.map(result => result.text_content).join("\n\n");
 }
 
-export async function getContextForQuery(query: string, slicerId: string) {
+export interface ContextObject {
+  id: string;
+  text_content: string;
+}
+
+export async function getContextForQuery(query: string, slicerId: string): Promise<{ context: string; contextObjects: ContextObject[] }> {
   try {
     const relevantDocuments = await searchVectorStore(query, slicerId);
     if (!relevantDocuments || relevantDocuments.length === 0) {
       console.warn("No relevant documents found for the query");
-      return "No relevant information found.";
+      return { context: "", contextObjects: [] };
     }
-    return relevantDocuments.map((doc: any) => doc.text_content).join("\n");
+    const contextObjects = relevantDocuments.map((doc: any) => ({
+      id: doc.id,
+      text_content: doc.text_content,
+      // Add other relevant metadata here
+    }));
+    const context = contextObjects.map(obj => `<context_id>${obj.id}</context_id> ${obj.text_content}`).join("\n\n");
+    return { context, contextObjects };
   } catch (error) {
     console.error("Error in getContextForQuery:", error);
     throw error;
@@ -31,7 +42,6 @@ export async function createMessages(context: string, instruction: string, query
 
   return messages;
 }
-
 
 export async function processWithLLM(messages: { role: string; content: string }[]) {
   if (!messages || !Array.isArray(messages)) {
