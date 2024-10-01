@@ -8,12 +8,17 @@ import { useUser } from "@/app/hooks/use-user";
 import { getSlicers, getUserPDFs } from "@/server/actions/studio/actions";
 import { Tables } from "@/types/supabase-types/database.types";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const StudioPage = () => {
+  const [activeTab, setActiveTab] = useState<string>("pdfs");
   const [pdfs, setPdfs] = useState<(Tables<"pdfs"> & { slicer_ids: string[] })[]>([]);
   const [slicers, setSlicers] = useState<Tables<"slicers">[]>([]);
   const { user, loading } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const fetchData = async () => {
     try {
@@ -23,7 +28,6 @@ const StudioPage = () => {
       setSlicers(fetchedSlicers);
     } catch (error) {
       console.error("Error fetching data:", error);
-      // Handle error (e.g., show a toast notification)
     }
   };
 
@@ -31,8 +35,22 @@ const StudioPage = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "pdfs" || tab === "slicers") {
+      setActiveTab(tab);
+    } else if (pathname === "/studio") {
+      router.push("/studio?tab=pdfs");
+    }
+  }, [pathname, router, searchParams]);
+
   const handleUploadSuccess = () => {
-    fetchData(); // Add this line to refetch data
+    fetchData();
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    router.push(`/studio?tab=${value}`);
   };
 
   if (loading) {
@@ -57,7 +75,7 @@ const StudioPage = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="pdfs" className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList>
           <TabsTrigger value="pdfs">Files</TabsTrigger>
           <TabsTrigger value="slicers">Slicers</TabsTrigger>

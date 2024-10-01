@@ -1,6 +1,6 @@
-import StudioPage from "./(pages)/studio/page";
 import { createClient } from "@/server/services/supabase/server";
 import { redirect } from "next/navigation";
+import StudioPage from "./(pages)/studio/_page";
 
 export default async function Home() {
 

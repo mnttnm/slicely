@@ -13,7 +13,6 @@ import { getSignedPdfUrl, getSlicerDetails, linkPdfToSlicer } from "@/server/act
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { LLMPrompt } from "@/app/types";
 
 const SlicerPage = () => {
   const { id } = useParams();
@@ -187,17 +186,17 @@ const SlicerPage = () => {
       });
     } else if (operation === "remove") {
       if (!payload.pageNumber || !payload.id) return;
-      
+
       setProcessingRules(prev => {
         if (!prev) return { annotations: [], skipped_pages: [] };
         return {
           ...prev,
-          annotations: prev.annotations.map(annotation => 
-            annotation.page === payload.pageNumber 
+          annotations: prev.annotations.map(annotation =>
+            annotation.page === payload.pageNumber
               ? {
-                  ...annotation,
-                  rectangles: annotation.rectangles.filter(rect => rect.id !== payload.id) as FabricRect[]
-                }
+                ...annotation,
+                rectangles: annotation.rectangles.filter(rect => rect.id !== payload.id) as FabricRect[]
+              }
               : annotation
           )
         };
@@ -308,9 +307,9 @@ const SlicerPage = () => {
           <TabsTrigger value="explore" className="px-4 py-2">Explore</TabsTrigger>
         </TabsList>
         <TabsContent value="slicerStudio" className="flex-1 overflow-hidden">
-            <div className="flex h-full">
-              <div className="flex-1">
-                <PDFViewer
+          <div className="flex h-full">
+            <div className="flex-1">
+              <PDFViewer
                 url={pdfUrl}
                 processingRules={processingRules}
                 onRectangleUpdate={onRectangleUpdate}
@@ -321,15 +320,15 @@ const SlicerPage = () => {
                 onPageExcludeAll={onPageExcludeAll}
                 onPageIncludeAll={onPageIncludeAll}
                 pdf_password={slicer.pdf_password ?? undefined}
-                />
-              </div>
-              <div className="flex-1 border-l border-gray-200 dark:border-gray-700">
-                <SlicerSettings
-                  slicerObject={slicer}
-                  extractedTexts={extractedTexts}
-                  onUpdateSlicer={updateSlicerDetails}
-                />
-              </div>
+              />
+            </div>
+            <div className="flex-1 border-l border-gray-200 dark:border-gray-700">
+              <SlicerSettings
+                slicerObject={slicer}
+                extractedTexts={extractedTexts}
+                onUpdateSlicer={updateSlicerDetails}
+              />
+            </div>
           </div>
         </TabsContent>
         <TabsContent value="linkedPdfs" className="flex-1 overflow-hidden">
