@@ -189,6 +189,11 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     if (!slicer.llm_prompts) {
       return;
     }
+
+    if (linkedPdfs.length === 0 || linkedPdfs.every(pdf => pdf.file_processing_status !== "processed")) {
+      return;
+    }
+
     setIsLoading(true);
     try {
       const processedOutputs = await Promise.all(slicer.llm_prompts?.map(async (promptObj: LLMPrompt) => {
@@ -316,10 +321,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [fetchSlicerDetails]);
 
   useEffect(() => {
-    if (slicer && mode === "chat" && !processedOutput) {
+    if (slicer && mode === "chat" && !processedOutput && linkedPdfs.some(pdf => pdf.file_processing_status === "processed")) {
       processInitialOutputs();
     }
-  }, [slicer, processInitialOutputs, mode, processedOutput]);
+  }, [slicer, processInitialOutputs, mode, processedOutput, linkedPdfs]);
 
 
   // Modify the useEffect to expand only the latest message
@@ -380,13 +385,20 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   );
 
   const ChatMode = ({ chatHistory, processedOutput }: { chatHistory: ChatMessage[]; processedOutput: ProcessedOutput[] }) => (
-    <div className="space-y-4">
-      {chatHistory.length > 0 && (
-        <RelatedDocuments contextObjects={chatHistory[chatHistory.length - 1].contextObjects || []} />
+    <>
+      {chatHistory.length > 0 ? (
+        <div className="space-y-4">
+          <PreviousMessagesCollapsible chatHistory={chatHistory} processedOutput={processedOutput} />
+          <RecentChatMessages chatHistory={chatHistory} />
+        </div>
+      ) : processedOutput?.length > 0 ? (
+        <ProcessedOutputs processedOutput={processedOutput} />
+      ) : (
+        <div className="space-y-4 flex flex-col items-center justify-center">
+          <p>Seems like there is no extracted text from the linked PDFs, please confirm if you have processed the PDFs.</p>
+        </div>
       )}
-      <PreviousMessagesCollapsible chatHistory={chatHistory} processedOutput={processedOutput} />
-      <RecentChatMessages chatHistory={chatHistory} />
-    </div>
+    </>
   );
 
   const PreviousMessagesCollapsible = ({ chatHistory, processedOutput }: { chatHistory: ChatMessage[]; processedOutput: ProcessedOutput[] }) => (
@@ -441,6 +453,9 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
         </div>
       )}
       {renderChatMessage(chatHistory[chatHistory.length - 1])}
+      {chatHistory.length > 0 && (
+        <RelatedDocuments contextObjects={chatHistory[chatHistory.length - 1].contextObjects || []} />
+      )}
     </>
   );
 
@@ -451,9 +466,13 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
           Showing {results.length} out of {totalResults} results
         </p>
       )}
-      {results.map((result) => (
-        <SearchResult key={result.id} result={result} showMetadata={showMetadata} setShowMetadata={setShowMetadata} />
-      ))}
+      {results.length === 0 ? (
+        <NoResultsState />
+      ) : (
+        results.map((result) => (
+          <SearchResult key={result.id} result={result} showMetadata={showMetadata} setShowMetadata={setShowMetadata} />
+        ))
+      )}
     </>
   );
 
@@ -548,13 +567,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
           <div className="flex-1 flex flex-col">
             <ScrollArea className="flex-1">
               <div className="p-2 space-y-4 overflow-hidden">
-                {results.length === 0 ? (
-                  <NoResultsState />
+                {mode === "chat" ? (
+                  <ChatMode chatHistory={chatHistory} processedOutput={processedOutput || []} />
                 ) : (
-                  <>
-                    {mode === "chat" && <ChatMode chatHistory={chatHistory} processedOutput={processedOutput || []} />}
-                    {mode === "search" && <SearchMode results={results} totalResults={totalResults} showMetadata={showMetadata} setShowMetadata={setShowMetadata} />}
-                  </>
+                  <SearchMode results={results} totalResults={totalResults} showMetadata={showMetadata} setShowMetadata={setShowMetadata} />
                 )}
               </div>
             </ScrollArea>
