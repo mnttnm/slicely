@@ -1,6 +1,8 @@
 "use client";
 
+import CreateSlicerDrawer from "@/app/components/create-slicer-drawer";
 import { Slicer } from "@/app/components/slicer";
+import { Button } from "@/app/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import UploadButton from "@/app/components/upload-button";
@@ -19,6 +21,7 @@ const StudioPage = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isCreatingSlicer, setIsCreatingSlicer] = useState<boolean>(false);
 
   const fetchData = async () => {
     try {
@@ -61,17 +64,29 @@ const StudioPage = () => {
     return <div>Please log in to access the Studio.</div>;
   }
 
+  const handleCreateSlicer = () => {
+    // initiate slicer creation
+    // once success, change the active tab to slicers
+    setIsCreatingSlicer(true);
+  };
+
   return (
-    <div className="px-4">
+    <div className="p-4">
       <div className="flex justify-between items-center py-1">
         <h1 className="text-xl">Studio</h1>
         <div className="flex gap-2">
-          <UploadButton
-            onSuccess={handleUploadSuccess}
-            buttonText="Upload PDF"
-            accept=".pdf"
-            isTemplate={false}
-          />
+          <div className="flex gap-2">
+            <UploadButton
+              onSuccess={handleUploadSuccess}
+              buttonText="Upload PDF"
+              accept=".pdf"
+              isTemplate={false}
+              variant={activeTab === "pdfs" ? "default" : "outline"}
+            />
+            <Button variant={activeTab === "slicers" ? "default" : "outline"} onClick={handleCreateSlicer}>
+              Create Slicer
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -123,14 +138,17 @@ const StudioPage = () => {
           {slicers.length === 0 ? (
             <p className="text-gray-500">No slicers available.</p>
           ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {slicers.map((slicer) => (
-                  <Slicer key={slicer.id} id={slicer.id} fileName={slicer.name} pdf_password={slicer.pdf_password} />
-                ))}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {slicers.map((slicer) => (
+                <Slicer key={slicer.id} id={slicer.id} fileName={slicer.name} pdf_password={slicer.pdf_password} />
+              ))}
+            </div>
           )}
         </TabsContent>
       </Tabs>
+      {isCreatingSlicer && (
+        <CreateSlicerDrawer open={isCreatingSlicer} onOpenChange={setIsCreatingSlicer} />
+      )}
     </div>
   );
 };

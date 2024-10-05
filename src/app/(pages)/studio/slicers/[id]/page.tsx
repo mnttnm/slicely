@@ -326,7 +326,7 @@ const SlicerPage = () => {
         </Breadcrumb>
         <div className="w-1/3"></div> {/* Placeholder for right side */}
       </header>
-      <Tabs defaultValue="explore" className="flex flex-col flex-grow overflow-hidden">
+      <Tabs defaultValue="slicerStudio" className="flex flex-col flex-grow overflow-hidden">
         <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
           <TabsTrigger value="slicerStudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
           <TabsTrigger value="linkedPdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>

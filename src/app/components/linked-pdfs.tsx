@@ -146,7 +146,7 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
           </Button>
           <UploadButton
             onSuccess={onUploadSuccess}
-            buttonText="Upload More file"
+            buttonText="Upload More files"
             variant="outline"
             isTemplate={false}
           />

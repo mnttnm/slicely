@@ -60,9 +60,13 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
       const formData = new FormData();
       formData.append("pdf", file);
       const newPdf = await uploadPdf(formData);
-      setUserPDFs([...userPDFs, newPdf]);
-      setSelectedFile(newPdf.id.toString());
-      setUploadedFile({ id: newPdf.id.toString(), name: file.name });
+
+      if (newPdf.id) {
+        setUserPDFs([...userPDFs, newPdf]);
+        setSelectedFile(newPdf.id.toString());
+        setUploadedFile({ id: newPdf.id.toString(), name: file.name });
+        setIsUploading(false);
+      }
     } catch (error) {
       console.error("Failed to upload PDF:", error);
       // Handle error (e.g., show error message to user)

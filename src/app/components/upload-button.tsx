@@ -11,6 +11,7 @@ interface UploadButtonProps extends ButtonProps {
   accept?: string;
   buttonText?: string;
   isTemplate?: boolean;
+  className?: string; // Added className prop
 }
 
 const UploadButton = ({
@@ -18,6 +19,7 @@ const UploadButton = ({
   accept = ".pdf",
   buttonText = "Upload PDF",
   isTemplate = false,
+  className = "", // Destructure className with default value
   ...buttonProps
 }: UploadButtonProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +44,7 @@ const UploadButton = ({
       <Button
         onClick={() => fileInputRef.current?.click()}
         disabled={isUploading}
+        className={`flex items-center ${className}`} // Merge className with existing styles
         {...buttonProps}
       >
         {isUploading ? (
