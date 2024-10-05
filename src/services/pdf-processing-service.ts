@@ -2,7 +2,6 @@
 
 import { FabricRect, PDFMetadata, ProcessedOutput } from "@/app/types";
 import { extractTextFromRectangle } from "@/app/utils/text-extraction";
-import { chatCompletion } from "@/lib/openai";
 import { getAnnotations, getSignedPdfUrl } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -33,28 +32,6 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
 
     const extractionPromises = rectangles.map(async (rect: FabricRect) => {
       const text = await extractTextFromRectangle(pageObj, rect);
-
-      // Apply annotation-level rule if exists
-      const annotationRule = processingRules.annotations.find(r => r.id === rect.id);
-      let processedText = text;
-      if (annotationRule) {
-        const result = await chatCompletion([{ role: "user", content: text }]);
-        processedText = JSON.parse(result as string).content;
-      }
-
-      // Apply page-level rule if exists
-      const pageRule = processingRules.annotations.find(r => r.page === page);
-      if (pageRule) {
-        const result = await chatCompletion([{ role: "user", content: processedText }]);
-        processedText = JSON.parse(result as string).content;
-      }
-
-      // Apply file-level rule if exists
-      if (processingRules.file_rule) {
-        const result = await chatCompletion([{ role: "user", content: processedText }]);
-        processedText = JSON.parse(result as string).content;
-      }
-
       const processedOutput: TablesInsert<"outputs"> = {
         pdf_id: pdf.id,
         slicer_id: slicerId,
@@ -71,7 +48,7 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Pr
             }
           }
         },
-        text_content: processedText,
+        text_content: text,
       };
 
       return processedOutput as ProcessedOutput;
