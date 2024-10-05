@@ -1,13 +1,14 @@
 "use server";
 
-import { PDFMetadata, ProcessedOutput, ProcessedOutputWithMetadata, ProcessingRules, SectionInfo, Slicer } from "@/app/types";
+import { LLMPrompt, PDFMetadata, ProcessedOutput, ProcessedOutputWithMetadata, ProcessingRules, SectionInfo, Slicer } from "@/app/types";
 import { deserializeProcessingRules, serializeProcessingRules } from "@/app/utils/fabric-helper";
 import { generateEmbedding } from "@/lib/embedding-utils";
 import { createClient } from "@/server/services/supabase/server";
 import { Tables, TablesInsert } from "@/types/supabase-types/database.types";
+import { hashPassword, verifyPassword } from "@/utils/password-utils";
 import { revalidatePath } from "next/cache";
 
-export async function uploadPdf(formData: FormData): Promise<TablesInsert<"pdfs">> {
+export async function uploadPdf(formData: FormData): Promise<Tables<"pdfs">> {
   const supabase = createClient();
   // Get the authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -244,12 +245,20 @@ export async function updateSlicer(slicerId: string, slicer: Slicer) {
     }
   }
 
+  console.log("slicer.llm_prompts", slicer.llm_prompts);
+
+  const llmPrompts = slicer.llm_prompts.map((prompt: LLMPrompt) => ({
+    id: prompt.id,
+    prompt: prompt.prompt
+  }));
+
   const { data, error } = await supabase
     .from("slicers")
-    .update({ 
-      ...slicer, 
+    .update({
+      ...slicer,
       processing_rules: serializedProcessingRules,
-      pdf_password: updatedPassword
+      pdf_password: updatedPassword,
+      llm_prompts: llmPrompts
     })
     .eq("id", slicerId)
     .eq("user_id", user.id)
@@ -498,7 +507,7 @@ export async function saveProcessedOutput(output: TablesInsert<"outputs">): Prom
   // Generate embedding for the output text
   const embedding = await generateEmbedding(output.text_content);
   // Add the embedding to the output object
-  output.embedding = embedding;
+  output.embedding = JSON.stringify(embedding);
   const { data, error } = await supabase
     .from("outputs")
     .insert(output)

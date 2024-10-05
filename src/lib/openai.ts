@@ -59,7 +59,7 @@ and a raw_response. The raw_response should be a comprehensive textual answer to
 The formatted_response should represent the same information in a structured format suitable for visualization
 or display. Additionally, include the context_object_ids array with the {id} of the context objects that are most relevant
 in context of the generated response. These IDs are in the format <context_id>{id}</context_id> in the provided context, do not include the 
-<context_id> tags in the context_object_ids array.`,
+<context_id> tags in the context_object_ids array. Most importantly, If the context is empty, respond with "No relevant information found in the context."`,
   };
 
   console.log("llm prompt messages", [systemMessage, ...messages]);
