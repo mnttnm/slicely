@@ -12,11 +12,14 @@ import { ExtractedText, FabricRect, PDFMetadata, ProcessingRules, Slicer } from 
 import { serializeFabricRect } from "@/app/utils/fabric-helper";
 import { getSignedPdfUrl, getSlicerDetails, linkPdfToSlicer } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 const SlicerPage = () => {
   const { id } = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState("slicerstudio");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [slicer, setSlicer] = useState<Slicer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +34,10 @@ const SlicerPage = () => {
   const { pdfDocument } = usePDFViewer();
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
 
-  const router = useRouter();
+  useEffect(() => {
+    const tab = searchParams.get("tab") || "slicerstudio";
+    setActiveTab(tab);
+  }, [searchParams]);
 
   useEffect(() => {
     // once slicer detail are fetched and the pdfdocument is loaded
@@ -289,6 +295,11 @@ const SlicerPage = () => {
     await fetchLinkedPdfs();
   }, [fetchLinkedPdfs]);
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    router.push(`/studio/slicers/${id}?tab=${value}`);
+  };
+
   if (isLoading) {
     return <div className="h-full flex items-center justify-center">Loading...</div>;
   }
@@ -326,13 +337,13 @@ const SlicerPage = () => {
         </Breadcrumb>
         <div className="w-1/3"></div> {/* Placeholder for right side */}
       </header>
-      <Tabs defaultValue="slicerStudio" className="flex flex-col flex-grow overflow-hidden">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-col flex-grow overflow-hidden">
         <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
-          <TabsTrigger value="slicerStudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
-          <TabsTrigger value="linkedPdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>
+          <TabsTrigger value="slicerstudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
+          <TabsTrigger value="linkedpdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>
           <TabsTrigger value="explore" className="px-4 py-2">Explore</TabsTrigger>
         </TabsList>
-        <TabsContent value="slicerStudio" className="flex-grow overflow-hidden">
+        <TabsContent value="slicerstudio" className="flex-grow overflow-hidden">
           <div className="flex h-full">
             <div className="flex-1">
               <PDFViewer
@@ -357,7 +368,7 @@ const SlicerPage = () => {
             </div>
           </div>
         </TabsContent>
-        <TabsContent value="linkedPdfs" className="flex-grow overflow-hidden">
+        <TabsContent value="linkedpdfs" className="flex-grow overflow-hidden">
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
         </TabsContent>
         <TabsContent value="explore" className="flex-grow overflow-hidden">
