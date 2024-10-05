@@ -10,10 +10,8 @@ import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
 import { getPdfDetails, getSlicerDetails } from "@/server/actions/studio/actions";
 import { Tables } from "@/types/supabase-types/database.types";
 import { Database, Download, MoreVertical, Settings } from "lucide-react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 const PDFDetails = () => {
   const { id } = useParams();
@@ -96,7 +94,9 @@ const PDFDetails = () => {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{pdfDetails?.file_name || "PDF Details"}</BreadcrumbPage>
+              <BreadcrumbPage className="truncate max-w-xs" title={pdfDetails?.file_name}>
+                {pdfDetails?.file_name || "PDF Details"}
+              </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
