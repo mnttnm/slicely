@@ -94,18 +94,19 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [totalResults, setTotalResults] = useState<number>(0);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [processedOutput, setProcessedOutput] = useState<ProcessedOutput[] | null>(null);
   const [slicer, setSlicer] = useState<Slicer | null>(null);
-  const [, setLinkedPdfs] = useState<PDFMetadata[]>([]);
+  const [linkedPdfs, setLinkedPdfs] = useState<PDFMetadata[]>([]);
   const [initialDataFetched, setInitialDataFetched] = useState(false);
   const [, setExpandedMessages] = useState<Set<number>>(new Set());
   const [isPreviousDataExpanded, setIsPreviousDataExpanded] = useState(false);
 
   const fetchResults = useCallback(async (searchQuery: string, pageNum: number) => {
+    console.log("fetchResults", searchQuery, pageNum);
     setIsLoading(true);
     try {
       const { results: searchResults, total } = await searchOutputs(slicerId, searchQuery, pageNum);
@@ -132,6 +133,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [slicerId, toast]);
 
   const fetchInitialOutputs = useCallback(async (pageNum = 1) => {
+    console.log("fetchInitialOutputs", pageNum);
     if (initialDataFetched) return;
     setIsLoading(true);
     try {
@@ -176,10 +178,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [hasMore, isLoading, query, page, fetchResults, fetchInitialOutputs]);
 
   useEffect(() => {
-    if (!initialDataFetched) {
+    if (!initialDataFetched && linkedPdfs.some(pdf => pdf.file_processing_status === "processed")) {
       fetchInitialOutputs();
     }
-  }, [fetchInitialOutputs, initialDataFetched]);
+  }, [fetchInitialOutputs, initialDataFetched, linkedPdfs]);
 
   const processInitialOutputs = useCallback(async () => {
     if (!slicer) return;
@@ -290,6 +292,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [chatHistory]);
 
   const fetchSlicerDetails = useCallback(async () => {
+    console.log("fetchSlicerDetails", slicerId);
     try {
       const result = await getSlicerDetails(slicerId);
       if (result) {
@@ -361,6 +364,140 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </div>
   );
 
+  const LoadingState = () => (
+    <div className="flex justify-center items-center py-4">
+      <Spinner />
+      <span className="ml-2">Processing outputs...</span>
+    </div>
+  );
+
+  const NoResultsState = () => (
+    <div className="flex-1 flex flex-col items-center justify-center p-4">
+      <p className="text-sm text-muted-foreground">
+        Seems like there is no extracted text from the linked PDFs, please confirm if you have processed the PDFs.
+      </p>
+    </div>
+  );
+
+  const ChatMode = ({ chatHistory, processedOutput }: { chatHistory: ChatMessage[]; processedOutput: ProcessedOutput[] }) => (
+    <div className="space-y-4">
+      {chatHistory.length > 0 && (
+        <RelatedDocuments contextObjects={chatHistory[chatHistory.length - 1].contextObjects || []} />
+      )}
+      <PreviousMessagesCollapsible chatHistory={chatHistory} processedOutput={processedOutput} />
+      <RecentChatMessages chatHistory={chatHistory} />
+    </div>
+  );
+
+  const PreviousMessagesCollapsible = ({ chatHistory, processedOutput }: { chatHistory: ChatMessage[]; processedOutput: ProcessedOutput[] }) => (
+    <Collapsible
+      open={isPreviousDataExpanded}
+      onOpenChange={setIsPreviousDataExpanded}
+      className="w-full"
+    >
+      <CollapsibleTrigger className="flex items-center justify-center w-full p-2 bg-purple-600 text-white rounded-lg">
+        <span>Earlier Messages {" "}</span>
+        {isPreviousDataExpanded ? (
+          <ChevronUp className="h-4 w-4 ml-2" />
+        ) : (
+          <ChevronDown className="h-4 w-4 ml-2" />
+        )}
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="space-y-4 mt-2">
+          <ProcessedOutputs processedOutput={processedOutput} />
+          <PreviousChatMessages chatHistory={chatHistory} />
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+
+  const ProcessedOutputs = ({ processedOutput }: { processedOutput: ProcessedOutput[] }) => (
+    <>
+      {processedOutput && processedOutput.map((output) => (
+        <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+          <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+            Processed Output for Prompt {output.id}
+          </h3>
+          {renderProcessedOutput(output.output)}
+        </div>
+      ))}
+    </>
+  );
+
+  const PreviousChatMessages = ({ chatHistory }: { chatHistory: ChatMessage[] }) => (
+    <>
+      {chatHistory.slice(0, -2).map((message, index) => (
+        <div key={index}>{renderChatMessage(message)}</div>
+      ))}
+    </>
+  );
+
+  const RecentChatMessages = ({ chatHistory }: { chatHistory: ChatMessage[] }) => (
+    <>
+      {chatHistory.length >= 2 && (
+        <div className="text-right bg-gray-200 p-2 rounded-lg">
+          {renderChatMessage(chatHistory[chatHistory.length - 2])}
+        </div>
+      )}
+      {renderChatMessage(chatHistory[chatHistory.length - 1])}
+    </>
+  );
+
+  const SearchMode = ({ results, totalResults, showMetadata, setShowMetadata }: { results: ProcessedOutputWithMetadata[]; totalResults: number; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
+    <>
+      {results.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Showing {results.length} out of {totalResults} results
+        </p>
+      )}
+      {results.map((result) => (
+        <SearchResult key={result.id} result={result} showMetadata={showMetadata} setShowMetadata={setShowMetadata} />
+      ))}
+    </>
+  );
+
+  const SearchResult = ({ result, showMetadata, setShowMetadata }: { result: ProcessedOutputWithMetadata; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
+    <div className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
+      <div className="flex justify-between items-center">
+        <h3 className="text-md font-medium text-gray-900 dark:text-gray-100">
+          {result.pdfs.file_name} - Page {result.page_number}
+        </h3>
+        <Button
+          variant="ghost"
+          className="text-xs text-muted-foreground"
+          onClick={() => setShowMetadata(showMetadata === result.id ? null : result.id)}
+        >
+          <Info className="h-4 w-4" />
+        </Button>
+      </div>
+      {result.updated_at && (
+        <p className="text-xs text-muted-foreground mb-2">
+          Updated: {new Date(result.updated_at).toLocaleString()}
+        </p>
+      )}
+      {showMetadata === result.id && <ResultMetadata result={result} />}
+      <p className="text-sm mb-2 text-gray-800 dark:text-gray-200">{result.text_content}</p>
+    </div>
+  );
+
+  const ResultMetadata = ({ result }: { result: ProcessedOutputWithMetadata }) => (
+    <div className="text-xs text-muted-foreground mb-2">
+      <p>Type: {result.section_info.type}</p>
+      {Object.entries(result.section_info.metadata).map(([key, value]) => (
+        <p key={key}>
+          {key}: {JSON.stringify(value)}
+        </p>
+      ))}
+    </div>
+  );
+
+  const LoadMoreButton = ({ onClick }: { onClick: () => void }) => (
+    <div className="flex justify-center p-4">
+      <Button onClick={onClick}>Load More</Button>
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <header className="flex items-center justify-between w-full p-2">
@@ -404,128 +541,27 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
           </Button>
         </div>
       </header>
-      <main className="flex-1 overflow-hidden flex">
-        <div className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-4 overflow-hidden">
-              {isLoading && (
-                <div className="flex justify-center items-center py-4">
-                  <Spinner />
-                  <span className="ml-2">Processing outputs...</span>
-                </div>
-              )}
-              {mode === "chat" && (
-                <div className="space-y-4">
-                  {chatHistory.length > 0 && (
-                    <Collapsible
-                      open={isPreviousDataExpanded}
-                      onOpenChange={setIsPreviousDataExpanded}
-                      className="w-full"
-                    >
-                      <CollapsibleTrigger className="flex items-center justify-center w-full p-2 bg-purple-600 text-white rounded-lg">
-                        <span>Earlier Messages {" "}</span>
-                        {isPreviousDataExpanded ? (
-                          <ChevronUp className="h-4 w-4 ml-2" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 ml-2" />
-                        )}
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="space-y-4 mt-2">
-                          {processedOutput && processedOutput.map((output) => (
-                            <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-                              <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
-                                Processed Output for Prompt {output.id}
-                              </h3>
-                              {renderProcessedOutput(output.output)}
-                            </div>
-                          ))}
-                          {chatHistory.slice(0, -2).map((message, index) => (
-                            <div key={index}>{renderChatMessage(message)}</div>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
-                  {processedOutput && chatHistory.length === 0 && (
-                    <div className="space-y-4">
-                      {processedOutput.map((output) => (
-                        <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-                          <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
-                            Processed Output for Prompt {output.id}
-                          </h3>
-                          {renderProcessedOutput(output.output)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {chatHistory.length > 0 && (
-                    <div className="space-y-4">
-                      {/* Render the last query */}
-                      {chatHistory.length >= 2 && (
-                        <div className="text-right bg-gray-200 p-2 rounded-lg">
-                          {renderChatMessage(chatHistory[chatHistory.length - 2])}
-                        </div>
-                      )}
-                      {/* Render the last response */}
-                      {renderChatMessage(chatHistory[chatHistory.length - 1])}
-                    </div>
-                  )}
-                </div>
-              )}
-              {mode === "search" && (
-                <>
-                  {results.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      Showing {results.length} out of {totalResults} results
-                    </p>
-                  )}
-                  {results.map((result) => (
-                    <div key={result.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-md font-medium text-gray-900 dark:text-gray-100">
-                          {result.pdfs.file_name} - Page {result.page_number}
-                        </h3>
-                        <Button
-                          variant="ghost"
-                          className="text-xs text-muted-foreground"
-                          onClick={() => setShowMetadata(showMetadata === result.id ? null : result.id)}
-                        >
-                          <Info className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {result.updated_at && (
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Updated: {new Date(result.updated_at).toLocaleString()}
-                        </p>
-                      )}
-                      {showMetadata === result.id && (
-                        <div className="text-xs text-muted-foreground mb-2">
-                          <p>Type: {result.section_info.type}</p>
-                          {Object.entries(result.section_info.metadata).map(([key, value]) => (
-                            <p key={key}>
-                              {key}: {JSON.stringify(value)}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-sm mb-2 text-gray-800 dark:text-gray-200">{result.text_content}</p>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          </ScrollArea>
-          {hasMore && !isLoading && mode === "search" && (
-            <div className="flex justify-center p-4">
-              <Button onClick={handleLoadMore}>Load More</Button>
-            </div>
-          )}
-        </div>
-        {mode === "chat" && chatHistory.length > 0 && (
-          <RelatedDocuments contextObjects={chatHistory[chatHistory.length - 1].contextObjects || []} />
-        )}
-      </main>
+      {isLoading ? (
+        <LoadingState />
+      ) : (
+        <main className="flex-1 overflow-hidden flex">
+          <div className="flex-1 flex flex-col">
+            <ScrollArea className="flex-1">
+              <div className="p-2 space-y-4 overflow-hidden">
+                {results.length === 0 ? (
+                  <NoResultsState />
+                ) : (
+                  <>
+                    {mode === "chat" && <ChatMode chatHistory={chatHistory} processedOutput={processedOutput || []} />}
+                    {mode === "search" && <SearchMode results={results} totalResults={totalResults} showMetadata={showMetadata} setShowMetadata={setShowMetadata} />}
+                  </>
+                )}
+              </div>
+            </ScrollArea>
+            {hasMore && !isLoading && <LoadMoreButton onClick={handleLoadMore} />}
+          </div>
+        </main>
+      )}
     </div>
   );
 }
