@@ -73,8 +73,9 @@ export interface ProcessedOutputWithMetadata extends ProcessedOutput {
   }
 }
 
+
 export type SectionInfo = {
-  type: "llm_output" | "annotation_output" | "full_page";
+  type: "llm_output" | "annotation_output" | "full_page_output";
   metadata: {
     [key: string]: any;
   };

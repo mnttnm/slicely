@@ -2,12 +2,12 @@
 
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { ProcessedOutput } from "@/app/types";
 import { getProcessedOutput } from "@/server/actions/studio/actions";
-import { ProcessPdf } from "@/services/pdf-processing-service";
+import { handlePDFProcessing } from "@/services/pdf-processing-service";
 import { Tables } from "@/types/supabase-types/database.types";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { ProcessedOutput } from "../types";
 import CreateSlicerDrawer from "./create-slicer-drawer";
 import ExtractedTextView from "./extracted-text-view";
 
@@ -22,22 +22,23 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
   const [loading, setLoading] = useState(false);
   const [isSlicerDrawerOpen, setIsSlicerDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchOutput = async () => {
-      try {
-        const data = await getProcessedOutput(pdfDetails.id);
-        if (data) {
-          setOutput(data);
-        }
-      } catch (error) {
-        console.error("Error fetching processed output:", error);
-      } finally {
-        setLoading(false);
+  const fetchOutput = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getProcessedOutput(pdfDetails.id);
+      if (data) {
+        setOutput(data);
       }
-    };
-
-    fetchOutput();
+    } catch (error) {
+      console.error("Error fetching processed output:", error);
+    } finally {
+      setLoading(false);
+    }
   }, [pdfDetails.id]);
+
+  useEffect(() => {
+    fetchOutput();
+  }, [fetchOutput]);
 
   const handleCreateSlicer = () => {
     if (slicerIds.length > 0) {
@@ -52,15 +53,25 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
     setIsSlicerDrawerOpen(open);
   };
 
-  async function handlePDFProcessing() {
+  const handleProcessPdf = async () => {
+    setLoading(true);
     try {
-      const result = await ProcessPdf(pdfDetails, slicerIds[0]);
-      setOutput(result);
+      await handlePDFProcessing(pdfDetails, slicerIds[0]);
+
+      // todo: this is a temporary solution to refresh the page after processing
+      // current db insert operation inside handlepdfprocessing is taking time
+      // to update entry in db (because of a trigger function in outputs table)
+      // we need to find a better solution
+      setTimeout(async () => {
+        await fetchOutput();
+        router.refresh();
+      }, 1000);
     } catch (error) {
       console.error("Error processing PDF:", error);
-      throw error;
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -74,7 +85,7 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
           <ul className="flex flex-col gap-2">
             {slicerIds.length > 0 ? (
               <li className="w-full">
-                <Button onClick={handlePDFProcessing} className="w-full">
+                <Button onClick={handleProcessPdf} className="w-full">
                   Process with Existing Slicer
                 </Button>
               </li>
@@ -91,7 +102,7 @@ const ProcessedOutputComponent: React.FC<ProcessedOutputComponentProps> = ({ pdf
           <ExtractedTextView
             slicedTexts={output.map(pageOutput => {
               return {
-                id: pageOutput.id,
+                id: pageOutput.section_info.metadata.id ?? pageOutput.id, // legacy entries will not have section_info.metadata.id
                 page_number: pageOutput.page_number,
                 text: pageOutput.text_content,
                 rectangle_info: pageOutput.section_info.metadata.rectangle_info

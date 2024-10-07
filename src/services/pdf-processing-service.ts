@@ -1,62 +1,69 @@
 "use server";
 
-import { FabricRect, PDFMetadata, ProcessedOutput } from "@/app/types";
-import { extractTextFromRectangle } from "@/app/utils/text-extraction";
-import { getAnnotations, getSignedPdfUrl } from "@/server/actions/studio/actions";
+import { PDFMetadata } from "@/app/types";
+import { extractPdfContent } from "@/server/actions/pdf-actions";
+import { getAnnotations, getSignedPdfUrl, getSlicerDetails, saveProcessedOutput, updatePDF } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
-import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
 
-export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<ProcessedOutput[]> {
-  // 1. Get the signed URL for the PDF
+// extract content from pdf and returns output in the format to be inserted into the outputs table
+export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<TablesInsert<"outputs">[]> {
   const pdfUrl = await getSignedPdfUrl(pdf.file_path);
-
-  // 2. Load the PDF document
-  const pdfDocument = await getDocument({
-    url: pdfUrl,
-    password: pdf.password,
-  }).promise;
-
-  // 3. Get the processing rules for the slicer
   const processingRules = await getAnnotations(slicerId);
 
   if (!processingRules) {
     throw new Error("No processing rules found for this slicer");
   }
 
-  // 4. Process each page
-  const processedOutput: ProcessedOutput[] = [];
+  const extractedContent = await extractPdfContent(pdfUrl, processingRules, pdf.password);
 
-  for (const { page, rectangles } of processingRules.annotations) {
-    const pageObj = await pdfDocument.getPage(page);
+  return extractedContent.map(content => ({
+    page_number: content.page_number,
+    pdf_id: pdf.id,
+    slicer_id: slicerId,
+    section_info: {
+      type: content.rectangle_info ? "annotation_output" : "full_page_output",
+      metadata: {
+        id: content.id,
+        rectangle_info: content.rectangle_info
+      }
+    },
+    text_content: content.text,
+  }));
+}
 
-    const extractionPromises = rectangles.map(async (rect: FabricRect) => {
-      const text = await extractTextFromRectangle(pageObj, rect);
-      const processedOutput: TablesInsert<"outputs"> = {
-        pdf_id: pdf.id,
-        slicer_id: slicerId,
-        page_number: page,
-        section_info: {
-          type: "annotation_output",
-          metadata: {
-            rectangle_info: {
-              id: rect.id,
-              left: rect.left,
-              top: rect.top,
-              width: rect.width,
-              height: rect.height,
-            }
-          }
-        },
-        text_content: text,
-      };
-
-      return processedOutput as ProcessedOutput;
-    });
-
-    const extractedSectionTexts = await Promise.all(extractionPromises);
-    processedOutput.push(...extractedSectionTexts);
+export async function handlePDFProcessing(pdf: PDFMetadata, slicerId: string) {
+  if (!slicerId) {
+    throw new Error(`No slicer associated with PDF ${pdf.file_name}. Please link a slicer first.`);
   }
 
-  return processedOutput;
+  try {
+    const { slicerDetails } = await getSlicerDetails(slicerId as string) ?? {};
+
+    if (!slicerDetails) {
+      throw new Error(`No slicer associated with PDF ${pdf.file_name}. Please link a slicer first.`);
+    }
+
+    const result = await ProcessPdf({ ...pdf, password: slicerDetails.pdf_password ?? undefined }, slicerId as string);
+    // TODO: Currently it generates a new output every time,
+    // so, even if the PDF is already processed, it will generate a new output.
+    // We need to check if the output already exists in the database.
+    // If it exists, we need to update the output.
+    // Or while showing the output, we can show a timeline of the outputs.
+    // If it doesn't exist, we need to insert the output.
+    result.forEach(async (output) => {
+      await saveProcessedOutput(output);
+    });
+
+    const updatedData: Partial<PDFMetadata> = {
+      file_processing_status: "processed",
+    };
+
+    try {
+      await updatePDF(pdf.id, updatedData);
+    } catch (error) {
+      throw new Error(`Error updating PDF ${pdf.file_name} status: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  } catch (error) {
+    throw new Error(`Error processing PDF ${pdf.file_name}: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }

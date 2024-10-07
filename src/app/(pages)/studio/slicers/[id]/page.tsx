@@ -10,7 +10,7 @@ import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
 import { useTextExtraction } from "@/app/hooks/use-text-extraction";
 import { ExtractedText, FabricRect, PDFMetadata, ProcessingRules, Slicer } from "@/app/types";
 import { serializeFabricRect } from "@/app/utils/fabric-helper";
-import { getPageText } from "@/app/utils/pdf-utils"; // Update this import
+import { extractPdfContent } from "@/server/actions/pdf-actions";
 import { getSignedPdfUrl, getSlicerDetails, linkPdfToSlicer } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -42,45 +42,21 @@ const SlicerPage = () => {
 
   useEffect(() => {
     const extractTextFn = async (slicer: Slicer) => {
-      if (!pdfDocument) return;
+      if (!pdfUrl || !slicer?.processing_rules) return;
 
-      const extractedTexts: ExtractedText[] = [];
-      const totalPages = pdfDocument.numPages;
-
-      for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
-        const pageAnnotation = slicer.processing_rules.annotations.find(a => a.page === pageNumber);
-        const isPageSkipped = slicer.processing_rules.skipped_pages.includes(pageNumber);
-
-        if (pageAnnotation) {
-          // Extract text for defined annotations
-          for (const rect of pageAnnotation.rectangles) {
-            const extractedText = await extractTextFromRectangle(rect, pageNumber);
-            extractedTexts.push({
-              id: rect.id,
-              page_number: pageNumber,
-              text: extractedText || "",
-              rectangle_info: rect
-            });
-          }
-        } else if (!isPageSkipped) {
-          // Extract full page content for pages without annotations and not skipped
-          const fullPageContent = await getPageText(pdfDocument, pageNumber);
-          extractedTexts.push({
-            id: `full-page-${pageNumber}`,
-            page_number: pageNumber,
-            text: fullPageContent || "",
-            rectangle_info: null // No specific rectangle for full page extraction
-          });
-        }
+      try {
+        const extractedTexts = await extractPdfContent(pdfUrl, slicer.processing_rules, slicer.pdf_password ?? undefined);
+        setExtractedTexts(extractedTexts);
+      } catch (error) {
+        console.error("Error extracting PDF content:", error);
+        setError("Failed to extract PDF content. Please try again.");
       }
-
-      setExtractedTexts(extractedTexts);
     };
 
-    if (pdfDocument && slicer && slicer?.processing_rules) {
+    if (pdfUrl && slicer && slicer?.processing_rules) {
       extractTextFn(slicer);
     }
-  }, [pdfDocument, slicer, extractTextFromRectangle]);
+  }, [pdfUrl, slicer]);
 
   // Add this effect to update slicer when processingRules changes
   useEffect(() => {

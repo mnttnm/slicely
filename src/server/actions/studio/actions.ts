@@ -398,6 +398,7 @@ export async function getAnnotations(slicerId: string): Promise<ProcessingRules 
 }
 
 export async function getProcessedOutput(pdfId: string): Promise<ProcessedOutput[]> {
+  console.log("getting data");
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -414,6 +415,8 @@ export async function getProcessedOutput(pdfId: string): Promise<ProcessedOutput
     console.error("Error fetching processed output:", error);
     throw new Error("Failed to fetch processed output");
   }
+
+  console.log("processed data: ", data.length);
 
   if (!data || data.length === 0) return [];
 

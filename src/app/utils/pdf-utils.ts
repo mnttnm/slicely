@@ -1,4 +1,5 @@
-import { pdfjs } from "react-pdf";
+"use server";
+import * as pdfjs from "pdfjs-dist";
 
 export async function getPageText(pdf: pdfjs.PDFDocumentProxy, pageNumber: number): Promise<string> {
   const page = await pdf.getPage(pageNumber);

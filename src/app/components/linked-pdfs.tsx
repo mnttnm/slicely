@@ -4,8 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import UploadButton from "@/app/components/upload-button";
 import { useUser } from "@/app/hooks/use-user";
 import { PDFMetadata } from "@/app/types";
-import { getSlicerDetails, saveProcessedOutput, updatePDF } from "@/server/actions/studio/actions";
-import { ProcessPdf } from "@/services/pdf-processing-service";
+import { handlePDFProcessing } from "@/services/pdf-processing-service";
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { Eye, MoreVertical, Play } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -58,9 +57,7 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
   const processAllPdfs = async () => {
     setIsProcessing(true);
     try {
-      for (const pdf of linkedPdfs) {
-        await processPdf(pdf);
-      }
+      await Promise.allSettled(linkedPdfs.map(pdf => handlePDFProcessing(pdf, slicerId as string)));
       alert("All PDFs processed successfully!");
       onRefresh(); // Trigger refresh after processing all PDFs
     } catch (error) {
@@ -68,50 +65,6 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
       alert("An error occurred while processing PDFs.");
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const processPdf = async (pdf: PDFMetadata) => {
-    if (!slicerId) {
-      alert(`No slicer associated with PDF ${pdf.file_name}. Please link a slicer first.`);
-      return;
-    }
-
-    try {
-      const { slicerDetails } = await getSlicerDetails(slicerId as string) ?? {};
-
-      if (!slicerDetails) {
-        alert(`No slicer associated with PDF ${pdf.file_name}. Please link a slicer first.`);
-        return;
-      }
-
-      const result = await ProcessPdf({ ...pdf, password: slicerDetails.pdf_password ?? undefined }, slicerId as string);
-
-      // TODO: Currently it generates a new output every time,
-      // so, even if the PDF is already processed, it will generate a new output.
-      // We need to check if the output already exists in the database.
-      // If it exists, we need to update the output.
-      // Or while showing the output, we can show a timeline of the outputs.
-      // If it doesn't exist, we need to insert the output.
-      result.forEach(async (output) => {
-        await saveProcessedOutput(output);
-      });
-
-      const updatedData: Partial<PDFMetadata> = {
-        file_processing_status: "processed",
-      };
-
-      try {
-        await updatePDF(pdf.id, updatedData);
-        onRefresh(); // Trigger refresh after processing a single PDF
-        router.refresh();
-      } catch (error) {
-        console.error(`Error updating PDF ${pdf.file_name} status:`, error);
-        alert(`An error occurred while updating the status of PDF ${pdf.file_name}.`);
-      }
-    } catch (error) {
-      console.error(`Error processing PDF ${pdf.file_name}:`, error);
-      alert(`An error occurred while processing PDF ${pdf.file_name}.`);
     }
   };
 
@@ -123,7 +76,9 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
   const processSinglePdf = async (pdf: PDFMetadata) => {
     setIsProcessing(true);
     try {
-      await processPdf(pdf);
+      await handlePDFProcessing(pdf, slicerId as string);
+      onRefresh(); // Trigger refresh after processing a single PDF
+      router.refresh();
     } catch (error) {
       console.error(`Error processing PDF ${pdf.file_name}:`, error);
       alert(`An error occurred while processing PDF ${pdf.file_name}.`);

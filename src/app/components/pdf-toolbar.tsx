@@ -65,8 +65,6 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
     }
   };
 
-  console.log("isPageSkipped", isPageSkipped);
-
   return (
     <TooltipProvider>
       <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-50">
