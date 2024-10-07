@@ -21,7 +21,7 @@ export interface ExtractedText {
     top: number;
     width: number;
     height: number;
-  };
+  } | null;
 }
 
 export interface PageAnnotation {

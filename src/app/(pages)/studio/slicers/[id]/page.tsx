@@ -10,6 +10,7 @@ import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
 import { useTextExtraction } from "@/app/hooks/use-text-extraction";
 import { ExtractedText, FabricRect, PDFMetadata, ProcessingRules, Slicer } from "@/app/types";
 import { serializeFabricRect } from "@/app/utils/fabric-helper";
+import { getPageText } from "@/app/utils/pdf-utils"; // Update this import
 import { getSignedPdfUrl, getSlicerDetails, linkPdfToSlicer } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -40,19 +41,35 @@ const SlicerPage = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    // once slicer detail are fetched and the pdfdocument is loaded
-    // pdfviewer, extract text for the initial annotations
-    // and set the extracted texts in the state
     const extractTextFn = async (slicer: Slicer) => {
+      if (!pdfDocument) return;
+
       const extractedTexts: ExtractedText[] = [];
-      for (const annotation of slicer.processing_rules.annotations) {
-        for (const rect of annotation.rectangles) {
-          const extractedText = await extractTextFromRectangle(rect, annotation.page);
+      const totalPages = pdfDocument.numPages;
+
+      for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+        const pageAnnotation = slicer.processing_rules.annotations.find(a => a.page === pageNumber);
+        const isPageSkipped = slicer.processing_rules.skipped_pages.includes(pageNumber);
+
+        if (pageAnnotation) {
+          // Extract text for defined annotations
+          for (const rect of pageAnnotation.rectangles) {
+            const extractedText = await extractTextFromRectangle(rect, pageNumber);
+            extractedTexts.push({
+              id: rect.id,
+              page_number: pageNumber,
+              text: extractedText || "",
+              rectangle_info: rect
+            });
+          }
+        } else if (!isPageSkipped) {
+          // Extract full page content for pages without annotations and not skipped
+          const fullPageContent = await getPageText(pdfDocument, pageNumber);
           extractedTexts.push({
-            id: rect.id,
-            page_number: annotation.page,
-            text: extractedText || "",
-            rectangle_info: rect
+            id: `full-page-${pageNumber}`,
+            page_number: pageNumber,
+            text: fullPageContent || "",
+            rectangle_info: null // No specific rectangle for full page extraction
           });
         }
       }
