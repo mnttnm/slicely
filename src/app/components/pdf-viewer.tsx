@@ -5,7 +5,7 @@ import { useAnnotations } from "@/app/hooks/use-annotations";
 import { ProcessingRules } from "@/app/types";
 import { serializeFabricRect } from "@/app/utils/fabric-helper";
 import * as fabric from "fabric";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { FabricRect } from "../types";
 import { AnnotationCanvas } from "./annotation-canvas";
 import PDFRenderer from "./pdf-renderer";
@@ -56,6 +56,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
 
+  useEffect(() => {
+    if (processingRules?.skipped_pages) {
+      processingRules.skipped_pages.forEach(page => {
+        if (!skippedPages.includes(page)) {
+          togglePageSkip(page);
+        }
+      });
+    }
+  }, [processingRules, skippedPages, togglePageSkip]);
 
   const {
     deleteSelectedObject,
@@ -90,23 +99,23 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
 
   const handlePageToggle = useCallback((pageNumber: number) => {
+    togglePageSkip(pageNumber);
     if (skippedPages.includes(pageNumber)) {
       onPageInclude(pageNumber);
     } else {
       onPageExclude(pageNumber);
     }
-    togglePageSkip(pageNumber);
-  }, [onPageInclude, onPageExclude, skippedPages, togglePageSkip]);
+  }, [togglePageSkip, skippedPages, onPageInclude, onPageExclude]);
 
   const handlePageExcludeAll = useCallback(() => {
     excludeAllPages();
     onPageExcludeAll();
-  }, [onPageExcludeAll, excludeAllPages]);
+  }, [excludeAllPages, onPageExcludeAll]);
 
   const handlePageIncludeAll = useCallback(() => {
     includeAllPages();
     onPageIncludeAll();
-  }, [onPageIncludeAll, includeAllPages]);
+  }, [includeAllPages, onPageIncludeAll]);
 
 
   const handleCanvasReady = useCallback((canvas: fabric.Canvas) => {

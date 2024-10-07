@@ -1,25 +1,25 @@
 "use client";
 
 import { Button } from "@/app/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
-import {
-  Square,
-  Trash2,
-  RotateCcw,
-  ChevronLeft,
-  ChevronRight,
-  BanIcon,
-  MoreVertical
-} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
-import { useState } from "react";
 import { Input } from "@/app/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
+import {
+  BanIcon,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+  RotateCcw,
+  Square,
+  Trash2
+} from "lucide-react";
+import { useState } from "react";
 
 interface PDFToolbarProps {
   isRectangleMode: boolean;
@@ -64,6 +64,8 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
       setIsJumpToPageOpen(false);
     }
   };
+
+  console.log("isPageSkipped", isPageSkipped);
 
   return (
     <TooltipProvider>
