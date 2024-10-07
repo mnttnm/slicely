@@ -14,7 +14,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const StudioPage = () => {
-  const [activeTab, setActiveTab] = useState<string>("pdfs");
+  const [activeTab, setActiveTab] = useState<string>("slicers");
   const [pdfs, setPdfs] = useState<(Tables<"pdfs"> & { slicer_ids: string[] })[]>([]);
   const [slicers, setSlicers] = useState<Tables<"slicers">[]>([]);
   const { user, loading } = useUser();
@@ -43,7 +43,7 @@ const StudioPage = () => {
     if (tab === "pdfs" || tab === "slicers") {
       setActiveTab(tab);
     } else if (pathname === "/studio") {
-      router.push("/studio?tab=pdfs");
+      router.push("/studio?tab=slicers");
     }
   }, [pathname, router, searchParams]);
 
@@ -92,8 +92,8 @@ const StudioPage = () => {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList>
-          <TabsTrigger value="pdfs">Files</TabsTrigger>
           <TabsTrigger value="slicers">Slicers</TabsTrigger>
+          <TabsTrigger value="pdfs">Files</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pdfs" className="mt-2">
