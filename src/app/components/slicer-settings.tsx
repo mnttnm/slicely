@@ -8,6 +8,7 @@ import { ExtractedText, LLMPrompt, Slicer } from "@/app/types";
 import { updateSlicer } from "@/server/actions/studio/actions";
 import { Eye, EyeOff, Plus, X } from "lucide-react";
 import { useState } from "react";
+
 import ExtractedTextView from "./extracted-text-view";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -208,7 +209,7 @@ const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObj
   return (
     <Tabs defaultValue="extracted" className="flex flex-col h-full pt-2 px-2">
       <TabsList className="flex-shrink-0 bg-transparent border-b border-gray-200 dark:border-gray-700">
-        <TabsTrigger value="extracted">Extracted Text</TabsTrigger>
+        <TabsTrigger value="extracted">Page Content</TabsTrigger>
         <TabsTrigger value="config">Page Processing Rules</TabsTrigger>
       </TabsList>
       <TabsContent value="extracted" className="flex-1 overflow-hidden">
