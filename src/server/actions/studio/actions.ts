@@ -632,3 +632,24 @@ export async function saveSlicerLLMOutput(slicerId: string, output: SlicerLLMOut
     throw new Error("Failed to save slicer LLM output");
   }
 }
+
+export async function getAllSlicers() {
+  const supabase = createClient();
+
+  try {
+    const { data: slicers, error } = await supabase
+      .from("slicers")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching slicers:", error);
+      throw new Error("Failed to fetch slicers");
+    }
+
+    return slicers || [];
+  } catch (error) {
+    console.error("Error in getAllSlicers:", error);
+    throw error;
+  }
+}

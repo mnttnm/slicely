@@ -19,6 +19,7 @@ interface CreateSlicerDrawerProps {
   defaultName?: string;
   defaultDescription?: string;
   defaultFileId?: string;
+  onComplete?: (slicerId: string) => void;
 }
 
 const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
@@ -26,7 +27,8 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
   onOpenChange,
   defaultName = "",
   defaultDescription = "",
-  defaultFileId = null
+  defaultFileId = null,
+  onComplete
 }) => {
   const [name, setName] = useState(defaultName);
   const [description, setDescription] = useState(defaultDescription);
@@ -95,6 +97,7 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
         description: slicerDescription,
         fileId: selectedFile
       });
+      onComplete?.(newSlicer.id);
       onOpenChange(false);
       router.push(`/studio/slicers/${newSlicer.id}`);
     } catch (error) {
