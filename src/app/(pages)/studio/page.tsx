@@ -71,7 +71,7 @@ const StudioPage = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 h-full overflow-hidden flex flex-col">
       <div className="flex justify-between items-center py-1">
         <h1 className="text-xl">Studio</h1>
         <div className="flex gap-2">
@@ -90,51 +90,53 @@ const StudioPage = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col overflow-hidden">
+        <TabsList className="self-start">
           <TabsTrigger value="slicers">Slicers</TabsTrigger>
           <TabsTrigger value="pdfs">Files</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pdfs" className="mt-2">
-          <Table>
-            <TableHeader className="hover:bg-transparent">
-              <TableRow>
-                <TableHead>File Name</TableHead>
-                <TableHead>Uploaded</TableHead>
-                <TableHead>Slicer</TableHead>
-                <TableHead>Is Template</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pdfs.map((pdf) => (
-                <TableRow key={pdf.id} className="hover:bg-neutral-200 dark:hover:bg-neutral-800">
-                  <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
-                  <TableCell className="text-gray-500">{pdf.created_at ? new Date(pdf.created_at).toLocaleString() : "N/A"}</TableCell>
-                  <TableCell className="text-gray-500">
-                    {pdf.slicer_ids && pdf.slicer_ids.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {pdf.slicer_ids.map((slicer_id) => (
-                          <Link key={slicer_id} href={`/studio/slicers/${slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
-                            {slicer_id}
-                          </Link>
-                        ))}
-                      </div>
-                    ) : "N/A"}
-                  </TableCell>
-                  <TableCell className="text-gray-500">{pdf.is_template ? "Yes" : "No"}</TableCell>
-                  <TableCell className="text-gray-500">
-                    <Link href={`/studio/pdfs/${pdf.id}`}>
-                      View
-                    </Link>
-                  </TableCell>
+        <TabsContent value="pdfs" className="mt-2 overflow-hidden flex flex-col w-full">
+          <div className="overflow-x-auto w-full">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>File Name</TableHead>
+                  <TableHead>Uploaded</TableHead>
+                  <TableHead>Slicer</TableHead>
+                  <TableHead>Is Template</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {pdfs.map((pdf) => (
+                  <TableRow key={pdf.id}>
+                    <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
+                    <TableCell className="text-gray-500">{pdf.created_at ? new Date(pdf.created_at).toLocaleString() : "N/A"}</TableCell>
+                    <TableCell className="text-gray-500">
+                      {pdf.slicer_ids && pdf.slicer_ids.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {pdf.slicer_ids.map((slicer_id) => (
+                            <Link key={slicer_id} href={`/studio/slicers/${slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
+                              {slicer_id}
+                            </Link>
+                          ))}
+                        </div>
+                      ) : "N/A"}
+                    </TableCell>
+                    <TableCell className="text-gray-500">{pdf.is_template ? "Yes" : "No"}</TableCell>
+                    <TableCell className="text-gray-500">
+                      <Link href={`/studio/pdfs/${pdf.id}`}>
+                        View
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
-        <TabsContent value="slicers" className="mt-4">
+        <TabsContent value="slicers">
           {slicers.length === 0 ? (
             <p className="text-gray-500">No slicers available.</p>
           ) : (
