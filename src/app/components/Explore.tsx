@@ -9,12 +9,18 @@ import { SingleValueDisplay } from "@/app/components/ui/single-value-display";
 import { Spinner } from "@/app/components/ui/spinner";
 import { TableDisplay } from "@/app/components/ui/table-display";
 import { TextDisplay } from "@/app/components/ui/text-display";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/app/components/ui/tooltip";
 import { useToast } from "@/app/hooks/use-toast";
-import { LLMPrompt, PDFMetadata, SlicedPdfContentWithMetadata, Slicer } from "@/app/types";
-import { FormattedResponse } from "@/lib/openai";
-import { getInitialSlicedContentForSlicer, getSlicerDetails, searchSlicedContentForSlicer } from "@/server/actions/studio/actions";
+import { LLMPrompt, PDFMetadata, SlicedPdfContentWithMetadata, Slicer, SlicerLLMOutput } from "@/app/types";
+import { FormattedResponse, LLMResponse } from "@/lib/openai";
+import { getInitialSlicedContentForSlicer, getSlicerDetails, getSlicerLLMOutput, saveSlicerLLMOutput, searchSlicedContentForSlicer } from "@/server/actions/studio/actions";
 import { ContextObject, createMessages, getContextForQuery, getContextForSlicer, processWithLLM } from "@/utils/explore-utils";
-import { ChevronDown, ChevronUp, Info, MessageSquare, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, Info, MessageSquare, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ChatMessage {
@@ -30,30 +36,47 @@ interface ChatMessage {
   contextObjects?: ContextObject[];
 }
 
-interface SmartSlicedContent {
-  id: string;
-  output: {
-    formatted_response: any;
-    raw_response: string;
-    confidence: number;
-    follow_up_questions: string[];
-  };
-}
+const RenderLLMOutput = (output: LLMResponse) => {
+  const [isOpen, setIsOpen] = useState(false);
 
-const renderLLMOutput = (output: any) => {
   if (!output || !output.formatted_response) {
     return <TextDisplay content={{ text: "Invalid or empty response" }} />;
   }
 
   return (
-    <div>
-      {output.raw_response && (
-        <div className="mb-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">
-          <h4 className="text-sm font-semibold mb-2">Raw Response:</h4>
-          <p>{output.raw_response}</p>
-        </div>
-      )}
+    <div className="relative">
       {renderFormattedOutput(output.formatted_response)}
+      {output.raw_response && (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <div className="absolute top-0 right-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  </CollapsibleTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">
+                    {isOpen ? "Hide raw response" : "Show raw response"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <CollapsibleContent>
+            <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">
+              <h4 className="text-sm font-semibold mb-2">Raw Response:</h4>
+              <p>{output.raw_response}</p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </div>
   );
 };
@@ -97,7 +120,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [totalResults, setTotalResults] = useState<number>(0);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const [smartSlicedContent, setSmartSlicedContent] = useState<SmartSlicedContent[] | null>(null);
+  const [smartSlicedContent, setSmartSlicedContent] = useState<SlicerLLMOutput[] | null>(null);
   const [slicer, setSlicer] = useState<Slicer | null>(null);
   const [linkedPdfs, setLinkedPdfs] = useState<PDFMetadata[]>([]);
   const [initialDataFetched, setInitialDataFetched] = useState(false);
@@ -181,12 +204,9 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     }
   }, [getInitialSlicedContentForSearch, initialDataFetched, linkedPdfs]);
 
-  const getLLMOutputForSlicer = useCallback(async () => {
+  const getLLMOutputForSlicer = useCallback(async (forceRefresh = false) => {
     if (!slicer) return;
-    // Todo: we need to handle the empty llm/screen scenario
-    if (!slicer.llm_prompts) {
-      return;
-    }
+    if (!slicer.llm_prompts) return;
 
     if (linkedPdfs.length === 0 || linkedPdfs.every(pdf => pdf.file_processing_status !== "processed")) {
       return;
@@ -194,6 +214,17 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
 
     setIsLoading(true);
     try {
+      // Check if we have saved output and it's not a forced refresh
+      if (!forceRefresh) {
+        const savedOutput = await getSlicerLLMOutput(slicerId);
+        if (savedOutput && savedOutput.length > 0) {
+          setSmartSlicedContent(savedOutput);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // If no saved output or forced refresh, generate new output
       const llmContentForSlicer = await Promise.all(slicer.llm_prompts?.map(async (promptObj: LLMPrompt) => {
         console.log("Processing initial outputs for slicer:", slicerId);
         const context = await getContextForSlicer(slicerId);
@@ -202,10 +233,15 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
         console.log("Messages created:", JSON.stringify(messages, null, 2));
         console.log("Messages created for prompt:", promptObj.id);
         const result = await processWithLLM(messages);
-        return { id: promptObj.id, output: result };
+        return { id: promptObj.id, prompt_id: promptObj.id, prompt: promptObj.prompt, output: result };
       }));
 
       console.log("LLM content for slicer:", llmContentForSlicer);
+
+      // Save each output individually
+      for (const output of llmContentForSlicer) {
+        await saveSlicerLLMOutput(slicerId, output);
+      }
 
       setSmartSlicedContent(llmContentForSlicer);
     } catch (error) {
@@ -218,7 +254,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     } finally {
       setIsLoading(false);
     }
-  }, [slicerId, slicer, toast]);
+  }, [slicerId, slicer, linkedPdfs, toast]);
 
   const handleChat = async () => {
     if (!query.trim() || !slicer) return;
@@ -332,7 +368,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     }
   }, [chatHistory]);
 
-  const renderChatMessage = (message: ChatMessage) => (
+  const RenderChatMessage = (message: ChatMessage) => (
     <div
       className={`p-2 rounded-lg ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
         }`}
@@ -370,7 +406,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const LoadingState = () => (
     <div className="flex justify-center items-center py-4">
       <Spinner />
-      <span className="ml-2">Processing Content...</span>
+      <span className="ml-2">{mode === "search" ? "Getting Data..." : "Fetching Insights..."}</span>
     </div>
   );
 
@@ -382,7 +418,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </div>
   );
 
-  const ChatMode = ({ chatHistory, smartSlicedContent }: { chatHistory: ChatMessage[]; smartSlicedContent: SmartSlicedContent[] }) => (
+  const ChatMode = ({ chatHistory, smartSlicedContent }: { chatHistory: ChatMessage[]; smartSlicedContent: SlicerLLMOutput[] }) => (
     <>
       {chatHistory.length > 0 ? (
         <div className="space-y-4">
@@ -399,7 +435,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </>
   );
 
-  const PreviousMessagesCollapsible = ({ chatHistory, smartSlicedContent }: { chatHistory: ChatMessage[]; smartSlicedContent: SmartSlicedContent[] }) => (
+  const PreviousMessagesCollapsible = ({ chatHistory, smartSlicedContent }: { chatHistory: ChatMessage[]; smartSlicedContent: SlicerLLMOutput[] }) => (
     <Collapsible
       open={isPreviousDataExpanded}
       onOpenChange={setIsPreviousDataExpanded}
@@ -422,14 +458,14 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </Collapsible>
   );
 
-  const LLMOutputRenderer = ({ smartSlicedContent }: { smartSlicedContent: SmartSlicedContent[] }) => (
+  const LLMOutputRenderer = ({ smartSlicedContent }: { smartSlicedContent: SlicerLLMOutput[] }) => (
     <>
       {smartSlicedContent && smartSlicedContent.map((output) => (
         <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
           <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
-            Output for Prompt {output.id}
+            {output.prompt}
           </h3>
-          {renderLLMOutput(output.output)}
+          {RenderLLMOutput(output.output)}
         </div>
       ))}
     </>
@@ -438,7 +474,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const PreviousChatMessages = ({ chatHistory }: { chatHistory: ChatMessage[] }) => (
     <>
       {chatHistory.slice(0, -2).map((message, index) => (
-        <div key={index}>{renderChatMessage(message)}</div>
+        <div key={index}>{RenderChatMessage(message)}</div>
       ))}
     </>
   );
@@ -447,10 +483,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     <>
       {chatHistory.length >= 2 && (
         <div className="text-right bg-gray-200 p-2 rounded-lg">
-          {renderChatMessage(chatHistory[chatHistory.length - 2])}
+          {RenderChatMessage(chatHistory[chatHistory.length - 2])}
         </div>
       )}
-      {renderChatMessage(chatHistory[chatHistory.length - 1])}
+      {RenderChatMessage(chatHistory[chatHistory.length - 1])}
       {chatHistory.length > 0 && (
         <RelatedDocuments contextObjects={chatHistory[chatHistory.length - 1].contextObjects || []} />
       )}
@@ -515,6 +551,17 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </div>
   );
 
+  const RefreshButton = () => (
+    <Button
+      onClick={() => getLLMOutputForSlicer(true)}
+      disabled={isLoading}
+      className="ml-2"
+      variant="outline"
+    >
+      Refresh LLM Output
+    </Button>
+  );
+
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <header className="flex items-center justify-between w-full p-2">
@@ -544,7 +591,9 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
               type="text"
               placeholder={mode === "search" ? "Search PDFs..." : "Ask a question..."}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+              }}
               className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -557,6 +606,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
             {mode === "search" ? "Search" : "Send"}
           </Button>
         </div>
+        {mode === "chat" && <RefreshButton />}
       </header>
       {isLoading ? (
         <LoadingState />
@@ -564,7 +614,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
         <main className="flex-1 overflow-hidden flex">
           <div className="flex-1 flex flex-col">
             <ScrollArea className="flex-1">
-              <div className="p-2 space-y-4 overflow-hidden">
+              <div className="p-4 space-y-4 overflow-hidden">
                 {mode === "chat" ? (
                   <ChatMode chatHistory={chatHistory} smartSlicedContent={smartSlicedContent || []} />
                 ) : (

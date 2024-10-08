@@ -165,6 +165,44 @@ export type Database = {
           },
         ]
       }
+      slicer_llm_outputs: {
+        Row: {
+          created_at: string | null
+          id: string
+          output: Json
+          prompt: string
+          prompt_id: string
+          slicer_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          output: Json
+          prompt: string
+          prompt_id: string
+          slicer_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          output?: Json
+          prompt?: string
+          prompt_id?: string
+          slicer_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slicer_llm_outputs_slicer_id_fkey"
+            columns: ["slicer_id"]
+            isOneToOne: false
+            referencedRelation: "slicers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       slicers: {
         Row: {
           created_at: string | null

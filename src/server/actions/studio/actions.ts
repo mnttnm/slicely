@@ -1,8 +1,9 @@
 "use server";
 
-import { LLMPrompt, PDFMetadata, ProcessingRules, SectionInfo, SlicedPdfContent, SlicedPdfContentWithMetadata, Slicer } from "@/app/types";
+import { LLMPrompt, PDFMetadata, ProcessingRules, SectionInfo, SlicedPdfContent, SlicedPdfContentWithMetadata, Slicer, SlicerLLMOutput } from "@/app/types";
 import { deserializeProcessingRules, serializeProcessingRules } from "@/app/utils/fabric-helper";
 import { generateEmbedding } from "@/lib/embedding-utils";
+import { LLMResponse } from "@/lib/openai";
 import { createClient } from "@/server/services/supabase/server";
 import { Tables, TablesInsert } from "@/types/supabase-types/database.types";
 import { hashPassword, verifyPassword } from "@/utils/password-utils";
@@ -593,4 +594,41 @@ export async function verifyPdfPassword(slicerId: string, password: string): Pro
   }
 
   return verifyPassword(password, slicer.pdf_password);
+}
+
+export async function getSlicerLLMOutput(slicerId: string): Promise<SlicerLLMOutput[] | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("slicer_llm_outputs")
+    .select("*")
+    .eq("slicer_id", slicerId);
+
+  if (error) {
+    console.error("Error fetching slicer LLM output:", error);
+    return null;
+  }
+
+  return data?.map(item => ({
+    id: item.id,
+    prompt_id: item.prompt_id,
+    prompt: item.prompt,
+    output: item.output as LLMResponse
+  })) || null;
+}
+
+export async function saveSlicerLLMOutput(slicerId: string, output: SlicerLLMOutput): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("slicer_llm_outputs")
+    .upsert({
+      slicer_id: slicerId,
+      prompt_id: output.prompt_id,
+      prompt: output.prompt,
+      output: output.output
+    }, { onConflict: "slicer_id,prompt_id" });
+
+  if (error) {
+    console.error("Error saving slicer LLM output:", error);
+    throw new Error("Failed to save slicer LLM output");
+  }
 }

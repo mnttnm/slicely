@@ -1,3 +1,4 @@
+import { LLMResponse } from "@/lib/openai";
 import * as fabric from "fabric";
 
 export interface PDFMetadata {
@@ -120,4 +121,11 @@ export interface FilterCounts {
 export interface ActiveFilters {
   pdf_title?: string;
   page_number?: number;
+}
+
+export interface SlicerLLMOutput {
+  id: string;
+  prompt_id: string;
+  prompt: string;
+  output: LLMResponse;
 }
