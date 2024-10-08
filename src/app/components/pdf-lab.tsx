@@ -1,5 +1,5 @@
 "use client";
-import ProcessedOutput from "@/app/components/processed-output";
+import ProcessedOutput from "@/app/components/pdf-sliced-content-viewer";
 import { Button } from "@/app/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Tables } from "@/types/supabase-types/database.types";

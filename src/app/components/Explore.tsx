@@ -9,11 +9,10 @@ import { SingleValueDisplay } from "@/app/components/ui/single-value-display";
 import { Spinner } from "@/app/components/ui/spinner";
 import { TableDisplay } from "@/app/components/ui/table-display";
 import { TextDisplay } from "@/app/components/ui/text-display";
-import { FilterProvider } from "@/app/context/filter-context";
 import { useToast } from "@/app/hooks/use-toast";
-import { LLMPrompt, PDFMetadata, ProcessedOutputWithMetadata, Slicer } from "@/app/types";
+import { LLMPrompt, PDFMetadata, SlicedPdfContentWithMetadata, Slicer } from "@/app/types";
 import { FormattedResponse } from "@/lib/openai";
-import { getInitialOutputs, getSlicerDetails, searchOutputs } from "@/server/actions/studio/actions";
+import { getInitialSlicedContentForSlicer, getSlicerDetails, searchSlicedContentForSlicer } from "@/server/actions/studio/actions";
 import { ContextObject, createMessages, getContextForQuery, getContextForSlicer, processWithLLM } from "@/utils/explore-utils";
 import { ChevronDown, ChevronUp, Info, MessageSquare, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -90,7 +89,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [mode, setMode] = useState<"search" | "chat">("search");
   const [query, setQuery] = useState("");
   const [showMetadata, setShowMetadata] = useState<string | null>(null);
-  const [results, setResults] = useState<ProcessedOutputWithMetadata[]>([]);
+  const [results, setResults] = useState<SlicedPdfContentWithMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [page, setPage] = useState(1);
@@ -109,7 +108,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     console.log("fetchResults", searchQuery, pageNum);
     setIsLoading(true);
     try {
-      const { results: searchResults, total } = await searchOutputs(slicerId, searchQuery, pageNum);
+      const { results: searchResults, total } = await searchSlicedContentForSlicer(slicerId, searchQuery, pageNum);
       setResults((prevResults) => {
         if (pageNum === 1) {
           return searchResults;
@@ -137,7 +136,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     if (initialDataFetched) return;
     setIsLoading(true);
     try {
-      const { results: initialResults, total } = await getInitialOutputs(slicerId, pageNum);
+      const { results: initialResults, total } = await getInitialSlicedContentForSlicer(slicerId, pageNum);
       setResults((prevResults) => {
         if (pageNum === 1) {
           return initialResults;
@@ -459,7 +458,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </>
   );
 
-  const SearchMode = ({ results, totalResults, showMetadata, setShowMetadata }: { results: ProcessedOutputWithMetadata[]; totalResults: number; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
+  const SearchMode = ({ results, totalResults, showMetadata, setShowMetadata }: { results: SlicedPdfContentWithMetadata[]; totalResults: number; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
     <>
       {results.length > 0 && (
         <p className="text-sm text-muted-foreground">
@@ -476,7 +475,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </>
   );
 
-  const SearchResult = ({ result, showMetadata, setShowMetadata }: { result: ProcessedOutputWithMetadata; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
+  const SearchResult = ({ result, showMetadata, setShowMetadata }: { result: SlicedPdfContentWithMetadata; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
     <div className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
       <div className="flex justify-between items-center">
         <h3 className="text-md font-medium text-gray-900 dark:text-gray-100">
@@ -500,7 +499,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </div>
   );
 
-  const ResultMetadata = ({ result }: { result: ProcessedOutputWithMetadata }) => (
+  const ResultMetadata = ({ result }: { result: SlicedPdfContentWithMetadata }) => (
     <div className="text-xs text-muted-foreground mb-2">
       <p>Type: {result.section_info.type}</p>
       {Object.entries(result.section_info.metadata).map(([key, value]) => (
@@ -588,8 +587,6 @@ export default function Explore({ slicerId }: { slicerId: string }) {
   }
 
   return (
-    <FilterProvider slicerID={slicerId}>
-      <ExploreContent slicerId={slicerId} />
-    </FilterProvider>
+    <ExploreContent slicerId={slicerId} />
   );
 }
