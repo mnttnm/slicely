@@ -95,7 +95,11 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
       const newSlicer = await createSlicer({
         name: slicerName,
         description: slicerDescription,
-        fileId: selectedFile
+        fileId: selectedFile,
+        processingRules: {
+          annotations: [],
+          skipped_pages: []
+        }
       });
       onComplete?.(newSlicer.id);
       onOpenChange(false);

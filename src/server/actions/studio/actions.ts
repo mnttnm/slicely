@@ -165,7 +165,7 @@ export async function getSlicers(): Promise<Tables<"slicers">[]> {
   return slicers;
 }
 
-export async function createSlicer({ name, description, fileId, password }: { name: string; description: string; fileId: string; password?: string }) {
+export async function createSlicer({ name, description, fileId, password, processingRules }: { name: string; description: string; fileId: string; password?: string; processingRules: ProcessingRules }) {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -182,6 +182,7 @@ export async function createSlicer({ name, description, fileId, password }: { na
     .insert({
       name,
       description,
+      processing_rules: serializeProcessingRules(processingRules),
       user_id: user.id,
       pdf_password: hashedPassword,
     })
