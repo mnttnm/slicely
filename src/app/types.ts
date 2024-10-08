@@ -53,7 +53,7 @@ export interface Slicer {
   updated_at: string | null;
 };
 
-export type ProcessedOutput = {
+export type SlicedPdfContent = {
   id: string;
   pdf_id: string;
   slicer_id: string;
@@ -66,13 +66,11 @@ export type ProcessedOutput = {
   embeddings?: number[];
 };
 
-
-export interface ProcessedOutputWithMetadata extends ProcessedOutput {
+export interface SlicedPdfContentWithMetadata extends SlicedPdfContent {
   pdfs: {
     file_name: string | null;
   }
 }
-
 
 export type SectionInfo = {
   type: "llm_output" | "annotation_output" | "full_page_output";

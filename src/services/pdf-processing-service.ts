@@ -2,8 +2,8 @@
 
 import { PDFMetadata } from "@/app/types";
 import { extractPdfContent } from "@/server/actions/pdf-actions";
-import { getAnnotations, getSignedPdfUrl, getSlicerDetails, saveProcessedOutput, updatePDF } from "@/server/actions/studio/actions";
-import { TablesInsert } from "@/types/supabase-types/database.types";
+import { getAnnotations, getSignedPdfUrl, getSlicerDetails, saveSlicedContent, updatePDF } from "@/server/actions/studio/actions";
+import { Tables, TablesInsert } from "@/types/supabase-types/database.types";
 
 // extract content from pdf and returns output in the format to be inserted into the outputs table
 export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<TablesInsert<"outputs">[]> {
@@ -31,19 +31,19 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Ta
   }));
 }
 
-export async function handlePDFProcessing(pdf: PDFMetadata, slicerId: string) {
+export async function handlePDFProcessing(pdfDetails: Tables<"pdfs">, slicerId: string) {
   if (!slicerId) {
-    throw new Error(`No slicer associated with PDF ${pdf.file_name}. Please link a slicer first.`);
+    throw new Error(`No slicer associated with PDF ${pdfDetails.file_name}. Please link a slicer first.`);
   }
 
   try {
     const { slicerDetails } = await getSlicerDetails(slicerId as string) ?? {};
 
     if (!slicerDetails) {
-      throw new Error(`No slicer associated with PDF ${pdf.file_name}. Please link a slicer first.`);
+      throw new Error(`No slicer associated with PDF ${pdfDetails.file_name}. Please link a slicer first.`);
     }
 
-    const result = await ProcessPdf({ ...pdf, password: slicerDetails.pdf_password ?? undefined }, slicerId as string);
+    const result = await ProcessPdf({ ...pdfDetails, password: slicerDetails.pdf_password ?? undefined }, slicerId as string);
     // TODO: Currently it generates a new output every time,
     // so, even if the PDF is already processed, it will generate a new output.
     // We need to check if the output already exists in the database.
@@ -51,7 +51,7 @@ export async function handlePDFProcessing(pdf: PDFMetadata, slicerId: string) {
     // Or while showing the output, we can show a timeline of the outputs.
     // If it doesn't exist, we need to insert the output.
     result.forEach(async (output) => {
-      await saveProcessedOutput(output);
+      await saveSlicedContent(output);
     });
 
     const updatedData: Partial<PDFMetadata> = {
@@ -59,11 +59,11 @@ export async function handlePDFProcessing(pdf: PDFMetadata, slicerId: string) {
     };
 
     try {
-      await updatePDF(pdf.id, updatedData);
+      await updatePDF(pdfDetails.id, updatedData);
     } catch (error) {
-      throw new Error(`Error updating PDF ${pdf.file_name} status: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Error updating PDF ${pdfDetails.file_name} status: ${error instanceof Error ? error.message : String(error)}`);
     }
   } catch (error) {
-    throw new Error(`Error processing PDF ${pdf.file_name}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`Error processing PDF ${pdfDetails.file_name}: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

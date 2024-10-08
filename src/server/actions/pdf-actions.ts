@@ -1,6 +1,6 @@
 "use server";
 
-import { ExtractedText, FabricRect, ProcessingRules } from "@/app/types";
+import { ExtractedText, FabricRect, ProcessingRules, SlicedPdfContent } from "@/app/types";
 import { getPageText } from "@/app/utils/pdf-utils";
 import { extractTextFromRectangle } from "@/app/utils/text-extraction";
 import * as pdfjs from "pdfjs-dist";

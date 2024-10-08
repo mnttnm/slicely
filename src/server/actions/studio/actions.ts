@@ -1,6 +1,6 @@
 "use server";
 
-import { LLMPrompt, PDFMetadata, ProcessedOutput, ProcessedOutputWithMetadata, ProcessingRules, SectionInfo, Slicer } from "@/app/types";
+import { LLMPrompt, PDFMetadata, ProcessingRules, SectionInfo, SlicedPdfContent, SlicedPdfContentWithMetadata, Slicer } from "@/app/types";
 import { deserializeProcessingRules, serializeProcessingRules } from "@/app/utils/fabric-helper";
 import { generateEmbedding } from "@/lib/embedding-utils";
 import { createClient } from "@/server/services/supabase/server";
@@ -397,8 +397,7 @@ export async function getAnnotations(slicerId: string): Promise<ProcessingRules 
   return null;
 }
 
-export async function getProcessedOutput(pdfId: string): Promise<ProcessedOutput[]> {
-  console.log("getting data");
+export async function getSlicedPdfContent(pdfId: string): Promise<SlicedPdfContent[]> {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -416,51 +415,13 @@ export async function getProcessedOutput(pdfId: string): Promise<ProcessedOutput
     throw new Error("Failed to fetch processed output");
   }
 
-  console.log("processed data: ", data.length);
-
   if (!data || data.length === 0) return [];
 
   return data.map(item => ({
     ...item,
     section_info: item.section_info as SectionInfo
-  })) as ProcessedOutput[];
+  })) as SlicedPdfContent[];
 }
-
-export async function getProcessedOutputForSlicer(slicerId: string): Promise<ProcessedOutputWithMetadata[]> {
-  const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("Authentication failed");
-  }
-
-  if (!slicerId) {
-    throw new Error("No slicer ID provided");
-  }
-
-  const { data, error } = await supabase
-    .from("outputs")
-    .select(`
-      *,
-      tsv,
-      pdfs (
-        file_name
-      )
-    `)
-    .eq("slicer_id", slicerId);
-
-  if (error) {
-    console.error("Error fetching processed output for slicer:", error);
-    throw new Error("Failed to fetch processed output for slicer");
-  }
-
-  return (data || []).map(item => ({
-    ...item,
-    section_info: item.section_info as SectionInfo,
-    pdfs: item.pdfs as { file_name: string | null }
-  })) as ProcessedOutputWithMetadata[];
-}
-
 
 export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
   const supabase = createClient();
@@ -500,7 +461,7 @@ export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
   return { success: true };
 }
 
-export async function saveProcessedOutput(output: TablesInsert<"outputs">): Promise<Tables<"outputs">> {
+export async function saveSlicedContent(output: TablesInsert<"outputs">): Promise<Tables<"outputs">> {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
@@ -525,7 +486,7 @@ export async function saveProcessedOutput(output: TablesInsert<"outputs">): Prom
   return data as Tables<"outputs">;
 }
 
-export async function searchOutputs(slicerId: string, query: string, page = 1, pageSize = 5): Promise<{ results: ProcessedOutputWithMetadata[], total: number }> {
+export async function searchSlicedContentForSlicer(slicerId: string, query: string, page = 1, pageSize = 5): Promise<{ results: SlicedPdfContentWithMetadata[], total: number }> {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -562,7 +523,7 @@ export async function searchOutputs(slicerId: string, query: string, page = 1, p
     ...item,
     section_info: item.section_info as SectionInfo,
     pdfs: item.pdfs as { file_name: string | null }
-  })) as ProcessedOutputWithMetadata[];
+  })) as SlicedPdfContentWithMetadata[];
 
   return {
     results,
@@ -570,7 +531,7 @@ export async function searchOutputs(slicerId: string, query: string, page = 1, p
   };
 }
 
-export async function getInitialOutputs(slicerId: string, page = 1, pageSize = 10) {
+export async function getInitialSlicedContentForSlicer(slicerId: string, page = 1, pageSize = 10) {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -602,7 +563,7 @@ export async function getInitialOutputs(slicerId: string, page = 1, pageSize = 1
     ...item,
     section_info: item.section_info as SectionInfo,
     pdfs: item.pdfs as { file_name: string | null }
-  })) as ProcessedOutputWithMetadata[];
+  })) as SlicedPdfContentWithMetadata[];
 
   return { results, total: count || 0 };
 }

@@ -1,11 +1,11 @@
 "use server";
 import { chatCompletion } from "@/lib/openai";
 import { searchVectorStore } from "@/lib/supabase";
-import { getInitialOutputs } from "@/server/actions/studio/actions";
+import { getInitialSlicedContentForSlicer } from "@/server/actions/studio/actions";
 
 
 export async function getContextForSlicer(slicerId: string, limit = 100) {
-  const { results } = await getInitialOutputs(slicerId, 1, limit);
+  const { results } = await getInitialSlicedContentForSlicer(slicerId, 1, limit);
   return results.map(result => result.text_content).join("\n\n");
 }
 

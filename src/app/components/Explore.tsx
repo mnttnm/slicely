@@ -9,11 +9,10 @@ import { SingleValueDisplay } from "@/app/components/ui/single-value-display";
 import { Spinner } from "@/app/components/ui/spinner";
 import { TableDisplay } from "@/app/components/ui/table-display";
 import { TextDisplay } from "@/app/components/ui/text-display";
-import { FilterProvider } from "@/app/context/filter-context";
 import { useToast } from "@/app/hooks/use-toast";
-import { LLMPrompt, PDFMetadata, ProcessedOutputWithMetadata, Slicer } from "@/app/types";
+import { LLMPrompt, PDFMetadata, SlicedPdfContentWithMetadata, Slicer } from "@/app/types";
 import { FormattedResponse } from "@/lib/openai";
-import { getInitialOutputs, getSlicerDetails, searchOutputs } from "@/server/actions/studio/actions";
+import { getInitialSlicedContentForSlicer, getSlicerDetails, searchSlicedContentForSlicer } from "@/server/actions/studio/actions";
 import { ContextObject, createMessages, getContextForQuery, getContextForSlicer, processWithLLM } from "@/utils/explore-utils";
 import { ChevronDown, ChevronUp, Info, MessageSquare, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,7 +30,7 @@ interface ChatMessage {
   contextObjects?: ContextObject[];
 }
 
-interface ProcessedOutput {
+interface SmartSlicedContent {
   id: string;
   output: {
     formatted_response: any;
@@ -41,7 +40,7 @@ interface ProcessedOutput {
   };
 }
 
-const renderProcessedOutput = (output: any) => {
+const renderLLMOutput = (output: any) => {
   if (!output || !output.formatted_response) {
     return <TextDisplay content={{ text: "Invalid or empty response" }} />;
   }
@@ -90,7 +89,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [mode, setMode] = useState<"search" | "chat">("search");
   const [query, setQuery] = useState("");
   const [showMetadata, setShowMetadata] = useState<string | null>(null);
-  const [results, setResults] = useState<ProcessedOutputWithMetadata[]>([]);
+  const [results, setResults] = useState<SlicedPdfContentWithMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [page, setPage] = useState(1);
@@ -98,18 +97,18 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [totalResults, setTotalResults] = useState<number>(0);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const [processedOutput, setProcessedOutput] = useState<ProcessedOutput[] | null>(null);
+  const [smartSlicedContent, setSmartSlicedContent] = useState<SmartSlicedContent[] | null>(null);
   const [slicer, setSlicer] = useState<Slicer | null>(null);
   const [linkedPdfs, setLinkedPdfs] = useState<PDFMetadata[]>([]);
   const [initialDataFetched, setInitialDataFetched] = useState(false);
   const [, setExpandedMessages] = useState<Set<number>>(new Set());
   const [isPreviousDataExpanded, setIsPreviousDataExpanded] = useState(false);
 
-  const fetchResults = useCallback(async (searchQuery: string, pageNum: number) => {
+  const searchSlicedContent = useCallback(async (searchQuery: string, pageNum: number) => {
     console.log("fetchResults", searchQuery, pageNum);
     setIsLoading(true);
     try {
-      const { results: searchResults, total } = await searchOutputs(slicerId, searchQuery, pageNum);
+      const { results: searchResults, total } = await searchSlicedContentForSlicer(slicerId, searchQuery, pageNum);
       setResults((prevResults) => {
         if (pageNum === 1) {
           return searchResults;
@@ -132,12 +131,11 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     }
   }, [slicerId, toast]);
 
-  const fetchInitialOutputs = useCallback(async (pageNum = 1) => {
-    console.log("fetchInitialOutputs", pageNum);
+  const getInitialSlicedContentForSearch = useCallback(async (pageNum = 1) => {
     if (initialDataFetched) return;
     setIsLoading(true);
     try {
-      const { results: initialResults, total } = await getInitialOutputs(slicerId, pageNum);
+      const { results: initialResults, total } = await getInitialSlicedContentForSlicer(slicerId, pageNum);
       setResults((prevResults) => {
         if (pageNum === 1) {
           return initialResults;
@@ -149,11 +147,11 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       setTotalResults(total);
       setInitialDataFetched(true);
     } catch (error) {
-      console.error("Error fetching initial outputs:", error);
+      console.error("Error fetching initial sliced content:", error);
       setHasMore(false);
       toast({
         title: "Error",
-        description: "Failed to fetch initial outputs. Please try again.",
+        description: "Failed to fetch initial sliced content. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -163,27 +161,27 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
 
   const handleSearch = useCallback(() => {
     if (query.trim()) {
-      fetchResults(query, 1);
+      searchSlicedContent(query, 1);
     }
-  }, [query, fetchResults]);
+  }, [query, searchSlicedContent]);
 
   const handleLoadMore = useCallback(() => {
     if (hasMore && !isLoading) {
       if (query.trim()) {
-        fetchResults(query, page + 1);
+        searchSlicedContent(query, page + 1);
       } else {
-        fetchInitialOutputs(page + 1);
+        getInitialSlicedContentForSearch(page + 1);
       }
     }
-  }, [hasMore, isLoading, query, page, fetchResults, fetchInitialOutputs]);
+  }, [hasMore, isLoading, query, page, searchSlicedContent, getInitialSlicedContentForSearch]);
 
   useEffect(() => {
     if (!initialDataFetched && linkedPdfs.some(pdf => pdf.file_processing_status === "processed")) {
-      fetchInitialOutputs();
+      getInitialSlicedContentForSearch();
     }
-  }, [fetchInitialOutputs, initialDataFetched, linkedPdfs]);
+  }, [getInitialSlicedContentForSearch, initialDataFetched, linkedPdfs]);
 
-  const processInitialOutputs = useCallback(async () => {
+  const getLLMOutputForSlicer = useCallback(async () => {
     if (!slicer) return;
     // Todo: we need to handle the empty llm/screen scenario
     if (!slicer.llm_prompts) {
@@ -196,7 +194,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
 
     setIsLoading(true);
     try {
-      const processedOutputs = await Promise.all(slicer.llm_prompts?.map(async (promptObj: LLMPrompt) => {
+      const llmContentForSlicer = await Promise.all(slicer.llm_prompts?.map(async (promptObj: LLMPrompt) => {
         console.log("Processing initial outputs for slicer:", slicerId);
         const context = await getContextForSlicer(slicerId);
         console.log("Context retrieved:", `${context.substring(0, 100)}...`);
@@ -207,9 +205,9 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
         return { id: promptObj.id, output: result };
       }));
 
-      console.log("Processed results:", processedOutputs);
+      console.log("LLM content for slicer:", llmContentForSlicer);
 
-      setProcessedOutput(processedOutputs);
+      setSmartSlicedContent(llmContentForSlicer);
     } catch (error) {
       console.error("Error processing initial outputs:", error);
       toast({
@@ -321,10 +319,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [fetchSlicerDetails]);
 
   useEffect(() => {
-    if (slicer && mode === "chat" && !processedOutput && linkedPdfs.some(pdf => pdf.file_processing_status === "processed")) {
-      processInitialOutputs();
+    if (slicer && mode === "chat" && !smartSlicedContent && linkedPdfs.some(pdf => pdf.file_processing_status === "processed")) {
+      getLLMOutputForSlicer();
     }
-  }, [slicer, processInitialOutputs, mode, processedOutput, linkedPdfs]);
+  }, [slicer, getLLMOutputForSlicer, mode, smartSlicedContent, linkedPdfs]);
 
 
   // Modify the useEffect to expand only the latest message
@@ -372,7 +370,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const LoadingState = () => (
     <div className="flex justify-center items-center py-4">
       <Spinner />
-      <span className="ml-2">Processing outputs...</span>
+      <span className="ml-2">Processing Content...</span>
     </div>
   );
 
@@ -384,15 +382,15 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </div>
   );
 
-  const ChatMode = ({ chatHistory, processedOutput }: { chatHistory: ChatMessage[]; processedOutput: ProcessedOutput[] }) => (
+  const ChatMode = ({ chatHistory, smartSlicedContent }: { chatHistory: ChatMessage[]; smartSlicedContent: SmartSlicedContent[] }) => (
     <>
       {chatHistory.length > 0 ? (
         <div className="space-y-4">
-          <PreviousMessagesCollapsible chatHistory={chatHistory} processedOutput={processedOutput} />
+          <PreviousMessagesCollapsible chatHistory={chatHistory} smartSlicedContent={smartSlicedContent} />
           <RecentChatMessages chatHistory={chatHistory} />
         </div>
-      ) : processedOutput?.length > 0 ? (
-        <ProcessedOutputs processedOutput={processedOutput} />
+      ) : smartSlicedContent?.length > 0 ? (
+        <LLMOutputRenderer smartSlicedContent={smartSlicedContent} />
       ) : (
         <div className="space-y-4 flex flex-col items-center justify-center">
           <p>Seems like there is no extracted text from the linked PDFs, please confirm if you have processed the PDFs.</p>
@@ -401,7 +399,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </>
   );
 
-  const PreviousMessagesCollapsible = ({ chatHistory, processedOutput }: { chatHistory: ChatMessage[]; processedOutput: ProcessedOutput[] }) => (
+  const PreviousMessagesCollapsible = ({ chatHistory, smartSlicedContent }: { chatHistory: ChatMessage[]; smartSlicedContent: SmartSlicedContent[] }) => (
     <Collapsible
       open={isPreviousDataExpanded}
       onOpenChange={setIsPreviousDataExpanded}
@@ -417,21 +415,21 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="space-y-4 mt-2">
-          <ProcessedOutputs processedOutput={processedOutput} />
+          <LLMOutputRenderer smartSlicedContent={smartSlicedContent} />
           <PreviousChatMessages chatHistory={chatHistory} />
         </div>
       </CollapsibleContent>
     </Collapsible>
   );
 
-  const ProcessedOutputs = ({ processedOutput }: { processedOutput: ProcessedOutput[] }) => (
+  const LLMOutputRenderer = ({ smartSlicedContent }: { smartSlicedContent: SmartSlicedContent[] }) => (
     <>
-      {processedOutput && processedOutput.map((output) => (
+      {smartSlicedContent && smartSlicedContent.map((output) => (
         <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
           <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
-            Processed Output for Prompt {output.id}
+            Output for Prompt {output.id}
           </h3>
-          {renderProcessedOutput(output.output)}
+          {renderLLMOutput(output.output)}
         </div>
       ))}
     </>
@@ -459,7 +457,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </>
   );
 
-  const SearchMode = ({ results, totalResults, showMetadata, setShowMetadata }: { results: ProcessedOutputWithMetadata[]; totalResults: number; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
+  const SearchMode = ({ results, totalResults, showMetadata, setShowMetadata }: { results: SlicedPdfContentWithMetadata[]; totalResults: number; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
     <>
       {results.length > 0 && (
         <p className="text-sm text-muted-foreground">
@@ -476,7 +474,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </>
   );
 
-  const SearchResult = ({ result, showMetadata, setShowMetadata }: { result: ProcessedOutputWithMetadata; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
+  const SearchResult = ({ result, showMetadata, setShowMetadata }: { result: SlicedPdfContentWithMetadata; showMetadata: string | null; setShowMetadata: (id: string | null) => void }) => (
     <div className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
       <div className="flex justify-between items-center">
         <h3 className="text-md font-medium text-gray-900 dark:text-gray-100">
@@ -500,7 +498,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     </div>
   );
 
-  const ResultMetadata = ({ result }: { result: ProcessedOutputWithMetadata }) => (
+  const ResultMetadata = ({ result }: { result: SlicedPdfContentWithMetadata }) => (
     <div className="text-xs text-muted-foreground mb-2">
       <p>Type: {result.section_info.type}</p>
       {Object.entries(result.section_info.metadata).map(([key, value]) => (
@@ -568,7 +566,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
             <ScrollArea className="flex-1">
               <div className="p-2 space-y-4 overflow-hidden">
                 {mode === "chat" ? (
-                  <ChatMode chatHistory={chatHistory} processedOutput={processedOutput || []} />
+                  <ChatMode chatHistory={chatHistory} smartSlicedContent={smartSlicedContent || []} />
                 ) : (
                   <SearchMode results={results} totalResults={totalResults} showMetadata={showMetadata} setShowMetadata={setShowMetadata} />
                 )}
@@ -588,8 +586,6 @@ export default function Explore({ slicerId }: { slicerId: string }) {
   }
 
   return (
-    <FilterProvider slicerID={slicerId}>
-      <ExploreContent slicerId={slicerId} />
-    </FilterProvider>
+    <ExploreContent slicerId={slicerId} />
   );
 }
