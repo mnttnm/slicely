@@ -4,8 +4,9 @@ import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
 import { useAnnotations } from "@/app/hooks/use-annotations";
 import { ProcessingRules } from "@/app/types";
 import { serializeFabricRect } from "@/app/utils/fabric-helper";
+import { getPagesToInclude } from "@/app/utils/pdf-utils";
 import * as fabric from "fabric";
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { FabricRect } from "../types";
 import { AnnotationCanvas } from "./annotation-canvas";
 import PDFRenderer from "./pdf-renderer";
@@ -16,24 +17,17 @@ interface PDFViewerProps {
   onRectangleUpdate(operation: "add" | "remove", payload: { id: string, rect?: Partial<FabricRect>, pageNumber?: number }): void;
   onClearPage: (pageNumber: number) => void;
   onClearAllPages: () => void;
-  processingRules: ProcessingRules | null;
-  onPageExclude: (pageNumber: number) => void;
-  onPageInclude: (pageNumber: number) => void;
-  onPageExcludeAll: () => void;
-  onPageIncludeAll: () => void;
+  processingRules: ProcessingRules;
   showToolbar?: boolean;
   pdf_password?: string;
 }
+
 const PDFViewer: React.FC<PDFViewerProps> = ({
   url,
   onRectangleUpdate,
   onClearPage,
   onClearAllPages,
   processingRules,
-  onPageExclude,
-  onPageInclude,
-  onPageExcludeAll,
-  onPageIncludeAll,
   showToolbar = true,
   pdf_password
 }) => {
@@ -42,34 +36,31 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     pageNumber,
     pageDimensions,
     isRectangleMode,
-    skippedPages,
-    togglePageSkip,
     onDocumentLoadSuccess,
     onPageRenderSuccess,
     previousPage,
     nextPage,
+    clearAllPages,
     toggleRectangleMode,
     includeAllPages,
     excludeAllPages,
     jumpToPage,
+    togglePageSkip,
+    updateProcessingRules,
+    currentProcessingRules
   } = usePDFViewer();
 
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
-
-  useEffect(() => {
-    if (processingRules?.skipped_pages) {
-      processingRules.skipped_pages.forEach(page => {
-        if (!skippedPages.includes(page)) {
-          togglePageSkip(page);
-        }
-      });
-    }
-  }, [processingRules, skippedPages, togglePageSkip]);
 
   const {
     deleteSelectedObject,
     clearAnnotationFromCurrentPage,
   } = useAnnotations(fabricCanvasRef);
+
+  // Sync processing rules with usePDFViewer context
+  useEffect(() => {
+    updateProcessingRules(processingRules);
+  }, [processingRules, updateProcessingRules]);
 
   const handleAnnotationDelete = useCallback(() => {
     if (fabricCanvasRef.current) {
@@ -86,9 +77,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   }, [clearAnnotationFromCurrentPage, onClearPage, pageNumber]);
 
   const handleClearAllPages = useCallback(() => {
+    clearAllPages();
     onClearAllPages();
-  }, [onClearAllPages]);
-
+  }, [clearAllPages, onClearAllPages]);
 
   const handleRectangleCreated = useCallback(async (rect: FabricRect) => {
     if (fabricCanvasRef.current) {
@@ -97,30 +88,28 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   }, [fabricCanvasRef, onRectangleUpdate, pageNumber]);
 
-
   const handlePageToggle = useCallback((pageNumber: number) => {
+    console.log("handlePageToggle called for page", pageNumber);
+    // Call togglePageSkip from the context
     togglePageSkip(pageNumber);
-    if (skippedPages.includes(pageNumber)) {
-      onPageInclude(pageNumber);
-    } else {
-      onPageExclude(pageNumber);
-    }
-  }, [togglePageSkip, skippedPages, onPageInclude, onPageExclude]);
+  }, [togglePageSkip]);
 
-  const handlePageExcludeAll = useCallback(() => {
-    excludeAllPages();
-    onPageExcludeAll();
-  }, [excludeAllPages, onPageExcludeAll]);
-
-  const handlePageIncludeAll = useCallback(() => {
+  const handleIncludeAll = useCallback(() => {
     includeAllPages();
-    onPageIncludeAll();
-  }, [includeAllPages, onPageIncludeAll]);
+  }, [includeAllPages]);
 
+  const handleExcludeAll = useCallback(() => {
+    excludeAllPages();
+  }, [excludeAllPages]);
 
   const handleCanvasReady = useCallback((canvas: fabric.Canvas) => {
     fabricCanvasRef.current = canvas;
   }, []);
+
+  const isPageSkipped = useCallback((pageNumber: number) => {
+    const pagesToInclude = getPagesToInclude(currentProcessingRules, numPages || 0);
+    return !pagesToInclude.includes(pageNumber);
+  }, [currentProcessingRules, numPages]);
 
   return (
     <>
@@ -133,7 +122,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 pageNumber={pageNumber}
                 onDocumentLoadSuccess={onDocumentLoadSuccess}
                 onPageRenderSuccess={onPageRenderSuccess}
-                skippedPages={processingRules?.skipped_pages || []}
+                processingRules={currentProcessingRules}
                 password={pdf_password}
               />
               {pageDimensions && (
@@ -150,7 +139,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                     pageNumber={pageNumber}
                     onRectangleCreated={handleRectangleCreated}
                     onCanvasReady={handleCanvasReady}
-                    annotations={processingRules?.annotations || []}
+                    annotations={currentProcessingRules?.annotations || []}
                   />
                 </div>
               )}
@@ -172,10 +161,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
           clearAllPages={handleClearAllPages}
           previousPage={previousPage}
           nextPage={nextPage}
-          isPageSkipped={skippedPages.includes(pageNumber)}
-          togglePageSkip={handlePageToggle}
-          includeAllPages={handlePageIncludeAll}
-          excludeAllPages={handlePageExcludeAll}
+          isPageSkipped={isPageSkipped(pageNumber)}
+          togglePageSkip={() => handlePageToggle(pageNumber)}
+          includeAllPages={handleIncludeAll}
+          excludeAllPages={handleExcludeAll}
           jumpToPage={jumpToPage}
         />
       )}

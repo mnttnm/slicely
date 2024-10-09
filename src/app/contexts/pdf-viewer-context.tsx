@@ -1,7 +1,8 @@
 "use client";
-import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from "react";
-import { pdfjs } from "react-pdf";
+import { PageAnnotation, PageSelectionRule, ProcessingRules } from "@/app/types";
 import { getSignedPdfUrl } from "@/server/actions/studio/actions";
+import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from "react";
+import { pdfjs } from "react-pdf";
 
 // pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -24,6 +25,10 @@ interface PDFViewerContextType {
   includeAllPages: () => void;
   excludeAllPages: () => void;
   jumpToPage: (page: number) => void;
+  currentProcessingRules: ProcessingRules;
+  updateProcessingRules: (newRules: Partial<ProcessingRules>) => void;
+  addAnnotation: (annotation: PageAnnotation) => void;
+  removeAnnotation: (page: number, rectId: string) => void;
 }
 
 export const PDFViewerContext = createContext<PDFViewerContextType | undefined>(undefined);
@@ -36,6 +41,13 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
   const [pdfDocument, setPdfDocument] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [skippedPages, setSkippedPages] = useState<number[]>([]);
+  const [currentProcessingRules, setCurrentProcessingRules] = useState<ProcessingRules>({
+    annotations: [],
+    pageSelection: {
+      strategy: "include",
+      rules: [{ type: "all" }],
+    },
+  });
 
   const onDocumentLoadSuccess = useCallback((document: pdfjs.PDFDocumentProxy) => {
     setPdfDocument(document);
@@ -44,12 +56,49 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const togglePageSkip = useCallback((pageNumber: number) => {
-    setSkippedPages(prevSkippedPages => {
-      if (prevSkippedPages.includes(pageNumber)) {
-        return prevSkippedPages.filter(page => page !== pageNumber);
+    console.log("togglePageSkip", pageNumber);
+    setCurrentProcessingRules(prevRules => {
+      const { strategy, rules } = prevRules.pageSelection;
+      let newRules: PageSelectionRule[];
+      let newStrategy = strategy;
+
+      console.log("current rules", rules);
+      console.log("current strategy", strategy);
+
+      if (rules.length === 1 && rules[0].type === "all") {
+        newRules = [{ type: "specific", pages: [pageNumber] }];
+        newStrategy = strategy === "include" ? "exclude" : "include";
       } else {
-        return [...prevSkippedPages, pageNumber];
+        const specificRule = rules.find(rule => rule.type === "specific") as { type: "specific"; pages: number[] } | undefined;
+
+        if (specificRule) {
+          const newPages = specificRule.pages.includes(pageNumber)
+            ? specificRule.pages.filter(p => p !== pageNumber)
+            : [...specificRule.pages, pageNumber];
+
+          if (newPages.length === 0) {
+            newRules = [{ type: "all" }];
+            newStrategy = strategy === "include" ? "exclude" : "include";
+          } else {
+            newRules = [{ type: "specific", pages: newPages }];
+          }
+        } else {
+          newRules = [{ type: "specific", pages: [pageNumber] }];
+        }
       }
+
+      console.log("newRules", {
+        strategy: newStrategy,
+        rules: newRules,
+      });
+
+      return {
+        ...prevRules,
+        pageSelection: {
+          strategy: newStrategy,
+          rules: newRules,
+        },
+      };
     });
   }, []);
 
@@ -78,19 +127,55 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const clearAllPages = useCallback(() => {
-    // Implement clear all pages logic
+  const updateProcessingRules = useCallback((newRules: Partial<ProcessingRules>) => {
+    console.log("updateProcessingRules", newRules);
+    setCurrentProcessingRules(prevRules => ({ ...prevRules, ...newRules }));
   }, []);
+
+  const addAnnotation = useCallback((annotation: PageAnnotation) => {
+    setCurrentProcessingRules(prevRules => ({
+      ...prevRules,
+      annotations: [...prevRules.annotations, annotation],
+    }));
+  }, []);
+
+  const removeAnnotation = useCallback((page: number, rectId: string) => {
+    setCurrentProcessingRules(prevRules => ({
+      ...prevRules,
+      annotations: prevRules.annotations.map(ann =>
+        ann.page === page
+          ? { ...ann, rectangles: ann.rectangles.filter(rect => rect.id !== rectId) }
+          : ann
+      ).filter(ann => ann.rectangles.length > 0)
+    }));
+  }, []);
+
+  const clearAllPages = useCallback(() => {
+    updateProcessingRules({
+      pageSelection: {
+        strategy: "include",
+        rules: [{ type: "all" }],
+      },
+    });
+  }, [updateProcessingRules]);
 
   const includeAllPages = useCallback(() => {
-    setSkippedPages([]);
-  }, []);
+    updateProcessingRules({
+      pageSelection: {
+        strategy: "include",
+        rules: [{ type: "all" }],
+      },
+    });
+  }, [updateProcessingRules]);
 
   const excludeAllPages = useCallback(() => {
-    if (numPages) {
-      setSkippedPages(Array.from({ length: numPages }, (_, i) => i + 1));
-    }
-  }, [numPages]);
+    updateProcessingRules({
+      pageSelection: {
+        strategy: "exclude",
+        rules: [{ type: "all" }],
+      },
+    });
+  }, [updateProcessingRules]);
 
   const jumpToPage = useCallback((page: number) => {
     if (page > 0 && page <= (numPages || 0)) {
@@ -127,6 +212,10 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
     includeAllPages,
     excludeAllPages,
     jumpToPage,
+    currentProcessingRules,
+    updateProcessingRules,
+    addAnnotation,
+    removeAnnotation,
     slicerObject
   }), [
     numPages, pageNumber, pageDimensions, isRectangleMode,
@@ -137,6 +226,10 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
     includeAllPages,
     excludeAllPages,
     jumpToPage,
+    currentProcessingRules,
+    updateProcessingRules,
+    addAnnotation,
+    removeAnnotation,
     slicerObject
   ]);
 
@@ -146,6 +239,7 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
     </PDFViewerContext.Provider>
   );
 };
+
 export const usePDFViewer = () => {
   const context = useContext(PDFViewerContext);
   if (context === undefined) {

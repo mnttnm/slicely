@@ -32,7 +32,7 @@ interface PDFToolbarProps {
   previousPage: () => void;
   nextPage: () => void;
   isPageSkipped: boolean;
-  togglePageSkip: (pageNumber: number) => void;
+  togglePageSkip: () => void;
   includeAllPages: () => void;
   excludeAllPages: () => void;
   jumpToPage: (page: number) => void;
@@ -99,7 +99,7 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
           <ToolbarButton
             icon={<BanIcon className="h-5 w-5" />}
             tooltip={isPageSkipped ? "Include this page" : "Exclude this page"}
-            onClick={() => togglePageSkip(pageNumber)}
+            onClick={togglePageSkip}
             active={isPageSkipped}
           />
 

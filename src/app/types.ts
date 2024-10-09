@@ -31,9 +31,12 @@ export interface PageAnnotation {
 };
 
 export interface ProcessingRules {
-  annotations: PageAnnotation[]; // Array of annotations, grouped by page
-  skipped_pages: number[];         // Array of page numbers to skip
-};
+  annotations: PageAnnotation[];
+  pageSelection: {
+    strategy: "include" | "exclude";
+    rules: PageSelectionRule[];
+  };
+}
 
 export interface LLMPrompt {
   id: string;
@@ -129,3 +132,8 @@ export interface SlicerLLMOutput {
   prompt: string;
   output: LLMResponse;
 }
+
+export type PageSelectionRule = 
+  | { type: "all" }
+  | { type: "range"; start: number; end: number }
+  | { type: "specific"; pages: number[] };

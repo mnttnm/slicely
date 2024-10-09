@@ -55,10 +55,10 @@ export function serializeProcessingRules(rules: ProcessingRules): string {
 export function deserializeProcessingRules(rulesString: Json): ProcessingRules {
   const parsedRules = JSON.parse(rulesString as string) as ProcessingRules;
   return {
-    ...parsedRules,
     annotations: parsedRules.annotations.map((annotation: PageAnnotation) => ({
       ...annotation,
       rectangles: annotation.rectangles.map(deserializeFabricRect),
     })),
+    pageSelection: parsedRules.pageSelection
   };
 }

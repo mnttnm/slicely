@@ -9,6 +9,7 @@ import { updateSlicer } from "@/server/actions/studio/actions";
 import { Eye, EyeOff, Plus, X } from "lucide-react";
 import { useState } from "react";
 
+import { usePDFViewer } from "../contexts/pdf-viewer-context";
 import ExtractedTextView from "./extracted-text-view";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
@@ -88,6 +89,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
 
   const { toast } = useToast();
   const [newPrompt, setNewPrompt] = useState("");
+  const { numPages, currentProcessingRules } = usePDFViewer();
 
   const saveSlicer = async () => {
     try {
@@ -121,21 +123,48 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
     onUpdateSlicer({ ...slicerObject, llm_prompts: updatedPrompts });
   };
 
+  if (!numPages) {
+    throw new Error("No pages found");
+  }
+
+  const pageSelectionStrategy = currentProcessingRules.pageSelection.strategy;
+
+  const pageSelectionLabel = () => {
+    const { strategy, rules } = currentProcessingRules.pageSelection;
+    if (rules.length === 1 && rules[0].type === "all") {
+      return strategy === "include" ? "Include All Pages" : "Exclude All Pages";
+    }
+    const specificRule = rules.find(rule => rule.type === "specific") as { type: "specific"; pages: number[] } | undefined;
+    if (specificRule) {
+      return `${strategy === "include" ? "Include" : "Exclude"} ${specificRule.pages.length} Pages`;
+    }
+    return "Unknown Selection";
+  };
+
   return (
     <div className="flex flex-col h-full w-full">
       <div className="flex-1 overflow-hidden">
         <Card className="h-full flex flex-col">
           <CardContent className="flex-1 overflow-y-auto">
             <div className="space-y-1 mt-2">
-              <Label className="text-sm text-gray-400">Skipped Pages</Label>
-              <p className="max-h-20 overflow-y-auto">
-                {slicerObject.processing_rules?.skipped_pages?.join(", ")}
-              </p>
+              <Label className="text-sm text-gray-400">Page Selection Strategy</Label>
+              <p>{pageSelectionStrategy}</p>
+            </div>
+            <div className="space-y-1 mt-2">
+              <Label className="text-sm text-gray-400">{pageSelectionLabel()}</Label>
+              <div className="max-h-20 overflow-y-auto">
+                {currentProcessingRules.pageSelection.rules.map((rule, index) => (
+                  <div key={index}>
+                    {rule.type === "all" && "All Pages"}
+                    {rule.type === "specific" && `Pages ${rule.pages.join(", ")}`}
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="space-y-1 mt-2">
               <Label className="text-sm text-gray-400">Annotations</Label>
               <div className="max-h-40 overflow-y-auto">
-                {slicerObject.processing_rules?.annotations.map((annotation, index) => (
+                {currentProcessingRules.annotations.map((annotation, index) => (
                   <div key={index} className="flex items-center space-x-2 mb-2">
                     <span>{`page ${annotation.page}: `}</span>
                     <span>{annotation.rectangles.map(rect => `${rect.top},${rect.left},${rect.width},${rect.height}`).join(" ")}</span>

@@ -1,7 +1,7 @@
 "use server";
 
-import { ExtractedText, FabricRect, ProcessingRules, SlicedPdfContent } from "@/app/types";
-import { getPageText } from "@/app/utils/pdf-utils";
+import { ExtractedText, FabricRect, ProcessingRules } from "@/app/types";
+import { getPagesToInclude, getPageText } from "@/app/utils/pdf-utils";
 import { extractTextFromRectangle } from "@/app/utils/text-extraction";
 import * as pdfjs from "pdfjs-dist";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -22,10 +22,10 @@ async function extractContentFromDocument(
 ): Promise<ExtractedText[]> {
   const extractedTexts: ExtractedText[] = [];
   const totalPages = pdfDocument.numPages;
-
+  const pagesToInclude = await getPagesToInclude(processingRules, totalPages);
   for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
     const pageAnnotation = processingRules.annotations.find(a => a.page === pageNumber);
-    const isPageSkipped = processingRules.skipped_pages.includes(pageNumber);
+    const isPageSkipped = !pagesToInclude.includes(pageNumber);
     const page = await pdfDocument.getPage(pageNumber);
     if (pageAnnotation) {
       for (const rect of pageAnnotation.rectangles) {
