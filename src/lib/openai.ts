@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { zodFunction } from "openai/helpers/zod";
+import { zodResponseFormat } from "openai/helpers/zod";
 import z from "zod";
 
 const SingleValueContent = z.object({
@@ -64,18 +64,18 @@ in context of the generated response. These IDs are in the format <context_id>{i
 
   console.log("llm prompt messages", [systemMessage, ...messages]);
 
-  const response = await openai.chat.completions.create({
+  const response = await openai.beta.chat.completions.parse({
     model: "gpt-4o-mini",
     messages: [systemMessage, ...messages],
-    tools: [zodFunction({ name: "output_formatter", parameters: OutputFormatter })],
+    response_format: zodResponseFormat(OutputFormatter, "llm_response"),
   });
 
-  const functionCall = response.choices[0].message.tool_calls?.[0];
+  const llmResponse = response.choices[0].message.parsed;
 
-  if (functionCall && functionCall.function.name === "output_formatter") {
-    const result = JSON.parse(functionCall.function.arguments);
-    return result as LLMResponse;
-  } else {
+  console.log("llmResponse", llmResponse);
+  if (!llmResponse) {
     throw new Error("Unexpected response format from OpenAI API");
   }
+
+  return llmResponse;
 };

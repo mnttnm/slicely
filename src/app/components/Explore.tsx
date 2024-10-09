@@ -278,7 +278,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
 
       console.log("Context objects:", contextObjects);
       console.log("Answer context messages:", answer.context_object_ids);
-      const relatedContextObjects = contextObjects.filter((obj) => answer.context_object_ids.includes(obj.id));
+      const relatedContextObjects = answer.context_object_ids ? contextObjects.filter((obj) => answer.context_object_ids.includes(obj.id)) : [];
       console.log("Related context objects:", relatedContextObjects);
 
       const botMessage: ChatMessage = {
