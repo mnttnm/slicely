@@ -1,9 +1,9 @@
 import { useToast } from "@/app/hooks/use-toast";
-import { uploadPdf } from "@/server/actions/studio/actions";
+import { uploadMultiplePdfs, uploadPdf } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { useState } from "react";
 
-export const useFileUpload = (onSuccess?: (pdf: TablesInsert<"pdfs">) => void) => {
+export const useFileUpload = (onSuccess?: (pdf: TablesInsert<"pdfs">[]) => void) => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
@@ -24,7 +24,7 @@ export const useFileUpload = (onSuccess?: (pdf: TablesInsert<"pdfs">) => void) =
         description: "Your file has been uploaded successfully",
       });
 
-      onSuccess?.(result);
+      onSuccess?.([result]);
 
       return result;
     } catch (error) {
@@ -40,5 +40,24 @@ export const useFileUpload = (onSuccess?: (pdf: TablesInsert<"pdfs">) => void) =
     }
   };
 
-  return { isUploading, uploadFile };
+  const uploadFiles = async (files: File[], isTemplate: boolean) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      files.forEach(file => formData.append("pdfs", file));
+      formData.append("is_template", isTemplate.toString());
+
+      const uploadedPDFs = await uploadMultiplePdfs(formData);
+
+      if (onSuccess) {
+        onSuccess(uploadedPDFs);
+      }
+    } catch (error) {
+      console.error("Error uploading files:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return { isUploading, uploadFile, uploadFiles };
 };

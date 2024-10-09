@@ -17,10 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-
 interface LinkedPdfsProps {
   linkedPdfs: PDFMetadata[];
-  onUploadSuccess: (pdf: TablesInsert<"pdfs">) => void;
+  onUploadSuccess: (pdfs: TablesInsert<"pdfs">[]) => void;
   onRefresh: () => void; // Add this prop
 }
 

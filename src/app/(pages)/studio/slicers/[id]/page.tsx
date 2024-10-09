@@ -274,10 +274,14 @@ const SlicerPage = () => {
     });
   }, []);
 
-  const onUploadSuccess = async (pdf: TablesInsert<"pdfs">) => {
-    if (!slicer || !pdf.id) return;
+  const onUploadSuccess = async (pdfs: TablesInsert<"pdfs">[]) => {
+    if (!slicer || pdfs.length === 0) return;
+
     try {
-      await linkPdfToSlicer(slicer.id, pdf.id);
+      for (const pdf of pdfs) {
+        if (!pdf.id) continue;
+        await linkPdfToSlicer(slicer.id, pdf.id);
+      }
       await fetchLinkedPdfs();
     } catch (error) {
       console.error("Error linking PDF to slicer:", error);

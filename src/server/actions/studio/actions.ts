@@ -654,3 +654,65 @@ export async function getAllSlicers() {
     throw error;
   }
 }
+
+export async function uploadMultiplePdfs(formData: FormData): Promise<Tables<"pdfs">[]> {
+  const supabase = createClient();
+  // Get the authenticated user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Authentication failed");
+  }
+
+  const files = formData.getAll("pdfs") as File[];
+  if (files.length === 0) {
+    throw new Error("No files provided");
+  }
+
+  const isTemplate = formData.get("is_template") === "true";
+
+  const uploadedPdfs: Tables<"pdfs">[] = [];
+
+  for (const file of files) {
+    if (!(file instanceof File)) {
+      continue;
+    }
+
+    // Upload file to Supabase Storage
+    const { data: fileData, error: uploadError } = await supabase.storage
+      .from("slicely-pdfs")
+      .upload(`${user.id}/${file.name}`, file, {
+        contentType: "application/pdf",
+      });
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      continue;
+    }
+
+    // Insert PDF record into database
+    const { data: newPdf, error: insertError } = await supabase
+      .from("pdfs")
+      .insert({
+        file_name: file.name,
+        file_path: fileData.path,
+        is_template: isTemplate,
+        user_id: user.id,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Insert error:", insertError);
+      continue;
+    }
+
+    uploadedPdfs.push(newPdf);
+  }
+
+  if (uploadedPdfs.length === 0) {
+    throw new Error("Failed to upload any PDFs");
+  }
+
+  return uploadedPdfs;
+}

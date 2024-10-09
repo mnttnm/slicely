@@ -54,23 +54,28 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
   }, [open]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("pdf", file);
-      const newPdf = await uploadPdf(formData);
+      const uploadedPdfs: Tables<"pdfs">[] = [];
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("pdf", file);
+        const newPdf = await uploadPdf(formData);
+        if (newPdf.id) {
+          uploadedPdfs.push(newPdf);
+        }
+      }
 
-      if (newPdf.id) {
-        setUserPDFs([...userPDFs, newPdf]);
-        setSelectedFile(newPdf.id.toString());
-        setUploadedFile({ id: newPdf.id.toString(), name: file.name });
-        setIsUploading(false);
+      setUserPDFs([...userPDFs, ...uploadedPdfs]);
+      if (uploadedPdfs.length > 0) {
+        setSelectedFile(uploadedPdfs[0].id.toString());
+        setUploadedFile({ id: uploadedPdfs[0].id.toString(), name: uploadedPdfs[0].file_name });
       }
     } catch (error) {
-      console.error("Failed to upload PDF:", error);
+      console.error("Failed to upload PDFs:", error);
       // Handle error (e.g., show error message to user)
     } finally {
       setIsUploading(false);

@@ -7,28 +7,28 @@ import { Upload } from "lucide-react";
 import { useRef } from "react";
 
 interface UploadButtonProps extends ButtonProps {
-  onSuccess?: (pdf: TablesInsert<"pdfs">) => void;
+  onSuccess?: (pdfs: TablesInsert<"pdfs">[]) => void;
   accept?: string;
   buttonText?: string;
   isTemplate?: boolean;
-  className?: string; // Added className prop
+  className?: string;
 }
 
 const UploadButton = ({
   onSuccess,
   accept = ".pdf",
-  buttonText = "Upload PDF",
+  buttonText = "Upload PDFs",
   isTemplate = false,
-  className = "", // Destructure className with default value
+  className = "",
   ...buttonProps
 }: UploadButtonProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { isUploading, uploadFile } = useFileUpload(onSuccess);
+  const { isUploading, uploadFiles } = useFileUpload(onSuccess);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      await uploadFile(file, isTemplate);
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      await uploadFiles(Array.from(files), isTemplate);
     }
   };
 
@@ -40,11 +40,12 @@ const UploadButton = ({
         ref={fileInputRef}
         onChange={handleUpload}
         className="hidden"
+        multiple
       />
       <Button
         onClick={() => fileInputRef.current?.click()}
         disabled={isUploading}
-        className={`flex items-center ${className}`} // Merge className with existing styles
+        className={`flex items-center ${className}`}
         {...buttonProps}
       >
         {isUploading ? (
