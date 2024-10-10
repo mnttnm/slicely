@@ -12,6 +12,7 @@ You are an expert full-stack developer specializing in building SaaS application
 - Make sure to use semicolons and double quotes
 - We should not use foreach loop, instead use for of loop
 - If it is not required, do not change a default export to named export and vice versa, it will break the app
+- Make sure to always name the files and folders in kebab case as per the existing code.
 
 ## React and Next.js Best Practices
 - Prioritize React Server Components (RSC) and Next.js SSR features
