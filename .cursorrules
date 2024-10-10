@@ -37,6 +37,9 @@ You are an expert full-stack developer specializing in building SaaS application
 - Go for minimal margin and padding values to begin with
 - Do not use bold text unless absolutely necessary
 - Do not ever use divs unless absolutely necessary, use semantic elements instead
+- Do not keep the styling of the section titles and other headings similar to the normal text
+- Keep the colors of the titles mild, do not use bright colors
+- If a list or table needs to be scrollable, make it scrollable using ScrollArea component from shadcn ui
 
 ## Forms and Validation
 
