@@ -1,5 +1,6 @@
 Follow this SOP when adding a new feature to Slicely. Make sure to make all the changes
-while going through the steps, and check them off as you go.
+
+
 # Standard Operating Procedure for Adding a New Feature to Slicely
 
 ## 1. Routing and Page Creation
@@ -580,10 +581,10 @@ If no:
   ```
   ```
 
-## Final Checklist
-
-Before considering the feature complete, ensure you've addressed all the following points:
-
+## Things to keep in mind while going through the steps:
+- @cursorrules
+- Do not create a new action or a UI component unless it does not already exist.
+- Once the feature is complete, go through the checklist and check off the steps as you go.
 - [ ] New route and page created (if applicable)
 - [ ] Backend functionality implemented (if needed)
 - [ ] Database schema updated in Supabase (if required)
