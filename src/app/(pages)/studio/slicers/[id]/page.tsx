@@ -2,6 +2,7 @@
 
 import Explore from "@/app/components/explore";
 import { LinkedPdfs } from "@/app/components/linked-pdfs";
+import PdfChat from "@/app/components/pdf-chat";
 import PDFViewer from "@/app/components/pdf-viewer";
 import SlicerSettings from "@/app/components/slicer-settings";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/app/components/ui/breadcrumb";
@@ -39,7 +40,6 @@ const SlicerPage = () => {
 
   const { pdfDocument, currentProcessingRules } = usePDFViewer();
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
-
 
   useEffect(() => {
     const tab = searchParams.get("tab") || "slicerstudio";
@@ -181,7 +181,7 @@ const SlicerPage = () => {
           id: payload.id,
           page_number: payload.pageNumber!,
           text: extractedText || "",
-          rectangle_info: payload.rect
+          rectangle_info: payload.rect ?? null
         }
       ]);
     } else if (operation === "remove") {
@@ -286,6 +286,7 @@ const SlicerPage = () => {
         <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
           <TabsTrigger value="slicerstudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
           <TabsTrigger value="linkedpdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>
+          <TabsTrigger value="pdfchat" className="px-4 py-2">PDF Chat</TabsTrigger> {/* New Tab */}
           <TabsTrigger value="explore" className="px-4 py-2">Explore</TabsTrigger>
         </TabsList>
         <TabsContent value="slicerstudio" className="flex-grow overflow-hidden">
@@ -311,6 +312,9 @@ const SlicerPage = () => {
         </TabsContent>
         <TabsContent value="linkedpdfs" className="flex-grow overflow-hidden">
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
+        </TabsContent>
+        <TabsContent value="pdfchat" className="flex-grow overflow-hidden"> {/* New Tab Content */}
+          <PdfChat linkedPdfs={linkedPdfs} pdf_prompts={slicer.pdf_prompts} />
         </TabsContent>
         <TabsContent value="explore" className="flex-grow overflow-hidden">
           <Explore slicerId={slicer.id} />

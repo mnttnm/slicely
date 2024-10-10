@@ -1,12 +1,18 @@
 "use server";
+import { SlicedPdfContent } from "@/app/types";
 import { chatCompletion } from "@/lib/openai";
 import { searchVectorStore } from "@/lib/supabase";
-import { getInitialSlicedContentForSlicer } from "@/server/actions/studio/actions";
+import { getInitialSlicedContentForSlicer, getSlicedPdfContent } from "@/server/actions/studio/actions";
 
 
 export async function getContextForSlicer(slicerId: string, limit = 100) {
   const { results } = await getInitialSlicedContentForSlicer(slicerId, 1, limit);
   return results.map(result => result.text_content).join("\n\n");
+}
+
+export async function getContextForPdf(pdfId: string) {
+  const slicedPdfContent = await getSlicedPdfContent(pdfId);
+  return slicedPdfContent.map((result: SlicedPdfContent) => result.text_content).join("\n\n");
 }
 
 export interface ContextObject {

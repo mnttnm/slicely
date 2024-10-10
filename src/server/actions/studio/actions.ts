@@ -574,6 +574,7 @@ export async function getInitialSlicedContentForSlicer(slicerId: string, page = 
   return { results, total: count || 0 };
 }
 
+
 // Add a function to verify the password
 export async function verifyPdfPassword(slicerId: string, password: string): Promise<boolean> {
   const supabase = createClient();
@@ -721,9 +722,8 @@ export async function uploadMultiplePdfs(formData: FormData): Promise<Tables<"pd
   return uploadedPdfs;
 }
 
-export async function getLLMOutputForPdf(pdfId: string): Promise<SlicerLLMOutput> {
-  // implement this
-  return null;
+export async function getLLMOutputForPdf(pdfId: string, pdf_prompts: LLMPrompt): Promise<SlicerLLMOutput> {
+  // todo: implement this
 }
 
 // Ensure you have a way to retrieve the pdf_prompts when fetching slicers
