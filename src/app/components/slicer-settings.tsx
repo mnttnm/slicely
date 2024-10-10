@@ -86,7 +86,6 @@ const GeneralSettings: React.FC<{
   };
 
 const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }) => {
-
   const { toast } = useToast();
   const [newPrompt, setNewPrompt] = useState("");
   const { numPages, currentProcessingRules } = usePDFViewer();
@@ -211,20 +210,83 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
                 </Button>
               </div>
             </div>
-            <div className="space-y-1 mt-2">
+            <PDFPrompts slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} />
+            {/* <div className="space-y-1 mt-2">
               <Label htmlFor="output_mode" className="text-sm text-gray-400">Output Mode</Label>
               <Input
                 id="output_mode"
                 value={slicerObject.output_mode || ""}
                 onChange={(e) => onUpdateSlicer({ ...slicerObject, output_mode: e.target.value })}
               />
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </div>
       <div className="mt-2 bg-background border-t">
         <Button onClick={saveSlicer} className="w-full">
           Save
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const PDFPrompts: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }) => {
+  const [newPDFPrompt, setNewPDFPrompt] = useState("");
+
+  const addPDFPrompt = () => {
+    if (newPDFPrompt.trim()) {
+      const updatedPDFPrompts: LLMPrompt[] = [
+        ...(slicerObject.pdf_prompts || []),
+        { id: crypto.randomUUID(), prompt: newPDFPrompt.trim() }
+      ];
+      onUpdateSlicer({ ...slicerObject, pdf_prompts: updatedPDFPrompts });
+      setNewPDFPrompt("");
+    }
+  };
+
+  const removePDFPrompt = (id: string) => {
+    const updatedPDFPrompts = slicerObject.pdf_prompts.filter(prompt => prompt.id !== id);
+    onUpdateSlicer({ ...slicerObject, pdf_prompts: updatedPDFPrompts });
+  };
+
+  return (
+    <div className="space-y-2 mt-2">
+      <Label className="text-sm text-gray-400">PDF Prompts</Label>
+      {slicerObject.pdf_prompts?.map((prompt) => (
+        <div key={prompt.id} className="flex items-center space-x-2">
+          <Textarea
+            value={prompt.prompt}
+            onChange={(e) => {
+              const updatedPDFPrompts = [...slicerObject.pdf_prompts];
+              updatedPDFPrompts.find(p => p.id === prompt.id)!.prompt = e.target.value;
+              onUpdateSlicer({ ...slicerObject, pdf_prompts: updatedPDFPrompts });
+            }}
+            className="flex-grow"
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => removePDFPrompt(prompt.id)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+      <div className="flex items-center space-x-2">
+        <Textarea
+          value={newPDFPrompt}
+          onChange={(e) => setNewPDFPrompt(e.target.value)}
+          placeholder="Enter a new PDF prompt"
+          className="flex-grow"
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={addPDFPrompt}
+          disabled={!newPDFPrompt.trim()}
+        >
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
     </div>

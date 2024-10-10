@@ -212,6 +212,7 @@ export type Database = {
           name: string
           output_mode: string | null
           pdf_password: string | null
+          pdf_prompts: Json | null
           processing_rules: Json | null
           updated_at: string | null
           user_id: string
@@ -225,6 +226,7 @@ export type Database = {
           name: string
           output_mode?: string | null
           pdf_password?: string | null
+          pdf_prompts?: Json | null
           processing_rules?: Json | null
           updated_at?: string | null
           user_id: string
@@ -238,6 +240,7 @@ export type Database = {
           name?: string
           output_mode?: string | null
           pdf_password?: string | null
+          pdf_prompts?: Json | null
           processing_rules?: Json | null
           updated_at?: string | null
           user_id?: string

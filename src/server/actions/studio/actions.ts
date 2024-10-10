@@ -247,9 +247,12 @@ export async function updateSlicer(slicerId: string, slicer: Slicer) {
     }
   }
 
-  console.log("slicer.llm_prompts", slicer.llm_prompts);
-
   const llmPrompts = slicer.llm_prompts.map((prompt: LLMPrompt) => ({
+    id: prompt.id,
+    prompt: prompt.prompt
+  }));
+
+  const pdfPrompts = slicer.pdf_prompts.map((prompt: LLMPrompt) => ({
     id: prompt.id,
     prompt: prompt.prompt
   }));
@@ -260,7 +263,8 @@ export async function updateSlicer(slicerId: string, slicer: Slicer) {
       ...slicer,
       processing_rules: serializedProcessingRules,
       pdf_password: updatedPassword,
-      llm_prompts: llmPrompts
+      llm_prompts: llmPrompts,
+      pdf_prompts: pdfPrompts, // Ensure pdf_prompts are included
     })
     .eq("id", slicerId)
     .eq("user_id", user.id)
@@ -716,3 +720,15 @@ export async function uploadMultiplePdfs(formData: FormData): Promise<Tables<"pd
 
   return uploadedPdfs;
 }
+
+export async function getLLMOutputForPdf(pdfId: string): Promise<SlicerLLMOutput> {
+  // implement this
+  return null;
+}
+
+// Ensure you have a way to retrieve the pdf_prompts when fetching slicers
+export const getSlicerById = async (id: string): Promise<Slicer | null> => {
+  const supabase = createClient();
+  const slicer = await supabase.from("slicers").select("*").eq("id", id).single();
+  return slicer.data;
+};

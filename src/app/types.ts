@@ -55,6 +55,7 @@ export interface Slicer {
   pdf_password: string | null; // Changed from 'password' to 'pdf_password'
   created_at: string | null;
   updated_at: string | null;
+  pdf_prompts: LLMPrompt[]; // New property for individual PDF prompts
 };
 
 export type SlicedPdfContent = {
