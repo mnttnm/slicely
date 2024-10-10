@@ -3,23 +3,26 @@
 import { Button } from "@/app/components/ui/button";
 import ChatMessage from "@/app/components/ui/chat-message";
 import { Input } from "@/app/components/ui/input";
-import { LLMPrompt, PDFMetadata, SlicerLLMOutput } from "@/app/types";
+import { LLMPrompt, PdfLLMOutput, PDFMetadata } from "@/app/types";
+import { LLMResponse } from "@/lib/openai";
+import { getLLMOutputForPdf, savePdfLLMOutput } from "@/server/actions/studio/actions";
 import { createMessages, getContextForPdf, processWithLLM } from "@/utils/explore-utils";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { RenderLLMOutput } from "./RenderLLMOutput";
 
 interface PdfChatProps {
   linkedPdfs: PDFMetadata[];
-  pdf_prompts: LLMPrompt[];
+  pdfPrompts: LLMPrompt[];
+  slicerId: string;
 }
 
-const PdfChat = ({ linkedPdfs, pdf_prompts }: PdfChatProps) => {
+const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
   const router = useRouter();
   const [selectedPdfIndex, setSelectedPdfIndex] = useState<number>(0);
-  const [llmOutputs, setLlmOutputs] = useState<SlicerLLMOutput[] | null>(null);
+  const [llmOutputs, setLlmOutputs] = useState<PdfLLMOutput[] | null>(null);
   const [query, setQuery] = useState("");
   const [chatHistory, setChatHistory] = useState<{ role: string; content: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,18 +33,37 @@ const PdfChat = ({ linkedPdfs, pdf_prompts }: PdfChatProps) => {
     setIsOutputCollapsed(chatHistory.length > 0);
   }, [chatHistory]);
 
+  const fetchFreshLLmOutputs = useCallback(async (pdfId: string) => {
+    const newOutputs: PdfLLMOutput[] = [];
+    for await (const prompt of pdfPrompts) {
+      const context = await getContextForPdf(pdfId);
+      const messages = await createMessages(context, prompt.prompt);
+      const llmResponse = await processWithLLM(messages);
+      const newOutput: Omit<PdfLLMOutput, "id"> = {
+        prompt_id: prompt.id,
+        prompt: prompt.prompt,
+        output: llmResponse as LLMResponse,
+        pdf_id: pdfId,
+        slicer_id: slicerId
+      };
+      const { output, ...savedOutput } = await savePdfLLMOutput(pdfId, slicerId, newOutput);
+
+      // parse the output
+      newOutputs.push({ ...savedOutput, output: output as LLMResponse });
+    }
+    setLlmOutputs(newOutputs);
+  }, [pdfPrompts, slicerId]);
+
   useEffect(() => {
     const fetchLlmOutput = async (pdfId: string) => {
       setIsLoading(true);
       try {
-        const newOutputs: SlicerLLMOutput[] = [];
-        for await (const prompt of pdf_prompts) {
-          const context = await getContextForPdf(pdfId);
-          const messages = await createMessages(context, prompt.prompt);
-          const result = await processWithLLM(messages);
-          newOutputs.push({ id: prompt.id, prompt_id: prompt.id, prompt: prompt.prompt, output: result });
+        const existingOutputs = await getLLMOutputForPdf(pdfId, slicerId);
+        if (existingOutputs && existingOutputs.length > 0) {
+          setLlmOutputs(existingOutputs);
+        } else {
+          await fetchFreshLLmOutputs(pdfId);
         }
-        setLlmOutputs(newOutputs);
       } catch (error) {
         console.error("Error fetching LLM output:", error);
       } finally {
@@ -52,7 +74,7 @@ const PdfChat = ({ linkedPdfs, pdf_prompts }: PdfChatProps) => {
     if (selectedPdfIndex !== null) {
       fetchLlmOutput(linkedPdfs[selectedPdfIndex].id);
     }
-  }, [selectedPdfIndex, pdf_prompts, linkedPdfs]);
+  }, [selectedPdfIndex, linkedPdfs, slicerId, pdfPrompts, fetchFreshLLmOutputs]);
 
   const handlePdfSelect = (index: number) => {
     setSelectedPdfIndex(index);
@@ -96,14 +118,7 @@ const PdfChat = ({ linkedPdfs, pdf_prompts }: PdfChatProps) => {
     if (selectedPdfIndex !== null) {
       setIsLoading(true);
       try {
-        const newOutputs: SlicerLLMOutput[] = [];
-        for await (const prompt of pdf_prompts) {
-          const context = await getContextForPdf(linkedPdfs[selectedPdfIndex].id);
-          const messages = await createMessages(context, prompt.prompt);
-          const result = await processWithLLM(messages);
-          newOutputs.push({ id: prompt.id, prompt_id: prompt.id, prompt: prompt.prompt, output: result });
-        }
-        setLlmOutputs(newOutputs);
+        await fetchFreshLLmOutputs(linkedPdfs[selectedPdfIndex].id);
       } catch (error) {
         console.error("Error refreshing LLM output:", error);
       } finally {
@@ -114,7 +129,7 @@ const PdfChat = ({ linkedPdfs, pdf_prompts }: PdfChatProps) => {
 
   return (
     <div className="flex h-full">
-      <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 p-4">
+      <div className="border-r border-gray-200 dark:border-gray-700 p-4">
         <h2 className="text-lg text-gray-600 dark:text-gray-400 mb-2">
           Linked PDFs ({linkedPdfs.length})
         </h2>
@@ -156,61 +171,60 @@ const PdfChat = ({ linkedPdfs, pdf_prompts }: PdfChatProps) => {
         {selectedPdfIndex !== null ? (
           <>
             <h2 className="text-lg font-semibold mb-4">{linkedPdfs[selectedPdfIndex].file_name}</h2>
-            {isLoading ? (
-              <div>Loading output...</div>
-            ) : (
-              <div>
-                <form onSubmit={handleChatSubmit} className="flex space-x-2 my-4">
-                  <Input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Ask a question..."
-                    className="flex-1"
-                  />
-                  <Button type="submit">Send</Button>
-                </form>
-                <div className="my-4">
+            <div className="flex flex-col h-full">
+              <form onSubmit={handleChatSubmit} className="flex space-x-2 my-2">
+                <Input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Ask a question..."
+                  className="flex-1"
+                />
+                <Button type="submit">Send</Button>
+              </form>
+              <div className="my-2">
+                <div className="flex items-center mb-2 justify-between">
                   <h3 className="font-semibold text-md text-gray-500 mb-2 flex justify-between items-center">
-                    Output:
-                    <div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={refreshOutput}
-                        className="mr-2"
-                      >
-                        Refresh
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsOutputCollapsed(!isOutputCollapsed)}
-                      >
-                        {isOutputCollapsed ? "Expand" : "Collapse"}
-                      </Button>
-                    </div>
+                    Output
                   </h3>
-                  {!isOutputCollapsed && (
-                    <div className="space-y-4">
-                      {llmOutputs ? llmOutputs.map(output => (
-                        <div key={output.id} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                          <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Prompt:</h4>
-                          <p className="text-sm mb-4">{output.prompt}</p>
-                          <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Output:</h4>
-                          <RenderLLMOutput output={output.output} />
-                        </div>
-                      )) : "No output available."}
-                    </div>
-                  )}
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={refreshOutput}
+                      className="mr-2"
+                    >
+                      Refresh
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsOutputCollapsed(!isOutputCollapsed)}
+                    >
+                      {isOutputCollapsed ? "Expand" : "Collapse"}
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-4">
-                  {chatHistory.map((msg, index) => (
-                    <ChatMessage key={index} role={msg.role} content={msg.content} />
-                  ))}
-                </div>
+                {isLoading ? "Loading..." : (
+                  !isOutputCollapsed &&
+                  <ScrollArea className="space-y-4 h-[200px]">
+                    {llmOutputs ? llmOutputs.map(output => (
+                      <div key={output.id} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                        <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Prompt:</h4>
+                        <p className="text-sm mb-4">{output.prompt}</p>
+                        <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Output:</h4>
+                        <RenderLLMOutput output={output.output} />
+                      </div>
+                    )) : "No output available."}
+                  </ScrollArea  >
+                )}
               </div>
-            )}
+              <div className="overflow-y-auto flex-1 py-2">
+                {chatHistory.map((msg, index) => (
+                  <ChatMessage key={index} role={msg.role} content={msg.content} />
+                ))}
+              </div>
+            </div>
           </>
         ) : (
           <div>Select a PDF to view details.</div>

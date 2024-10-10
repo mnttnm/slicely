@@ -1,6 +1,6 @@
 "use server";
 
-import { LLMPrompt, PDFMetadata, ProcessingRules, SectionInfo, SlicedPdfContent, SlicedPdfContentWithMetadata, Slicer, SlicerLLMOutput } from "@/app/types";
+import { LLMPrompt, PdfLLMOutput, PDFMetadata, ProcessingRules, SectionInfo, SlicedPdfContent, SlicedPdfContentWithMetadata, Slicer, SlicerLLMOutput } from "@/app/types";
 import { deserializeProcessingRules, serializeProcessingRules } from "@/app/utils/fabric-helper";
 import { generateEmbedding } from "@/lib/embedding-utils";
 import { LLMResponse } from "@/lib/openai";
@@ -722,13 +722,53 @@ export async function uploadMultiplePdfs(formData: FormData): Promise<Tables<"pd
   return uploadedPdfs;
 }
 
-export async function getLLMOutputForPdf(pdfId: string, pdf_prompts: LLMPrompt): Promise<SlicerLLMOutput> {
-  // todo: implement this
+
+export async function savePdfLLMOutput(pdfId: string, slicerId: string, pdf_llm_output: TablesInsert<"pdf_llm_outputs">): Promise<Tables<"pdf_llm_outputs">> {
+  const supabase = createClient();
+
+  // Get the authenticated user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Authentication failed");
+  }
+
+  // Store LLM output in the database
+  const { error: insertError, data } = await supabase.from("pdf_llm_outputs").insert({
+    pdf_id: pdfId,
+    slicer_id: slicerId,
+    prompt_id: pdf_llm_output.prompt_id,
+    prompt: pdf_llm_output.prompt,
+    output: pdf_llm_output.output,
+  }).select().single();
+
+  if (insertError) {
+    throw new Error(`Error storing LLM output: ${insertError.message}`);
+  }
+
+  return data;
 }
 
-// Ensure you have a way to retrieve the pdf_prompts when fetching slicers
-export const getSlicerById = async (id: string): Promise<Slicer | null> => {
+export async function getLLMOutputForPdf(pdfId: string, slicerId: string): Promise<PdfLLMOutput[]> {
   const supabase = createClient();
-  const slicer = await supabase.from("slicers").select("*").eq("id", id).single();
-  return slicer.data;
-};
+
+  const { data, error } = await supabase
+    .from("pdf_llm_outputs")
+    .select("*")
+    .eq("pdf_id", pdfId)
+    .eq("slicer_id", slicerId);
+
+  if (error) {
+    console.error(`Error fetching LLM outputs: ${error.message}`);
+    return [];
+  }
+
+  return data.map(item => ({
+    id: item.id,
+    pdf_id: item.pdf_id,
+    slicer_id: item.slicer_id,
+    prompt_id: item.prompt_id,
+    prompt: item.prompt,
+    output: item.output as LLMResponse
+  }));
+}

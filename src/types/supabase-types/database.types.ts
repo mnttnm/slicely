@@ -88,6 +88,54 @@ export type Database = {
           },
         ]
       }
+      pdf_llm_outputs: {
+        Row: {
+          created_at: string | null
+          id: string
+          output: Json
+          pdf_id: string
+          prompt: string
+          prompt_id: string
+          slicer_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          output: Json
+          pdf_id: string
+          prompt: string
+          prompt_id: string
+          slicer_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          output?: Json
+          pdf_id?: string
+          prompt?: string
+          prompt_id?: string
+          slicer_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_llm_outputs_pdf_id_fkey"
+            columns: ["pdf_id"]
+            isOneToOne: false
+            referencedRelation: "pdfs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdf_llm_outputs_slicer_id_fkey"
+            columns: ["slicer_id"]
+            isOneToOne: false
+            referencedRelation: "slicers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdf_slicers: {
         Row: {
           id: string

@@ -314,7 +314,7 @@ const SlicerPage = () => {
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
         </TabsContent>
         <TabsContent value="pdfchat" className="flex-grow overflow-hidden"> {/* New Tab Content */}
-          <PdfChat linkedPdfs={linkedPdfs} pdf_prompts={slicer.pdf_prompts} />
+          <PdfChat linkedPdfs={linkedPdfs} pdfPrompts={slicer.pdf_prompts} slicerId={slicer.id} />
         </TabsContent>
         <TabsContent value="explore" className="flex-grow overflow-hidden">
           <Explore slicerId={slicer.id} />

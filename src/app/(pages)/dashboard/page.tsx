@@ -34,7 +34,7 @@ function DashboardContent() {
     }
   }, []);
 
-  const sortedSlicers = Object.entries(allSlicersOutput).sort((a, b) => 
+  const sortedSlicers = Object.entries(allSlicersOutput).sort((a, b) =>
     new Date(b[1].lastProcessed).getTime() - new Date(a[1].lastProcessed).getTime()
   );
 

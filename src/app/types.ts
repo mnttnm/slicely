@@ -134,7 +134,16 @@ export interface SlicerLLMOutput {
   output: LLMResponse;
 }
 
-export type PageSelectionRule = 
+export type PageSelectionRule =
   | { type: "all" }
   | { type: "range"; start: number; end: number }
   | { type: "specific"; pages: number[] };
+
+export interface PdfLLMOutput {
+  id: string;
+  pdf_id: string;
+  slicer_id: string;
+  prompt_id: string;
+  prompt: string;
+  output: LLMResponse;
+}
