@@ -7,9 +7,9 @@ interface ChatMessageProps {
 
 const ChatMessage = ({ role, content }: ChatMessageProps) => {
   return (
-    <div className={`p-2 rounded-lg ${role === "user" ? "bg-gray-800 text-white" : "bg-gray-300 text-black"}`}>
-      <p className="font-semibold">{role === "user" ? "You" : "Assistant"}</p>
-      <p>{content}</p>
+    <div className={`p-4 rounded-lg mb-4 ${role === "user" ? "bg-blue-100 text-blue-900" : "bg-gray-100 text-gray-900"}`}>
+      <p className="font-semibold mb-2">{role === "user" ? "You" : "Assistant"}</p>
+      <p className="whitespace-pre-wrap">{content}</p>
     </div>
   );
 };
