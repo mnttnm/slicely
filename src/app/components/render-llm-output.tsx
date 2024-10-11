@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/app/components/ui/collapsible";
 import { Button } from "@/app/components/ui/button";
-import { FileText } from "lucide-react";
-import { SingleValueDisplay } from "@/app/components/ui/single-value-display";
 import { ChartDisplay } from "@/app/components/ui/chart-display";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/app/components/ui/collapsible";
+import { SingleValueDisplay } from "@/app/components/ui/single-value-display";
 import { TableDisplay } from "@/app/components/ui/table-display";
 import { TextDisplay } from "@/app/components/ui/text-display";
 import { LLMResponse } from "@/lib/openai";
+import { FileText } from "lucide-react";
+import { useState } from "react";
 
 export const RenderLLMOutput = ({ output }: { output: LLMResponse }) => {
   const [isOpen, setIsOpen] = useState(false);

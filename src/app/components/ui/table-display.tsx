@@ -31,7 +31,7 @@ export function TableDisplay({ content }: TableProps) {
             ))}
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="text-normal">
           {rows.map((row, rowIndex) => (
             <TableRow key={rowIndex}>
               {row.map((cell, cellIndex) => (

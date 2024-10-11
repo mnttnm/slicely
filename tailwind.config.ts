@@ -17,6 +17,10 @@ const config: Config = {
 			},
 		},
 		extend: {
+			fontSize: {
+				sm: "0.875rem",
+				normal: "1rem",
+			},
 			colors: {
 				border: "hsl(var(--border))",
 				input: "hsl(var(--input))",

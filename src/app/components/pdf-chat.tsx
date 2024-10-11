@@ -1,5 +1,6 @@
 "use client";
 
+import { RenderLLMOutput } from "@/app/components/render-llm-output";
 import { Button } from "@/app/components/ui/button";
 import ChatMessage from "@/app/components/ui/chat-message";
 import { Input } from "@/app/components/ui/input";
@@ -11,7 +12,7 @@ import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { RenderLLMOutput } from "./RenderLLMOutput";
+import { Card } from "./ui/card";
 
 interface PdfChatProps {
   linkedPdfs: PDFMetadata[];
@@ -209,12 +210,12 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
                   !isOutputCollapsed &&
                   <ScrollArea className="space-y-4 h-[200px]">
                     {llmOutputs ? llmOutputs.map(output => (
-                      <div key={output.id} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                      <Card key={output.id} className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                         <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Prompt:</h4>
-                        <p className="text-sm mb-4">{output.prompt}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4" title={output.prompt}>{output.prompt.substring(0, 120)}...</p>
                         <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Output:</h4>
                         <RenderLLMOutput output={output.output} />
-                      </div>
+                      </Card>
                     )) : "No output available."}
                   </ScrollArea  >
                 )}

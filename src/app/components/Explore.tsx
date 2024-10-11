@@ -71,7 +71,7 @@ const RenderLLMOutput = (output: LLMResponse) => {
           </div>
           <CollapsibleContent>
             <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">
-              <h4 className="text-sm font-semibold mb-2">Raw Response:</h4>
+              <h4 className="text-muted-foreground mb-2">Raw Response:</h4>
               <p>{output.raw_response}</p>
             </div>
           </CollapsibleContent>
@@ -99,17 +99,19 @@ const renderFormattedOutput = (formattedResponse: any) => {
 const RelatedDocuments = ({ contextObjects }: { contextObjects: any[] }) => (
   <div className="w-1/4 p-4 border-l border-gray-200 dark:border-gray-700 overflow-y-auto">
     <h3 className="text-lg font-semibold mb-4">Related Documents</h3>
-    {contextObjects.map((obj, index) => (
-      <div key={index} className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-        <p className="text-sm font-medium">Document ID: {obj.id}</p>
-        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{obj.text_content}...</p>
-      </div>
-    ))}
+    <ScrollArea className="h-[calc(100vh-10rem)] flex"  >
+      {contextObjects.map((obj, index) => (
+        <div key={index} className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+          <p className="text-sm font-medium">Document ID: {obj.id}</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{obj.text_content}...</p>
+        </div>
+      ))}
+    </ScrollArea>
   </div>
 );
 
 function ExploreContent({ slicerId }: { slicerId: string }) {
-  const [mode, setMode] = useState<"search" | "chat">("search");
+  const [mode, setMode] = useState<"search" | "chat">("chat");
   const [query, setQuery] = useState("");
   const [showMetadata, setShowMetadata] = useState<string | null>(null);
   const [results, setResults] = useState<SlicedPdfContentWithMetadata[]>([]);
@@ -462,8 +464,8 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     <>
       {smartSlicedContent && smartSlicedContent.map((output) => (
         <div key={output.id} className="p-4 border rounded-lg border-gray-300 dark:border-gray-700">
-          <h3 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
-            {output.prompt}
+          <h3 className="text-muted-foreground mb-2" title={output.prompt}>
+            {`${output.prompt.substring(0, 120)}...`}
           </h3>
           {RenderLLMOutput(output.output)}
         </div>

@@ -5,5 +5,5 @@ interface TextProps {
 }
 
 export function TextDisplay({ content }: TextProps) {
-  return <p className="text-lg">{content.text}</p>;
+  return <p>{content.text}</p>;
 }

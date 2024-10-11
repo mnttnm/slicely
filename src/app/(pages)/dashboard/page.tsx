@@ -1,6 +1,6 @@
 "use client";
 
-import { RenderLLMOutput } from "@/app/components/RenderLLMOutput";
+import { RenderLLMOutput } from "@/app/components/render-llm-output";
 import { SlicerNavigation } from "@/app/components/slicer-navigation";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
@@ -63,7 +63,7 @@ function DashboardContent() {
               <CardContent>
                 {outputs.map((output: SlicerLLMOutput) => (
                   <div key={output.id} className="mb-4 w-full">
-                    <h3 className="text-sm font-medium mb-2">{output.prompt}</h3>
+                    <h3 className="text-sm mb-2 text-slate-400">{output.prompt}</h3>
                     <RenderLLMOutput output={output.output} />
                   </div>
                 ))}
