@@ -247,12 +247,12 @@ export async function updateSlicer(slicerId: string, slicer: Slicer) {
     }
   }
 
-  const llmPrompts = slicer.llm_prompts.map((prompt: LLMPrompt) => ({
+  const llmPrompts = slicer.llm_prompts?.map((prompt: LLMPrompt) => ({
     id: prompt.id,
     prompt: prompt.prompt
   }));
 
-  const pdfPrompts = slicer.pdf_prompts.map((prompt: LLMPrompt) => ({
+  const pdfPrompts = slicer.pdf_prompts?.map((prompt: LLMPrompt) => ({
     id: prompt.id,
     prompt: prompt.prompt
   }));

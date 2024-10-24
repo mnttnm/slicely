@@ -20,6 +20,7 @@ import { LLMPrompt, PDFMetadata, SlicedPdfContentWithMetadata, Slicer, SlicerLLM
 import { FormattedResponse, LLMResponse } from "@/lib/openai";
 import { getInitialSlicedContentForSlicer, getSlicerDetails, getSlicerLLMOutput, saveSlicerLLMOutput, searchSlicedContentForSlicer } from "@/server/actions/studio/actions";
 import { ContextObject, createMessages, getContextForQuery, getContextForSlicer, processWithLLM } from "@/utils/explore-utils";
+import { Scrollbar } from "@radix-ui/react-scroll-area";
 import { ChevronDown, ChevronUp, FileText, Info, MessageSquare, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -106,6 +107,7 @@ const RelatedDocuments = ({ contextObjects }: { contextObjects: any[] }) => (
           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{obj.text_content}...</p>
         </div>
       ))}
+      <Scrollbar orientation="horizontal" />
     </ScrollArea>
   </div>
 );
@@ -443,7 +445,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       onOpenChange={setIsPreviousDataExpanded}
       className="w-full"
     >
-      <CollapsibleTrigger className="flex items-center justify-center w-full p-2 bg-purple-600 text-white rounded-lg">
+      <CollapsibleTrigger className="flex items-center justify-center w-full p-2 bg-purple-300 text-gray-900 rounded-lg">
         <span>Earlier Messages {" "}</span>
         {isPreviousDataExpanded ? (
           <ChevronUp className="h-4 w-4 ml-2" />
