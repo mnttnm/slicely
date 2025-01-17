@@ -1,7 +1,7 @@
 "use server";
 
-import { createClient } from "@/server/services/supabase/server";
 import { SlicerLLMOutput } from "@/app/types";
+import { createClient } from "@/server/services/supabase/server";
 
 export async function getAllSlicersLLMOutput(): Promise<{ [slicerId: string]: { name: string; outputs: SlicerLLMOutput[]; lastProcessed: string } }> {
   const supabase = createClient();
@@ -13,7 +13,7 @@ export async function getAllSlicersLLMOutput(): Promise<{ [slicerId: string]: { 
 
   const { data: slicers, error: slicersError } = await supabase
     .from("slicers")
-    .select("id, name, updated_at")
+    .select("id, name, updated_at, description")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -22,7 +22,7 @@ export async function getAllSlicersLLMOutput(): Promise<{ [slicerId: string]: { 
     throw new Error("Failed to fetch slicers");
   }
 
-  const allSlicersOutput: { [slicerId: string]: { name: string; outputs: SlicerLLMOutput[]; lastProcessed: string } } = {};
+  const allSlicersOutput: { [slicerId: string]: { name: string; outputs: SlicerLLMOutput[]; lastProcessed: string, description?: string } } = {};
 
   for (const slicer of slicers) {
     const { data: llmOutputs, error: llmOutputError } = await supabase
@@ -35,10 +35,11 @@ export async function getAllSlicersLLMOutput(): Promise<{ [slicerId: string]: { 
       continue;
     }
 
-    allSlicersOutput[slicer.id] = { 
-      name: slicer.name, 
-      outputs: llmOutputs,
-      lastProcessed: slicer.updated_at
+    allSlicersOutput[slicer.id] = {
+      name: slicer.name,
+      outputs: llmOutputs ?? [],
+      lastProcessed: slicer.updated_at ?? "-",
+      description: slicer.description ?? "",
     };
   }
 

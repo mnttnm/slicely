@@ -3,6 +3,8 @@
 import CreateSlicerDrawer from "@/app/components/create-slicer-drawer";
 import { Slicer } from "@/app/components/slicer";
 import { Button } from "@/app/components/ui/button";
+import { EmptyPlaceholder } from "@/app/components/ui/empty-placeholder";
+import { StudioSkeleton } from "@/app/components/ui/skeleton-studio";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import UploadButton from "@/app/components/upload-button";
@@ -13,30 +15,37 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const StudioPage = () => {
+export default function StudioPage() {
   const [activeTab, setActiveTab] = useState<string>("slicers");
   const [pdfs, setPdfs] = useState<(Tables<"pdfs"> & { slicer_ids: string[] })[]>([]);
   const [slicers, setSlicers] = useState<Tables<"slicers">[]>([]);
-  const { user, loading } = useUser();
+  const { user, loading: userLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isCreatingSlicer, setIsCreatingSlicer] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const fetchedPDFs = await getUserPDFs();
-      const fetchedSlicers = await getSlicers();
+      const [fetchedPDFs, fetchedSlicers] = await Promise.all([
+        getUserPDFs(),
+        getSlicers()
+      ]);
       setPdfs(fetchedPDFs);
       setSlicers(fetchedSlicers);
     } catch (error) {
       console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -56,19 +65,17 @@ const StudioPage = () => {
     router.push(`/studio?tab=${value}`);
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
+  const handleCreateSlicer = () => {
+    setIsCreatingSlicer(true);
+  };
+
+  if (userLoading || isLoading) {
+    return <StudioSkeleton />;
   }
 
   if (!user) {
     return <div>Please log in to access the Studio.</div>;
   }
-
-  const handleCreateSlicer = () => {
-    // initiate slicer creation
-    // once success, change the active tab to slicers
-    setIsCreatingSlicer(true);
-  };
 
   return (
     <div className="p-4 h-full overflow-hidden flex flex-col">
@@ -97,48 +104,74 @@ const StudioPage = () => {
         </TabsList>
 
         <TabsContent value="pdfs" className="mt-2 overflow-hidden flex flex-col w-full">
-          <div className="overflow-x-auto w-full">
-            <Table className="w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>File Name</TableHead>
-                  <TableHead>Uploaded</TableHead>
-                  <TableHead>Slicer</TableHead>
-                  <TableHead>Is Template</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pdfs.map((pdf) => (
-                  <TableRow key={pdf.id}>
-                    <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
-                    <TableCell className="text-gray-500">{pdf.created_at ? new Date(pdf.created_at).toLocaleString() : "N/A"}</TableCell>
-                    <TableCell className="text-gray-500">
-                      {pdf.slicer_ids && pdf.slicer_ids.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {pdf.slicer_ids.map((slicer_id) => (
-                            <Link key={slicer_id} href={`/studio/slicers/${slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
-                              {slicer_id}
-                            </Link>
-                          ))}
-                        </div>
-                      ) : "N/A"}
-                    </TableCell>
-                    <TableCell className="text-gray-500">{pdf.is_template ? "Yes" : "No"}</TableCell>
-                    <TableCell className="text-gray-500">
-                      <Link href={`/studio/pdfs/${pdf.id}`}>
-                        View
-                      </Link>
-                    </TableCell>
+          {pdfs.length === 0 ? (
+            <div className="h-full flex items-center justify-center">
+              <EmptyPlaceholder
+                title="No PDF Files"
+                description="Upload PDF files to start creating slicers and extracting insights."
+                icon="📄"
+              >
+                <UploadButton
+                  onSuccess={handleUploadSuccess}
+                  buttonText="Upload PDF"
+                  accept=".pdf"
+                  isTemplate={false}
+                  variant="default"
+                />
+              </EmptyPlaceholder>
+            </div>
+          ) : (
+            <div className="overflow-x-auto w-full">
+              <Table className="w-full">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>File Name</TableHead>
+                    <TableHead>Uploaded</TableHead>
+                    <TableHead>Slicer</TableHead>
+                    <TableHead>Is Template</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {pdfs.map((pdf) => (
+                    <TableRow key={pdf.id}>
+                      <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
+                      <TableCell className="text-gray-500">{pdf.created_at ? new Date(pdf.created_at).toLocaleString() : "N/A"}</TableCell>
+                      <TableCell className="text-gray-500">
+                        {pdf.slicer_ids && pdf.slicer_ids.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {pdf.slicer_ids.map((slicer_id) => (
+                              <Link key={slicer_id} href={`/studio/slicers/${slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
+                                {slicer_id}
+                              </Link>
+                            ))}
+                          </div>
+                        ) : "N/A"}
+                      </TableCell>
+                      <TableCell className="text-gray-500">{pdf.is_template ? "Yes" : "No"}</TableCell>
+                      <TableCell className="text-gray-500">
+                        <Link href={`/studio/pdfs/${pdf.id}`}>
+                          View
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </TabsContent>
         <TabsContent value="slicers">
           {slicers.length === 0 ? (
-            <p className="text-gray-500">No slicers available.</p>
+            <div className="h-full flex items-center justify-center">
+              <EmptyPlaceholder
+                title="No Slicers Created"
+                description="Create a slicer to start processing your PDF files and extracting insights."
+                icon="✂️"
+              >
+                <Button onClick={handleCreateSlicer}>Create Slicer</Button>
+              </EmptyPlaceholder>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {slicers.map((slicer) => (
@@ -153,6 +186,4 @@ const StudioPage = () => {
       )}
     </div>
   );
-};
-
-export default StudioPage;
+}

@@ -31,10 +31,10 @@ export function Header() {
 
   return (
     <header className="h-[4rem] px-4 py-2 top-0 z-50 w-full border-b border-gray-700/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-full items-center justify-between max-w-7xl">
+      <div className="mx-auto flex h-full">
         <div className="flex items-center">
           <Link href="/" className="flex items-center justify-center space-x-2">
-            <span className="text-3xl font-bold font-orbitron dark:text-neutral-200 text-gray-600 drop-shadow-[0_0_0.3rem_#ffffff70] dark:drop-shadow-[0_0_0.3rem_#ffffff70]">
+            <span className="text-3xl font-bold font-orbitron dark:text-neutral-200 text-gray-600">
               Slicely
             </span>
           </Link>

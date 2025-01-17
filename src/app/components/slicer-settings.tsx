@@ -3,10 +3,11 @@
 import { Input } from "@/app/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Textarea } from "@/app/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
 import { useToast } from "@/app/hooks/use-toast";
 import { ExtractedText, LLMPrompt, Slicer } from "@/app/types";
 import { updateSlicer } from "@/server/actions/studio/actions";
-import { Eye, EyeOff, Plus, X } from "lucide-react";
+import { Eye, EyeOff, HelpCircle, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import { usePDFViewer } from "../contexts/pdf-viewer-context";
@@ -19,6 +20,22 @@ interface SlicerRulesProps {
   slicerObject: Slicer;
   onUpdateSlicer: (slicer: Slicer) => void;
 }
+
+const LabelWithTooltip = ({ label, tooltip }: { label: string; tooltip: string }) => (
+  <div className="flex items-center gap-1">
+    <Label className="text-sm text-gray-400">{label}</Label>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <HelpCircle className="h-4 w-4 text-gray-400" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="max-w-xs">{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </div>
+);
 
 const GeneralSettings: React.FC<{
   slicerObject: Slicer;
@@ -38,7 +55,10 @@ const GeneralSettings: React.FC<{
     return (
       <div className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm text-gray-400">Name</Label>
+          <LabelWithTooltip
+            label="Name"
+            tooltip="A unique name to identify your slicer"
+          />
           <Input
             id="name"
             value={slicerObject.name}
@@ -46,7 +66,10 @@ const GeneralSettings: React.FC<{
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="description" className="text-sm text-gray-400">Description</Label>
+          <LabelWithTooltip
+            label="Description"
+            tooltip="A brief description of what this slicer does and what kind of data it processes"
+          />
           <Textarea
             id="description"
             value={slicerObject.description || ""}
@@ -54,7 +77,10 @@ const GeneralSettings: React.FC<{
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="pdf_password" className="text-sm text-gray-400">PDF Password</Label>
+          <LabelWithTooltip
+            label="PDF Password"
+            tooltip="If your PDF is password protected, enter the password here"
+          />
           <div className="relative">
             <Input
               id="pdf_password"
@@ -76,11 +102,11 @@ const GeneralSettings: React.FC<{
               Password changed. Remember to save your changes.
             </p>
           )}
-          <Button onClick={() => {
-            setPasswordChanged(false);
-            updateSlicer(slicerObject.id, slicerObject);
-          }} className="w-full">Save</Button>
         </div>
+        <Button onClick={() => {
+          setPasswordChanged(false);
+          updateSlicer(slicerObject.id, slicerObject);
+        }} className="w-full">Save</Button>
       </div>
     );
   };
@@ -146,11 +172,17 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
         <Card className="h-full flex flex-col">
           <CardContent className="flex-1 overflow-y-auto">
             <div className="space-y-1 mt-2">
-              <Label className="text-sm text-gray-400">Page Selection Strategy</Label>
+              <LabelWithTooltip
+                label="Page Selection Strategy"
+                tooltip="Choose whether to include or exclude specific pages from processing"
+              />
               <p>{pageSelectionStrategy}</p>
             </div>
             <div className="space-y-1 mt-2">
-              <Label className="text-sm text-gray-400">{pageSelectionLabel()}</Label>
+              <LabelWithTooltip
+                label={pageSelectionLabel()}
+                tooltip="Selected pages that will be processed based on your strategy"
+              />
               <div className="max-h-20 overflow-y-auto">
                 {currentProcessingRules.pageSelection.rules.map((rule, index) => (
                   <div key={index}>
@@ -161,7 +193,10 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
               </div>
             </div>
             <div className="space-y-1 mt-2">
-              <Label className="text-sm text-gray-400">Annotations</Label>
+              <LabelWithTooltip
+                label="Annotations"
+                tooltip="Areas of interest marked on the PDF pages for data extraction"
+              />
               <div className="max-h-40 overflow-y-auto">
                 {currentProcessingRules.annotations.map((annotation, index) => (
                   <div key={index} className="flex items-center space-x-2 mb-2">
@@ -172,7 +207,10 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
               </div>
             </div>
             <div className="space-y-1 mt-2">
-              <Label className="text-sm text-gray-400">LLM Prompts</Label>
+              <LabelWithTooltip
+                label="LLM Prompts"
+                tooltip="Instructions for the AI to process the extracted text from annotations"
+              />
               {slicerObject.llm_prompts?.map((prompt, index) => (
                 <div key={prompt.id} className="flex items-center space-x-2">
                   <Textarea
@@ -252,7 +290,10 @@ const PDFPrompts: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }
 
   return (
     <div className="space-y-2 mt-2">
-      <Label className="text-sm text-gray-400">PDF Prompts</Label>
+      <LabelWithTooltip
+        label="PDF Prompts"
+        tooltip="LLM instructions to be run on the content of each PDF page"
+      />
       {slicerObject.pdf_prompts?.map((prompt) => (
         <div key={prompt.id} className="flex items-center space-x-2">
           <Textarea
