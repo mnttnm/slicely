@@ -45,11 +45,25 @@ const OutputFormatter = z.object({
 
 export type LLMResponse = z.infer<typeof OutputFormatter>;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIKey(): string {
+  if (typeof window !== "undefined") {
+    const key = localStorage.getItem("openai_api_key");
+    if (!key) {
+      throw new Error("OpenAI API key not found. Please configure it in settings.");
+    }
+    return key;
+  }
+  return process.env.OPENAI_API_KEY || "";
+}
+
+const getOpenAIInstance = () => {
+  return new OpenAI({
+    apiKey: getOpenAIKey(),
+  });
+};
 
 export const chatCompletion = async (messages: any[]) => {
+  const openai = getOpenAIInstance();
   const systemMessage = {
     role: "system",
     content: `You are an AI assistant responding to queries about PDF content. 

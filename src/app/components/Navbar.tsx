@@ -31,7 +31,6 @@ const Navbar = () => (
   <nav className="flex flex-1 items-center justify-center space-x-6 mx-auto font-medium">
     <NavLink href="/dashboard">Dashboard</NavLink>
     <NavLink href="/studio">Studio</NavLink>
-    <NavLink href="/search">Search</NavLink>
   </nav>
 );
 
