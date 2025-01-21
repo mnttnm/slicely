@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Explore from "@/app/components/explore";
 import { LinkedPdfs } from "@/app/components/linked-pdfs";
 import PdfChat from "@/app/components/pdf-chat";
