@@ -1,6 +1,6 @@
 "use client";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
-import { Suspense } from "react";
 import Explore from "@/app/components/explore";
 import { LinkedPdfs } from "@/app/components/linked-pdfs";
 import PdfChat from "@/app/components/pdf-chat";
@@ -16,7 +16,6 @@ import { extractPdfContent } from "@/server/actions/pdf-actions";
 import { getSignedPdfUrl, getSlicerDetails, linkPdfToSlicer } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
 
 const selectAllPages: PageSelectionRule = { type: "all" };
 
