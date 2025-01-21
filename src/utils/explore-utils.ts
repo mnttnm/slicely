@@ -56,7 +56,6 @@ export async function processWithLLM(messages: { role: string; content: string }
 
   try {
     const answer = await chatCompletion(messages);
-    console.log("Chat completion response:", JSON.stringify(answer, null, 2));
     return answer;
   } catch (error) {
     console.error("Error in processWithLLM:", error);

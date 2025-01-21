@@ -89,7 +89,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   }, [fabricCanvasRef, onRectangleUpdate, pageNumber]);
 
   const handlePageToggle = useCallback((pageNumber: number) => {
-    console.log("handlePageToggle called for page", pageNumber);
     // Call togglePageSkip from the context
     togglePageSkip(pageNumber);
   }, [togglePageSkip]);

@@ -1,6 +1,7 @@
 "use server";
 
 import { SlicerLLMOutput } from "@/app/types";
+import { LLMResponse } from "@/lib/openai";
 import { createClient } from "@/server/services/supabase/server";
 
 export async function getAllSlicersLLMOutput(): Promise<{ [slicerId: string]: { name: string; outputs: SlicerLLMOutput[]; lastProcessed: string } }> {
@@ -37,7 +38,15 @@ export async function getAllSlicersLLMOutput(): Promise<{ [slicerId: string]: { 
 
     allSlicersOutput[slicer.id] = {
       name: slicer.name,
-      outputs: llmOutputs ?? [],
+      outputs: (llmOutputs ?? []).map(llmOutput => ({
+        id: llmOutput.id,
+        prompt: llmOutput.prompt,
+        prompt_id: llmOutput.prompt_id,
+        output: llmOutput.output as LLMResponse,
+        created_at: llmOutput.created_at,
+        updated_at: llmOutput.updated_at,
+        slicer_id: llmOutput.slicer_id
+      })),
       lastProcessed: slicer.updated_at ?? "-",
       description: slicer.description ?? "",
     };

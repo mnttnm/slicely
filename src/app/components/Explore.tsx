@@ -132,7 +132,6 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [isPreviousDataExpanded, setIsPreviousDataExpanded] = useState(false);
 
   const searchSlicedContent = useCallback(async (searchQuery: string, pageNum: number) => {
-    console.log("fetchResults", searchQuery, pageNum);
     setIsLoading(true);
     try {
       const { results: searchResults, total } = await searchSlicedContentForSlicer(slicerId, searchQuery, pageNum);
@@ -230,17 +229,11 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
 
       // If no saved output or forced refresh, generate new output
       const llmContentForSlicer = await Promise.all(slicer.llm_prompts?.map(async (promptObj: LLMPrompt) => {
-        console.log("Processing initial outputs for slicer:", slicerId);
         const context = await getContextForSlicer(slicerId);
-        console.log("Context retrieved:", `${context.substring(0, 100)}...`);
         const messages = await createMessages(context, promptObj.prompt);
-        console.log("Messages created:", JSON.stringify(messages, null, 2));
-        console.log("Messages created for prompt:", promptObj.id);
         const result = await processWithLLM(messages);
         return { id: promptObj.id, prompt_id: promptObj.id, prompt: promptObj.prompt, output: result };
       }));
-
-      console.log("LLM content for slicer:", llmContentForSlicer);
 
       // Save each output individually
       for (const output of llmContentForSlicer) {
@@ -269,21 +262,14 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     setIsLoading(true);
 
     try {
-      console.log("Fetching context for query:", query, "slicerId:", slicerId);
       const { context, contextObjects } = await getContextForQuery(query, slicerId);
-      console.log("Context received:", context);
       if (context === "") {
         throw new Error("No relevant information found");
       }
       const messages = await createMessages(context, "", query);
-      console.log("Messages created:", JSON.stringify(messages, null, 2));
       const answer = await processWithLLM(messages);
-      console.log("LLM answer received:", answer);
 
-      console.log("Context objects:", contextObjects);
-      console.log("Answer context messages:", answer.context_object_ids);
       const relatedContextObjects = answer.context_object_ids ? contextObjects.filter((obj) => answer.context_object_ids.includes(obj.id)) : [];
-      console.log("Related context objects:", relatedContextObjects);
 
       const botMessage: ChatMessage = {
         role: "assistant",
@@ -314,8 +300,9 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       const botMessage = {
         role: "assistant",
         content: <TextDisplay content={{ text: `I'm sorry, but an error occurred: ${errorMessage}` }} />,
-        rawContent: { response_type: "text", content: { text: `I'm sorry, but an error occurred: ${errorMessage}` }, raw_response: `I'm sorry, but an error occurred: ${errorMessage}`, confidence: 0, follow_up_questions: [] }
-
+        rawContent: {
+          response_type: "text", content: { response_type: "text", content: { text: `I'm sorry, but an error occurred: ${errorMessage}` } }, raw_response: `I'm sorry, but an error occurred: ${errorMessage}`, confidence: 0, follow_up_questions: []
+        }
       };
       setChatHistory(prev => [...prev, botMessage as ChatMessage]);
       toast({
@@ -335,7 +322,6 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [chatHistory]);
 
   const fetchSlicerDetails = useCallback(async () => {
-    console.log("fetchSlicerDetails", slicerId);
     try {
       const result = await getSlicerDetails(slicerId);
       if (result) {

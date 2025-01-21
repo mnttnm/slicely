@@ -2,7 +2,8 @@ import { Label } from "@/app/components/ui/label";
 import { Switch } from "@/app/components/ui/switch";
 import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
 import { ExtractedText, ProcessingRules } from "@/app/types";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { getPagesToInclude } from "../utils/pdf-utils";
 
 interface ExtractedTextViewProps {
   slicedTexts: ExtractedText[];
@@ -10,10 +11,14 @@ interface ExtractedTextViewProps {
 }
 
 function ExtractedTextView({ slicedTexts, processingRules }: ExtractedTextViewProps) {
-  const { pageNumber } = usePDFViewer();
+  const { pageNumber, numPages } = usePDFViewer();
   const [showAllPages, setShowAllPages] = useState(false);
+  const pagesToInclude = useMemo(() => {
+    if (!numPages || !processingRules) return [];
+    return getPagesToInclude(processingRules, numPages);
+  }, [processingRules, numPages]);
 
-  const isPageExcluded = processingRules?.skipped_pages?.includes(pageNumber);
+  const isPageExcluded = !pagesToInclude.includes(pageNumber);
   const filteredTexts = showAllPages
     ? slicedTexts
     : slicedTexts.filter((item) => item.page_number === pageNumber);
@@ -45,7 +50,7 @@ function ExtractedTextView({ slicedTexts, processingRules }: ExtractedTextViewPr
               ) : (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Full page extraction</p>
               )}
-              {processingRules?.skipped_pages?.includes(item.page_number) ? (
+              {isPageExcluded ? (
                 <p className="text-gray-600 dark:text-gray-400">Not extracted as page is excluded</p>
               ) : (
                 <p className="text-sm text-gray-900 dark:text-gray-200">{item.text}</p>

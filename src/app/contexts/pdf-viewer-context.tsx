@@ -56,14 +56,10 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const togglePageSkip = useCallback((pageNumber: number) => {
-    console.log("togglePageSkip", pageNumber);
     setCurrentProcessingRules(prevRules => {
       const { strategy, rules } = prevRules.pageSelection;
       let newRules: PageSelectionRule[];
       let newStrategy = strategy;
-
-      console.log("current rules", rules);
-      console.log("current strategy", strategy);
 
       if (rules.length === 1 && rules[0].type === "all") {
         newRules = [{ type: "specific", pages: [pageNumber] }];
@@ -87,10 +83,6 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      console.log("newRules", {
-        strategy: newStrategy,
-        rules: newRules,
-      });
 
       return {
         ...prevRules,
@@ -128,7 +120,6 @@ export const PDFViewerProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const updateProcessingRules = useCallback((newRules: Partial<ProcessingRules>) => {
-    console.log("updateProcessingRules", newRules);
     setCurrentProcessingRules(prevRules => ({ ...prevRules, ...newRules }));
   }, []);
 

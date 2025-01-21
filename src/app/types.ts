@@ -27,7 +27,7 @@ export interface ExtractedText {
 
 export interface PageAnnotation {
   page: number;            // Page number the annotation applies to
-  rectangles: FabricRect[]; // List of rectangle annotations for the page
+  rectangles: Partial<FabricRect>[]; // List of rectangle annotations for the page
 };
 
 export interface ProcessingRules {
@@ -91,30 +91,6 @@ export interface FabricRect extends fabric.Rect {
 export interface ExtractedTextItem {
   str: string;
   transform: number[];
-}
-
-export interface Rectangle {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-  id: string;
-  fillRule: string;
-  flipX: boolean;
-  flipY: boolean;
-  globalCompositeOperation: string;
-  hasBorders: boolean;
-  hasControls: boolean;
-  hoverCursor: string | null;
-  includeDefaultValues: boolean;
-  inverted: boolean;
-  lockMovementX: boolean;
-  lockMovementY: boolean;
-  lockRotation: boolean;
-  lockScalingFlip: boolean;
-  lockScalingX: boolean;
-  lockScalingY: boolean;
-  // Add any other properties that are present in your rectangles
 }
 
 export interface FilterCounts {

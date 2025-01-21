@@ -5,6 +5,8 @@ import { getPagesToInclude, getPageText } from "@/app/utils/pdf-utils";
 import { extractTextFromRectangle } from "@/app/utils/text-extraction";
 import * as pdfjs from "pdfjs-dist";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
 
 export async function extractPdfContent(
@@ -31,7 +33,7 @@ async function extractContentFromDocument(
       for (const rect of pageAnnotation.rectangles) {
         const extractedText = await extractTextFromRectangle(page, rect as FabricRect);
         extractedTexts.push({
-          id: rect.id,
+          id: (rect as FabricRect).id,
           page_number: pageNumber,
           text: extractedText || "",
           rectangle_info: rect as FabricRect

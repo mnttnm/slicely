@@ -13,9 +13,9 @@ import { getSlicers, getUserPDFs } from "@/server/actions/studio/actions";
 import { Tables } from "@/types/supabase-types/database.types";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-export default function StudioPage() {
+const StudioPageContent = () => {
   const [activeTab, setActiveTab] = useState<string>("slicers");
   const [pdfs, setPdfs] = useState<(Tables<"pdfs"> & { slicer_ids: string[] })[]>([]);
   const [slicers, setSlicers] = useState<Tables<"slicers">[]>([]);
@@ -186,4 +186,14 @@ export default function StudioPage() {
       )}
     </div>
   );
-}
+};
+
+const StudioPage = () => {
+  return (
+    <Suspense fallback={<div className="h-full flex items-center justify-center">Loading...</div>}>
+      <StudioPageContent />
+    </Suspense>
+  );
+};
+
+export default StudioPage;
