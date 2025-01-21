@@ -57,7 +57,7 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
   const processAllPdfs = async () => {
     setIsProcessing(true);
     try {
-      await Promise.all(linkedPdfs.map(pdf => handlePDFProcessing(pdf, slicerId as string)));
+      await Promise.all(linkedPdfs.map(pdf => handlePDFProcessing(pdf as PDFMetadata, slicerId as string)));
       alert("All PDFs processed successfully!");
       onRefresh(); // Trigger refresh after processing all PDFs
     } catch (error) {

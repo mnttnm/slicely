@@ -20,9 +20,9 @@ const defaultRectValues: Partial<FabricRect> = {
 };
 
 export function serializeFabricRect(rect: FabricRect): Partial<FabricRect> {
-  return Object.keys(defaultRectValues).reduce((acc, key) => {
-    if (rect[key as keyof FabricRect] !== defaultRectValues[key as keyof FabricRect]) {
-      acc[key as keyof FabricRect] = rect[key as keyof FabricRect];
+  return Object.keys(defaultRectValues).reduce((acc: Partial<FabricRect>, key) => {
+    if (rect[key as keyof FabricRect] !== defaultRectValues[key as keyof FabricRect] && rect[key as keyof FabricRect] != null) {
+      (acc as any)[key] = rect[key as keyof FabricRect];
     }
     return acc;
   }, {
@@ -46,7 +46,7 @@ export function serializeProcessingRules(rules: ProcessingRules): string {
     ...rules,
     annotations: rules.annotations.map(annotation => ({
       ...annotation,
-      rectangles: annotation.rectangles.map(serializeFabricRect),
+      rectangles: annotation.rectangles,
     })),
   };
   return JSON.stringify(serializedRules);

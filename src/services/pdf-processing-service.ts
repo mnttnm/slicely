@@ -3,7 +3,7 @@
 import { LLMPrompt, PDFMetadata } from "@/app/types";
 import { extractPdfContent } from "@/server/actions/pdf-actions";
 import { getAnnotations, getSignedPdfUrl, getSlicerDetails, savePdfLLMOutput, saveSlicedContent, updatePDF } from "@/server/actions/studio/actions";
-import { Tables, TablesInsert } from "@/types/supabase-types/database.types";
+import { TablesInsert } from "@/types/supabase-types/database.types";
 import { createMessages, getContextForPdf, processWithLLM } from "@/utils/explore-utils";
 
 // extract content from pdf and returns output in the format to be inserted into the outputs table
@@ -32,7 +32,7 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Ta
   }));
 }
 
-export async function handlePDFProcessing(pdfDetails: Tables<"pdfs">, slicerId: string) {
+export async function handlePDFProcessing(pdfDetails: PDFMetadata, slicerId: string) {
   if (!slicerId) {
     throw new Error(`No slicer associated with PDF ${pdfDetails.file_name}. Please link a slicer first.`);
   }

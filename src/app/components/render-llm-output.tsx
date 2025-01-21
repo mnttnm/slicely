@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/app/compo
 import { SingleValueDisplay } from "@/app/components/ui/single-value-display";
 import { TableDisplay } from "@/app/components/ui/table-display";
 import { TextDisplay } from "@/app/components/ui/text-display";
-import { LLMResponse } from "@/lib/openai";
+import { FormattedResponse, LLMResponse } from "@/lib/openai";
 import { FileText } from "lucide-react";
 import { useState } from "react";
 
@@ -17,7 +17,7 @@ export const RenderLLMOutput = ({ output }: { output: LLMResponse }) => {
     return <TextDisplay content={{ text: "Invalid or empty response" }} />;
   }
 
-  const renderFormattedOutput = (formattedResponse: any) => {
+  const renderFormattedOutput = (formattedResponse: FormattedResponse): JSX.Element => {
     switch (formattedResponse.response_type) {
       case "single_value":
         return <SingleValueDisplay content={formattedResponse.content} />;
@@ -27,8 +27,10 @@ export const RenderLLMOutput = ({ output }: { output: LLMResponse }) => {
         return <TableDisplay content={formattedResponse.content} />;
       case "text":
         return <TextDisplay content={formattedResponse.content} />;
-      default:
-        return <TextDisplay content={{ text: `Unsupported response type: ${formattedResponse.response_type}` }} />;
+      default: {
+        const exhaustiveCheck: never = formattedResponse;
+        throw new Error(`Unsupported response type: ${exhaustiveCheck}`);
+      }
     }
   };
 

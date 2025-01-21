@@ -301,6 +301,21 @@ export async function updatePDF(pdfId: string, updatedData: Partial<PDFMetadata>
   return data;
 }
 
+function deserializeSlicer(data: any): Slicer {
+  return {
+    ...data,
+    llm_prompts: Array.isArray(data.llm_prompts) ? data.llm_prompts.map((p: any) => ({
+      id: p.id,
+      prompt: p.prompt
+    })) : [],
+    pdf_prompts: Array.isArray(data.pdf_prompts) ? data.pdf_prompts.map((p: any) => ({
+      id: p.id,
+      prompt: p.prompt
+    })) : [],
+    processing_rules: deserializeProcessingRules(data.processing_rules)
+  };
+}
+
 export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Slicer; linkedPdfs: PDFMetadata[] } | null> {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -333,7 +348,12 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
     ? deserializeProcessingRules(slicerDetailsWithoutPdfSlicers.processing_rules)
     : {
       annotations: [],
-      skipped_pages: []
+      pageSelection: {
+        strategy: "include",
+        rules: [
+          { type: "all" }
+        ]
+      }
     };
 
   if (!processingRules) {
@@ -341,14 +361,10 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
   }
 
   return {
-    slicerDetails: {
-      ...slicerDetailsWithoutPdfSlicers,
-      processing_rules: processingRules
-    } as Slicer,
+    slicerDetails: deserializeSlicer(slicerDetailsWithoutPdfSlicers),
     linkedPdfs: linkedPdfs as PDFMetadata[]
   };
 }
-
 export async function saveAnnotations(slicerId: string, annotations: ProcessingRules) {
   const supabase = createClient();
   // Get the authenticated user

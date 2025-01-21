@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Explore from "@/app/components/explore";
 import { LinkedPdfs } from "@/app/components/linked-pdfs";
 import PdfChat from "@/app/components/pdf-chat";
@@ -10,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
 import { useTextExtraction } from "@/app/hooks/use-text-extraction";
 import { ExtractedText, FabricRect, PageSelectionRule, PDFMetadata, ProcessingRules, Slicer } from "@/app/types";
-import { serializeFabricRect } from "@/app/utils/fabric-helper";
+import { deserializeFabricRect } from "@/app/utils/fabric-helper";
 import { extractPdfContent } from "@/server/actions/pdf-actions";
 import { getSignedPdfUrl, getSlicerDetails, linkPdfToSlicer } from "@/server/actions/studio/actions";
 import { TablesInsert } from "@/types/supabase-types/database.types";
@@ -19,7 +20,7 @@ import { useCallback, useEffect, useState } from "react";
 
 const selectAllPages: PageSelectionRule = { type: "all" };
 
-const SlicerPage = () => {
+const SlicerPageContent = () => {
   const { id } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -150,10 +151,10 @@ const SlicerPage = () => {
     });
   }, [processingRules]);
 
-  const onRectangleUpdate = useCallback(async (operation: "add" | "remove", payload: { id: string, rect?: FabricRect, pageNumber?: number }) => {
+  const onRectangleUpdate = useCallback(async (operation: "add" | "remove", payload: { id: string, rect?: Partial<FabricRect>, pageNumber?: number }) => {
     if (operation === "add") {
-      if (!payload.pageNumber || !payload.rect) return;
-      const serializedRect = serializeFabricRect(payload.rect);
+      if (payload.rect === undefined || !payload.pageNumber) return;
+      // const serializedRect = serializeFabricRect(payload.rect);
       setProcessingRules((prev) => {
         const existingAnnotation = prev.annotations.find(a => a.page === payload.pageNumber);
         if (existingAnnotation) {
@@ -161,27 +162,28 @@ const SlicerPage = () => {
             ...prev,
             annotations: prev.annotations.map(a =>
               a.page === payload.pageNumber
-                ? { ...a, rectangles: [...a.rectangles, serializedRect] }
+                ? { ...a, rectangles: [...a.rectangles, payload.rect as Partial<FabricRect>] }
                 : a
             )
           };
         } else {
           return {
             ...prev,
-            annotations: [...prev.annotations, { page: payload.pageNumber!, rectangles: [serializedRect] }]
+            annotations: [...prev.annotations, { page: payload.pageNumber!, rectangles: [payload.rect as Partial<FabricRect>] }]
           };
         }
       });
 
       // Extract and set the text for the new rectangle
-      const extractedText = await extractTextFromRectangle(payload.rect, payload.pageNumber);
+      const deserializedRect = deserializeFabricRect(payload.rect);
+      const extractedText = await extractTextFromRectangle(deserializedRect, payload.pageNumber);
       setExtractedTexts(prev => [
         ...prev,
         {
           id: payload.id,
           page_number: payload.pageNumber!,
           text: extractedText || "",
-          rectangle_info: payload.rect ?? null
+          rectangle_info: deserializedRect ?? null
         }
       ]);
     } else if (operation === "remove") {
@@ -321,6 +323,14 @@ const SlicerPage = () => {
         </TabsContent>
       </Tabs>
     </div>
+  );
+};
+
+const SlicerPage = () => {
+  return (
+    <Suspense fallback={<div className="h-full flex items-center justify-center">Loading...</div>}>
+      <SlicerPageContent />
+    </Suspense>
   );
 };
 

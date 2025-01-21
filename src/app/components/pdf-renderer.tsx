@@ -31,8 +31,6 @@ function PDFRenderer({
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [numPages, setNumPages] = useState<number | null>(null);
 
-  console.log("new processingRules", processingRules);
-
   const handleLoadError = (error: Error) => {
     console.error("Error loading PDF:", error);
     if (error.name === "PasswordException") {

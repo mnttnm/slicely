@@ -76,7 +76,6 @@ in context of the generated response. These IDs are in the format <context_id>{i
 <context_id> tags in the context_object_ids array. Most importantly, If the context is empty, respond with "No relevant information found in the context."`,
   };
 
-  console.log("llm prompt messages", [systemMessage, ...messages]);
 
   const response = await openai.beta.chat.completions.parse({
     model: "gpt-4o-mini",
@@ -86,7 +85,6 @@ in context of the generated response. These IDs are in the format <context_id>{i
 
   const llmResponse = response.choices[0].message.parsed;
 
-  console.log("llmResponse", llmResponse);
   if (!llmResponse) {
     throw new Error("Unexpected response format from OpenAI API");
   }

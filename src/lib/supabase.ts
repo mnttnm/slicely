@@ -23,7 +23,6 @@ export async function searchVectorStore(query: string, slicerId: string) {
       throw error;
     }
 
-    console.log("match_outputs count:", data.length);
     return data;
   } catch (error) {
     console.error("Error in searchVectorStore:", error);

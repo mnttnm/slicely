@@ -192,18 +192,12 @@ const PDFDetails = () => {
               onClearAllPages={() => {
                 console.log("Clear all pages");
               }}
-              processingRules={null}
-              onPageExclude={() => {
-                console.log("Page exclude");
-              }}
-              onPageInclude={() => {
-                console.log("Page include");
-              }}
-              onPageExcludeAll={() => {
-                console.log("Page exclude all");
-              }}
-              onPageIncludeAll={() => {
-                console.log("Page include all");
+              processingRules={{
+                annotations: [],
+                pageSelection: {
+                  strategy: "include",
+                  rules: [{ type: "all" }],
+                },
               }}
             />
             <PDFNavigation

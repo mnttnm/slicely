@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { MIN_RECTANGLE_SIZE, RECTANGLE_FILL, RECTANGLE_STROKE, RECTANGLE_STROKE_WIDTH } from "@/app/constants";
+import { FabricRect, PageAnnotation } from "@/app/types";
 import * as fabric from "fabric";
-import { PageAnnotation, FabricRect } from "@/app/types";
-import { RECTANGLE_FILL, RECTANGLE_STROKE, RECTANGLE_STROKE_WIDTH, MIN_RECTANGLE_SIZE } from "@/app/constants";
+import { useCallback, useEffect, useRef } from "react";
 
 interface AnnotationCanvasProps {
   pageDimensions: { width: number; height: number };
@@ -32,7 +32,7 @@ export const AnnotationCanvas: React.FC<AnnotationCanvasProps> = ({
 
     const pageAnnotation = annotations.find(a => a.page === pageNumber);
     if (pageAnnotation) {
-      pageAnnotation.rectangles.forEach((rect: FabricRect) => {
+      pageAnnotation.rectangles.forEach((rect: Partial<FabricRect>) => {
 
         canvas.add(
           new fabric.Rect({
