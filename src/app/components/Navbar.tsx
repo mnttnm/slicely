@@ -3,7 +3,6 @@
 import { cn } from "@/app/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
 
 interface NavLinkProps {
   href: string;
@@ -27,11 +26,11 @@ const NavLink = ({ href, children }: NavLinkProps) => {
   );
 };
 
-const Navbar = () => (
-  <nav className="flex flex-1 items-center justify-center space-x-6 mx-auto font-medium">
-    <NavLink href="/dashboard">Dashboard</NavLink>
-    <NavLink href="/studio">Studio</NavLink>
-  </nav>
-);
-
-export { Navbar };
+export function Navbar() {
+  return (
+    <nav className="flex items-center space-x-6">
+      <NavLink href="/dashboard">Dashboard</NavLink>
+      <NavLink href="/studio">Studio</NavLink>
+    </nav>
+  );
+}
