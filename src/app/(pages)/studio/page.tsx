@@ -175,7 +175,7 @@ const StudioPageContent = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {slicers.map((slicer) => (
-                <Slicer key={slicer.id} id={slicer.id} fileName={slicer.name} pdf_password={slicer.pdf_password} />
+                <Slicer key={slicer.id} id={slicer.id} fileName={slicer.name} pdf_password={slicer.pdf_password} description={slicer.description ?? ""} />
               ))}
             </div>
           )}

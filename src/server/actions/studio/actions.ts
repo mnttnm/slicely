@@ -9,6 +9,8 @@ import { Tables, TablesInsert } from "@/types/supabase-types/database.types";
 import { hashPassword, verifyPassword } from "@/utils/password-utils";
 import { revalidatePath } from "next/cache";
 
+const DEMO_USER_ID = "20d7775d-40ab-4de3-8208-d5c453c284f8";
+
 export async function uploadPdf(formData: FormData): Promise<Tables<"pdfs">> {
   const supabase = createClient();
   // Get the authenticated user
@@ -60,33 +62,65 @@ export async function uploadPdf(formData: FormData): Promise<Tables<"pdfs">> {
 
 export async function getUserPDFs(): Promise<(Tables<"pdfs"> & { slicer_ids: string[] })[]> {
   const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    throw new Error("Authentication failed");
-  }
+  let pdfs;
 
-  const { data: userPDFs, error } = await supabase
-    .from("pdfs")
-    .select(`
-      *,
-      pdf_slicers (slicer_id)
-    `)
-    .eq("user_id", user.id);
+  if (user?.id === DEMO_USER_ID) {
+    // If logged-in user is the demo user, just fetch their data
+    const { data: userPDFs, error } = await supabase
+      .from("pdfs")
+      .select(`
+        *,
+        pdf_slicers (slicer_id)
+      `)
+      .eq("user_id", user.id);
 
-  if (error) {
-    console.error("Error fetching user PDFs:", error);
-    throw new Error("Failed to fetch user PDFs");
+    if (error) {
+      console.error("Error fetching PDFs:", error);
+      throw new Error("Failed to fetch PDFs");
+    }
+    pdfs = userPDFs;
+  } else {
+    // Get demo user's data
+    const { data: demoPDFs, error: demoError } = await supabase
+      .from("pdfs")
+      .select(`
+        *,
+        pdf_slicers (slicer_id)
+      `)
+      .eq("user_id", DEMO_USER_ID);
+
+    if (demoError) {
+      console.error("Error fetching demo PDFs:", demoError);
+      throw new Error("Failed to fetch demo PDFs");
+    }
+
+    // If user is logged in and not the demo user, get their data too
+    if (user) {
+      const { data: userPDFs, error: userError } = await supabase
+        .from("pdfs")
+        .select(`
+          *,
+          pdf_slicers (slicer_id)
+        `)
+        .eq("user_id", user.id);
+
+      if (userError) {
+        console.error("Error fetching user PDFs:", userError);
+      }
+      pdfs = [...(demoPDFs || []), ...(userPDFs || [])];
+    } else {
+      pdfs = demoPDFs || [];
+    }
   }
 
   // Transform the data to include slicer_ids
-  const transformedPDFs = userPDFs.map(pdf => ({
+  return pdfs.map(pdf => ({
     ...pdf,
     slicer_ids: pdf.pdf_slicers.map(ps => ps.slicer_id),
     pdf_slicers: undefined // Remove this property as it's no longer needed
   }));
-
-  return transformedPDFs;
 }
 
 // fetch PDF from Supabase Storage
@@ -117,10 +151,14 @@ export async function getSignedPdfUrl(filePath: string): Promise<string> {
 
 export async function getPdfDetails(pdfId: string): Promise<{ pdfDetails: Tables<"pdfs">, slicer_ids: string[]; pdfUrl: string } | null> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // First try to get the PDF
   const { data, error } = await supabase
     .from("pdfs")
     .select("*, pdf_slicers (slicer_id)")
     .eq("id", pdfId)
+    .or(`user_id.eq.${DEMO_USER_ID}${user ? `,user_id.eq.${user.id}` : ""}`)
     .single();
 
   if (!data) {
@@ -145,24 +183,50 @@ export async function getPdfDetails(pdfId: string): Promise<{ pdfDetails: Tables
 
 export async function getSlicers(): Promise<Tables<"slicers">[]> {
   const supabase = createClient();
-  // Get the authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    throw new Error("Authentication failed");
+  if (user?.id === DEMO_USER_ID) {
+    // If logged-in user is the demo user, just fetch their data
+    const { data: userSlicers, error: userSlicersError } = await supabase
+      .from("slicers")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (userSlicersError) {
+      console.error("Error fetching slicers:", userSlicersError);
+      throw new Error("Failed to fetch slicers");
+    }
+    return userSlicers || [];
   }
 
-  const { data: slicers, error } = await supabase
+  // Get demo user's data
+  const { data: demoSlicers, error: demoSlicersError } = await supabase
     .from("slicers")
     .select("*")
-    .eq("user_id", user.id);
+    .eq("user_id", DEMO_USER_ID)
+    .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching user slicers:", error);
-    throw new Error("Failed to fetch user slicers");
+  if (demoSlicersError) {
+    console.error("Error fetching demo slicers:", demoSlicersError);
+    throw new Error("Failed to fetch demo slicers");
   }
 
-  return slicers;
+  // If user is logged in and not the demo user, get their data too
+  if (user) {
+    const { data: userSlicers, error: userSlicersError } = await supabase
+      .from("slicers")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (userSlicersError) {
+      console.error("Error fetching user slicers:", userSlicersError);
+    }
+    return [...(demoSlicers || []), ...(userSlicers || [])];
+  }
+
+  return demoSlicers || [];
 }
 
 export async function createSlicer({ name, description, fileId, password, processingRules }: { name: string; description: string; fileId: string; password?: string; processingRules: ProcessingRules }) {
@@ -318,25 +382,22 @@ function deserializeSlicer(data: any): Slicer {
 
 export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Slicer; linkedPdfs: PDFMetadata[] } | null> {
   const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    throw new Error("Authentication failed");
-  }
-
-  // Fetch slicer details
+  // First try to get the slicer
   const { data: slicerDetails, error } = await supabase
     .from("slicers")
     .select("*, pdf_slicers (pdfs(*))")
     .eq("id", slicerId)
+    .or(`user_id.eq.${DEMO_USER_ID}${user ? `,user_id.eq.${user.id}` : ""}`)
     .single();
 
-  if (error) {
+  if (error || !slicerDetails) {
     console.error("Error fetching slicer details:", error);
     throw new Error("Failed to fetch slicer details");
   }
 
-  if (!slicerDetails || !slicerDetails.pdf_slicers[0]?.pdfs) {
+  if (!slicerDetails.pdf_slicers[0]?.pdfs) {
     throw new Error("Slicer or associated PDF not found");
   }
 
@@ -365,13 +426,24 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
     linkedPdfs: linkedPdfs as PDFMetadata[]
   };
 }
+
 export async function saveAnnotations(slicerId: string, annotations: ProcessingRules) {
   const supabase = createClient();
-  // Get the authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    throw new Error("Authentication failed");
+  if (!user) {
+    throw new Error("Authentication required");
+  }
+
+  // First verify if the user owns this slicer
+  const { data: slicer } = await supabase
+    .from("slicers")
+    .select("user_id")
+    .eq("id", slicerId)
+    .single();
+
+  if (!slicer || slicer.user_id !== user.id) {
+    throw new Error("Access denied: You can only edit your own slicers");
   }
 
   const serializedAnnotations = serializeProcessingRules(annotations);
@@ -393,18 +465,13 @@ export async function saveAnnotations(slicerId: string, annotations: ProcessingR
 
 export async function getAnnotations(slicerId: string): Promise<ProcessingRules | null> {
   const supabase = createClient();
-  // Get the authenticated user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("Authentication failed");
-  }
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { data, error } = await supabase
     .from("slicers")
     .select("processing_rules")
     .eq("id", slicerId)
-    .eq("user_id", user.id)
+    .or(`user_id.eq.${DEMO_USER_ID}${user ? `,user_id.eq.${user.id}` : ""}`)
     .single();
 
   if (error) {
@@ -421,10 +488,18 @@ export async function getAnnotations(slicerId: string): Promise<ProcessingRules 
 
 export async function getSlicedPdfContent(pdfId: string): Promise<SlicedPdfContent[]> {
   const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    throw new Error("Authentication failed");
+  // First verify if the user has access to this PDF
+  const { data: pdf } = await supabase
+    .from("pdfs")
+    .select("id")
+    .eq("id", pdfId)
+    .or(`user_id.eq.${DEMO_USER_ID}${user ? `,user_id.eq.${user.id}` : ""}`)
+    .single();
+
+  if (!pdf) {
+    throw new Error("PDF not found or access denied");
   }
 
   const { data, error } = await supabase
@@ -510,10 +585,18 @@ export async function saveSlicedContent(output: TablesInsert<"outputs">): Promis
 
 export async function searchSlicedContentForSlicer(slicerId: string, query: string, page = 1, pageSize = 5): Promise<{ results: SlicedPdfContentWithMetadata[], total: number }> {
   const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    throw new Error("Authentication failed");
+  // First verify if the user has access to this slicer
+  const { data: slicer } = await supabase
+    .from("slicers")
+    .select("id")
+    .eq("id", slicerId)
+    .or(`user_id.eq.${DEMO_USER_ID}${user ? `,user_id.eq.${user.id}` : ""}`)
+    .single();
+
+  if (!slicer) {
+    throw new Error("Slicer not found or access denied");
   }
 
   const offset = (page - 1) * pageSize;
@@ -555,10 +638,18 @@ export async function searchSlicedContentForSlicer(slicerId: string, query: stri
 
 export async function getInitialSlicedContentForSlicer(slicerId: string, page = 1, pageSize = 10) {
   const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    throw new Error("Authentication failed");
+  // First verify if the user has access to this slicer
+  const { data: slicer } = await supabase
+    .from("slicers")
+    .select("id")
+    .eq("id", slicerId)
+    .or(`user_id.eq.${DEMO_USER_ID}${user ? `,user_id.eq.${user.id}` : ""}`)
+    .single();
+
+  if (!slicer) {
+    throw new Error("Slicer not found or access denied");
   }
 
   const offset = (page - 1) * pageSize;
@@ -594,21 +685,18 @@ export async function getInitialSlicedContentForSlicer(slicerId: string, page = 
 // Add a function to verify the password
 export async function verifyPdfPassword(slicerId: string, password: string): Promise<boolean> {
   const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    throw new Error("Authentication failed");
-  }
-
-  const { data: slicer, error } = await supabase
+  // First verify if the user has access to this slicer
+  const { data: slicer } = await supabase
     .from("slicers")
     .select("pdf_password")
     .eq("id", slicerId)
-    .eq("user_id", user.id)
+    .or(`user_id.eq.${DEMO_USER_ID}${user ? `,user_id.eq.${user.id}` : ""}`)
     .single();
 
-  if (error || !slicer) {
-    throw new Error("Failed to fetch slicer");
+  if (!slicer) {
+    throw new Error("Slicer not found or access denied");
   }
 
   if (!slicer.pdf_password) {
@@ -657,23 +745,38 @@ export async function saveSlicerLLMOutput(slicerId: string, output: SlicerLLMOut
 
 export async function getAllSlicers() {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  try {
+  if (user?.id === DEMO_USER_ID) {
+    // If logged-in user is the demo user, just fetch their data
     const { data: slicers, error } = await supabase
       .from("slicers")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching slicers:", error);
       throw new Error("Failed to fetch slicers");
     }
-
     return slicers || [];
-  } catch (error) {
-    console.error("Error in getAllSlicers:", error);
-    throw error;
   }
+
+  // Get demo user's data and user's data if logged in
+  const query = supabase
+    .from("slicers")
+    .select("*")
+    .or(`user_id.eq.${DEMO_USER_ID}${user ? `,user_id.eq.${user.id}` : ""}`)
+    .order("created_at", { ascending: false });
+
+  const { data: slicers, error } = await query;
+
+  if (error) {
+    console.error("Error fetching slicers:", error);
+    throw new Error("Failed to fetch slicers");
+  }
+
+  return slicers || [];
 }
 
 export async function uploadMultiplePdfs(formData: FormData): Promise<Tables<"pdfs">[]> {

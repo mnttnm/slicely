@@ -1,17 +1,7 @@
-import StudioPage from "@/app/(pages)/studio/page";
-import { createClient } from "@/server/services/supabase/server";
 import { redirect } from "next/navigation";
 
-export default async function Home() {
-
-  const supabase = createClient();
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    redirect("/login");
-  }
-
-  return (
-    <StudioPage />
-  );
+export default function Home() {
+  // Simply redirect to dashboard, no auth check needed here
+  // Auth checks will be handled by the dashboard page
+  redirect("/dashboard");
 }

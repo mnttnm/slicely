@@ -1,6 +1,7 @@
 "use client";
 
 import CreateSlicerDrawer from "@/app/components/create-slicer-drawer";
+import { LoginRequiredMessage } from "@/app/components/login-required-message";
 import PDFLab from "@/app/components/pdf-lab";
 import PDFNavigation from "@/app/components/pdf-navigation";
 import PDFViewer from "@/app/components/pdf-viewer";
@@ -10,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
+import { useAuth } from "@/app/hooks/use-auth";
+import { toast } from "@/app/hooks/use-toast";
 import { getAllSlicers, getPdfDetails, getSlicerDetails, linkPdfToSlicer } from "@/server/actions/studio/actions";
 import { Tables } from "@/types/supabase-types/database.types";
 import { Database, Download, MoreVertical, Settings } from "lucide-react";
@@ -32,6 +35,7 @@ const PDFDetails = () => {
   const router = useRouter();
 
   const { numPages, pageNumber, jumpToPage } = usePDFViewer();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const fetchPdfDetails = async () => {
@@ -71,15 +75,39 @@ const PDFDetails = () => {
   }, [id]);
 
   const handleSaveToDB = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save to database.",
+        variant: "destructive",
+      });
+      return;
+    }
     console.log("Save to DB");
   };
 
   const handleCreateNewSlicer = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to create a new slicer.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsDialogOpen(false);
     setIsCreateSlicerDrawerOpen(true);
   };
 
   const handleSelectExistingSlicer = (slicerId: string) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to select a slicer.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedSlicerId(slicerId);
   };
 
@@ -184,12 +212,36 @@ const PDFDetails = () => {
               showToolbar={false}
               url={pdfUrl}
               onRectangleUpdate={() => {
+                if (!isAuthenticated) {
+                  toast({
+                    title: "Login Required",
+                    description: "Please login to make annotations.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
                 console.log("Rectangle updated");
               }}
               onClearPage={() => {
+                if (!isAuthenticated) {
+                  toast({
+                    title: "Login Required",
+                    description: "Please login to clear pages.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
                 console.log("Clear page");
               }}
               onClearAllPages={() => {
+                if (!isAuthenticated) {
+                  toast({
+                    title: "Login Required",
+                    description: "Please login to clear all pages.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
                 console.log("Clear all pages");
               }}
               processingRules={{
@@ -210,7 +262,14 @@ const PDFDetails = () => {
             {hasSlicers ? (
               <PDFLab pdfDetails={pdfDetails} slicerIds={slicerIds ?? []} />
             ) : (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center justify-center h-full flex-col gap-4">
+                {!isAuthenticated && (
+                  <LoginRequiredMessage
+                    title="Login to Configure Slicer"
+                    description="You need to be logged in to configure slicers."
+                    className="mb-4"
+                  />
+                )}
                 <Button onClick={handleConfigureSlicer}>Configure Slicer</Button>
               </div>
             )}

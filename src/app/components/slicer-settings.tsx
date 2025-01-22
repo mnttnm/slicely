@@ -4,14 +4,16 @@ import { Input } from "@/app/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
-import { useToast } from "@/app/hooks/use-toast";
+import { toast, useToast } from "@/app/hooks/use-toast";
 import { ExtractedText, LLMPrompt, Slicer } from "@/app/types";
 import { updateSlicer } from "@/server/actions/studio/actions";
 import { Eye, EyeOff, HelpCircle, Plus, X } from "lucide-react";
 import { useState } from "react";
 
+import { useAuth } from "@/app/hooks/use-auth";
 import { usePDFViewer } from "../contexts/pdf-viewer-context";
 import ExtractedTextView from "./extracted-text-view";
+import { LoginRequiredMessage } from "./login-required-message";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Label } from "./ui/label";
@@ -46,14 +48,30 @@ const GeneralSettings: React.FC<{
 }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [passwordChanged, setPasswordChanged] = useState(false);
+    const { isAuthenticated } = useAuth();
 
     const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!isAuthenticated) {
+        toast({
+          title: "Login Required",
+          description: "Please login to change password.",
+          variant: "destructive",
+        });
+        return;
+      }
       onUpdateSlicer({ ...slicerObject, pdf_password: e.target.value });
       setPasswordChanged(true);
     };
 
     return (
       <div className="space-y-6">
+        {!isAuthenticated && (
+          <LoginRequiredMessage
+            title="Login to Edit Settings"
+            description="You need to be logged in to modify slicer settings."
+            className="mb-4"
+          />
+        )}
         <div className="space-y-2">
           <LabelWithTooltip
             label="Name"
@@ -113,10 +131,20 @@ const GeneralSettings: React.FC<{
 
 const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }) => {
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [newPrompt, setNewPrompt] = useState("");
   const { numPages, currentProcessingRules } = usePDFViewer();
 
   const saveSlicer = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save changes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await updateSlicer(slicerObject.id, slicerObject);
       toast({
@@ -168,6 +196,13 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
 
   return (
     <div className="flex flex-col h-full w-full">
+      {!isAuthenticated && (
+        <LoginRequiredMessage
+          title="Login to Save Changes"
+          description="You can make changes but need to login to save them."
+          className="mb-4"
+        />
+      )}
       <div className="flex-1 overflow-hidden">
         <Card className="h-full flex flex-col">
           <CardContent className="flex-1 overflow-y-auto">

@@ -3,13 +3,16 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 
 import Explore from "@/app/components/explore";
 import { LinkedPdfs } from "@/app/components/linked-pdfs";
+import { LoginRequiredMessage } from "@/app/components/login-required-message";
 import PdfChat from "@/app/components/pdf-chat";
 import PDFViewer from "@/app/components/pdf-viewer";
 import SlicerSettings from "@/app/components/slicer-settings";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/app/components/ui/breadcrumb";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
+import { useAuth } from "@/app/hooks/use-auth";
 import { useTextExtraction } from "@/app/hooks/use-text-extraction";
+import { useToast } from "@/app/hooks/use-toast";
 import { ExtractedText, FabricRect, PageSelectionRule, PDFMetadata, ProcessingRules, Slicer } from "@/app/types";
 import { deserializeFabricRect } from "@/app/utils/fabric-helper";
 import { extractPdfContent } from "@/server/actions/pdf-actions";
@@ -40,6 +43,8 @@ const SlicerPageContent = () => {
 
   const { pdfDocument, currentProcessingRules } = usePDFViewer();
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
+  const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const tab = searchParams.get("tab") || "slicerstudio";
@@ -151,6 +156,15 @@ const SlicerPageContent = () => {
   }, [processingRules]);
 
   const onRectangleUpdate = useCallback(async (operation: "add" | "remove", payload: { id: string, rect?: Partial<FabricRect>, pageNumber?: number }) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to make annotations.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (operation === "add") {
       if (payload.rect === undefined || !payload.pageNumber) return;
       // const serializedRect = serializeFabricRect(payload.rect);
@@ -202,17 +216,35 @@ const SlicerPageContent = () => {
 
       setExtractedTexts(prev => prev.filter(text => text.id !== payload.id));
     }
-  }, [extractTextFromRectangle]);
+  }, [extractTextFromRectangle, isAuthenticated, toast]);
 
   const onClearPage = useCallback((pageNumber: number) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to clear pages.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setProcessingRules(prev => ({
       ...prev,
       annotations: prev.annotations.filter(annotation => annotation.page !== pageNumber)
     }));
     setExtractedTexts(prev => prev.filter(text => text.page_number !== pageNumber));
-  }, []);
+  }, [isAuthenticated, toast]);
 
   const onClearAllPages = useCallback(() => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to clear all pages.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setExtractedTexts([]);
     setProcessingRules({
       annotations: [],
@@ -221,9 +253,18 @@ const SlicerPageContent = () => {
         rules: [selectAllPages]
       }
     });
-  }, []);
+  }, [isAuthenticated, toast]);
 
   const onUploadSuccess = async (pdfs: TablesInsert<"pdfs">[]) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to upload PDFs.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!slicer || pdfs.length === 0) return;
 
     try {
@@ -293,6 +334,14 @@ const SlicerPageContent = () => {
         <TabsContent value="slicerstudio" className="flex-grow overflow-hidden">
           <div className="flex h-full">
             <div className="flex-1">
+              {!isAuthenticated && (
+                <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                  <LoginRequiredMessage
+                    title="Login to Edit Slicer"
+                    description="You can view the slicer but need to login to make changes."
+                  />
+                </div>
+              )}
               <PDFViewer
                 url={pdfUrl}
                 processingRules={processingRules}
@@ -312,6 +361,14 @@ const SlicerPageContent = () => {
           </div>
         </TabsContent>
         <TabsContent value="linkedpdfs" className="flex-grow overflow-hidden">
+          {!isAuthenticated && (
+            <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+              <LoginRequiredMessage
+                title="Login to Manage PDFs"
+                description="You can view linked PDFs but need to login to make changes."
+              />
+            </div>
+          )}
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
         </TabsContent>
         <TabsContent value="pdfchat" className="flex-grow overflow-hidden"> {/* New Tab Content */}
