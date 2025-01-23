@@ -4,60 +4,22 @@ import { SlicerLLMOutput } from "@/app/types";
 import { LLMResponse } from "@/lib/openai";
 import { createClient } from "@/server/services/supabase/server";
 
-const DEMO_USER_ID = "20d7775d-40ab-4de3-8208-d5c453c284f8";
-
 export async function getAllSlicersLLMOutput(): Promise<{ [slicerId: string]: { name: string; outputs: SlicerLLMOutput[]; lastProcessed: string } }> {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
-  let slicers;
+  const { data: slicers, error: slicersError } = await supabase
+    .from("slicers")
+    .select("id, name, updated_at, description")
+    .order("updated_at", { ascending: false });
 
-  if (user?.id === DEMO_USER_ID) {
-    // If logged-in user is the demo user, just fetch their data
-    const { data: userSlicers, error: userSlicersError } = await supabase
-      .from("slicers")
-      .select("id, name, updated_at, description")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
-
-    if (userSlicersError) {
-      console.error("Error fetching slicers:", userSlicersError);
-      return {};
-    }
-    slicers = userSlicers;
-  } else {
-    // Get demo user's data
-    const { data: demoSlicers, error: demoSlicersError } = await supabase
-      .from("slicers")
-      .select("id, name, updated_at, description")
-      .eq("user_id", DEMO_USER_ID)
-      .order("updated_at", { ascending: false });
-
-    if (demoSlicersError) {
-      console.error("Error fetching demo slicers:", demoSlicersError);
-      return {};
-    }
-
-    // If user is logged in and not the demo user, get their data too
-    if (user) {
-      const { data: userSlicers, error: userSlicersError } = await supabase
-        .from("slicers")
-        .select("id, name, updated_at, description")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false });
-
-      if (userSlicersError) {
-        console.error("Error fetching user slicers:", userSlicersError);
-      }
-      slicers = [...(demoSlicers || []), ...(userSlicers || [])];
-    } else {
-      slicers = demoSlicers || [];
-    }
+  if (slicersError) {
+    console.error("Error fetching slicers:", slicersError);
+    return {};
   }
 
   const allSlicersOutput: { [slicerId: string]: { name: string; outputs: SlicerLLMOutput[]; lastProcessed: string, description?: string } } = {};
 
-  for (const slicer of slicers) {
+  for (const slicer of slicers || []) {
     const { data: llmOutputs, error: llmOutputError } = await supabase
       .from("slicer_llm_outputs")
       .select("*")

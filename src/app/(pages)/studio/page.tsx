@@ -1,6 +1,7 @@
 "use client";
 
 import CreateSlicerDrawer from "@/app/components/create-slicer-drawer";
+import { LoginDialog } from "@/app/components/login-dialog";
 import { Slicer } from "@/app/components/slicer";
 import { Button } from "@/app/components/ui/button";
 import { EmptyPlaceholder } from "@/app/components/ui/empty-placeholder";
@@ -24,10 +25,15 @@ const StudioPageContent = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isCreatingSlicer, setIsCreatingSlicer] = useState<boolean>(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const fetchData = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
       const [fetchedPDFs, fetchedSlicers] = await Promise.all([
         getUserPDFs(),
         getSlicers()
@@ -36,16 +42,19 @@ const StudioPageContent = () => {
       setSlicers(fetchedSlicers);
     } catch (error) {
       console.error("Error fetching data:", error);
+      setError("Failed to load data. Please try again.");
     } finally {
       setIsLoading(false);
+      setHasInitialized(true);
     }
   };
 
   useEffect(() => {
-    if (user) {
+    // Only fetch data once the user loading state is complete
+    if (!userLoading) {
       fetchData();
     }
-  }, [user]);
+  }, [userLoading]);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -66,15 +75,37 @@ const StudioPageContent = () => {
   };
 
   const handleCreateSlicer = () => {
+    if (!user) {
+      setIsLoginDialogOpen(true);
+      return;
+    }
     setIsCreatingSlicer(true);
   };
 
-  if (userLoading || isLoading) {
+  const handleUploadClick = () => {
+    if (!user) {
+      setIsLoginDialogOpen(true);
+      return;
+    }
+  };
+
+  // Show loading state while initializing or loading user
+  if (userLoading || !hasInitialized) {
     return <StudioSkeleton />;
   }
 
-  if (!user) {
-    return <div>Please log in to access the Studio.</div>;
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <EmptyPlaceholder
+          title="Error"
+          description={error}
+          icon="⚠️"
+        >
+          <Button onClick={fetchData}>Retry</Button>
+        </EmptyPlaceholder>
+      </div>
+    );
   }
 
   return (
@@ -83,13 +114,19 @@ const StudioPageContent = () => {
         <h1 className="text-xl">Studio</h1>
         <div className="flex gap-2">
           <div className="flex gap-2">
-            <UploadButton
-              onSuccess={handleUploadSuccess}
-              buttonText="Upload PDF"
-              accept=".pdf"
-              isTemplate={false}
-              variant={activeTab === "pdfs" ? "default" : "outline"}
-            />
+            {user ? (
+              <UploadButton
+                onSuccess={handleUploadSuccess}
+                buttonText="Upload PDF"
+                accept=".pdf"
+                isTemplate={false}
+                variant={activeTab === "pdfs" ? "default" : "outline"}
+              />
+            ) : (
+              <Button variant={activeTab === "pdfs" ? "default" : "outline"} onClick={handleUploadClick}>
+                Upload PDF
+              </Button>
+            )}
             <Button variant={activeTab === "slicers" ? "default" : "outline"} onClick={handleCreateSlicer}>
               Create Slicer
             </Button>
@@ -97,93 +134,104 @@ const StudioPageContent = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col overflow-hidden">
-        <TabsList className="self-start">
-          <TabsTrigger value="slicers">Slicers</TabsTrigger>
-          <TabsTrigger value="pdfs">Files</TabsTrigger>
-        </TabsList>
+      {isLoading ? (
+        <StudioSkeleton />
+      ) : (
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col overflow-hidden">
+          <TabsList className="self-start">
+            <TabsTrigger value="slicers">Slicers</TabsTrigger>
+            <TabsTrigger value="pdfs">Files</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="pdfs" className="mt-2 overflow-hidden flex flex-col w-full">
-          {pdfs.length === 0 ? (
-            <div className="h-full flex items-center justify-center">
-              <EmptyPlaceholder
-                title="No PDF Files"
-                description="Upload PDF files to start creating slicers and extracting insights."
-                icon="📄"
-              >
-                <UploadButton
-                  onSuccess={handleUploadSuccess}
-                  buttonText="Upload PDF"
-                  accept=".pdf"
-                  isTemplate={false}
-                  variant="default"
-                />
-              </EmptyPlaceholder>
-            </div>
-          ) : (
-            <div className="overflow-x-auto w-full">
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>File Name</TableHead>
-                    <TableHead>Uploaded</TableHead>
-                    <TableHead>Slicer</TableHead>
-                    <TableHead>Is Template</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pdfs.map((pdf) => (
-                    <TableRow key={pdf.id}>
-                      <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
-                      <TableCell className="text-gray-500">{pdf.created_at ? new Date(pdf.created_at).toLocaleString() : "N/A"}</TableCell>
-                      <TableCell className="text-gray-500">
-                        {pdf.slicer_ids && pdf.slicer_ids.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {pdf.slicer_ids.map((slicer_id) => (
-                              <Link key={slicer_id} href={`/studio/slicers/${slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
-                                {slicer_id}
-                              </Link>
-                            ))}
-                          </div>
-                        ) : "N/A"}
-                      </TableCell>
-                      <TableCell className="text-gray-500">{pdf.is_template ? "Yes" : "No"}</TableCell>
-                      <TableCell className="text-gray-500">
-                        <Link href={`/studio/pdfs/${pdf.id}`}>
-                          View
-                        </Link>
-                      </TableCell>
+          <TabsContent value="pdfs" className="mt-2 overflow-hidden flex flex-col w-full">
+            {pdfs.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <EmptyPlaceholder
+                  title="No PDF Files"
+                  description={user ? "Upload PDF files to start creating slicers and extracting insights." : "Log in to upload PDF files and start creating slicers."}
+                  icon="📄"
+                >
+                  {user ? (
+                    <UploadButton
+                      onSuccess={handleUploadSuccess}
+                      buttonText="Upload PDF"
+                      accept=".pdf"
+                      isTemplate={false}
+                      variant="default"
+                    />
+                  ) : (
+                    <Button onClick={() => setIsLoginDialogOpen(true)}>Log in</Button>
+                  )}
+                </EmptyPlaceholder>
+              </div>
+            ) : (
+              <div className="overflow-x-auto w-full">
+                <Table className="w-full">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>File Name</TableHead>
+                      <TableHead>Uploaded</TableHead>
+                      <TableHead>Slicer</TableHead>
+                      <TableHead>Is Template</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </TabsContent>
-        <TabsContent value="slicers">
-          {slicers.length === 0 ? (
-            <div className="h-full flex items-center justify-center">
-              <EmptyPlaceholder
-                title="No Slicers Created"
-                description="Create a slicer to start processing your PDF files and extracting insights."
-                icon="✂️"
-              >
-                <Button onClick={handleCreateSlicer}>Create Slicer</Button>
-              </EmptyPlaceholder>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {slicers.map((slicer) => (
-                <Slicer key={slicer.id} id={slicer.id} fileName={slicer.name} pdf_password={slicer.pdf_password} description={slicer.description ?? ""} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                  </TableHeader>
+                  <TableBody>
+                    {pdfs.map((pdf) => (
+                      <TableRow key={pdf.id}>
+                        <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
+                        <TableCell className="text-gray-500">{pdf.created_at ? new Date(pdf.created_at).toLocaleString() : "N/A"}</TableCell>
+                        <TableCell className="text-gray-500">
+                          {pdf.slicer_ids && pdf.slicer_ids.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {pdf.slicer_ids.map((slicer_id) => (
+                                <Link key={slicer_id} href={`/studio/slicers/${slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
+                                  {slicer_id}
+                                </Link>
+                              ))}
+                            </div>
+                          ) : "N/A"}
+                        </TableCell>
+                        <TableCell className="text-gray-500">{pdf.is_template ? "Yes" : "No"}</TableCell>
+                        <TableCell className="text-gray-500">
+                          <Link href={`/studio/pdfs/${pdf.id}`}>
+                            View
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="slicers">
+            {slicers.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <EmptyPlaceholder
+                  title="No Slicers Created"
+                  description={user ? "Create a slicer to start processing your PDF files and extracting insights." : "Log in to create slicers and start processing PDF files."}
+                  icon="✂️"
+                >
+                  <Button onClick={handleCreateSlicer}>
+                    {user ? "Create Slicer" : "Log in"}
+                  </Button>
+                </EmptyPlaceholder>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {slicers.map((slicer) => (
+                  <Slicer key={slicer.id} id={slicer.id} fileName={slicer.name} pdf_password={slicer.pdf_password} description={slicer.description ?? ""} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
       {isCreatingSlicer && (
         <CreateSlicerDrawer open={isCreatingSlicer} onOpenChange={setIsCreatingSlicer} />
       )}
+      <LoginDialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen} />
     </div>
   );
 };

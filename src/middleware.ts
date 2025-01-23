@@ -8,9 +8,12 @@ const PROTECTED_PATHS = [
   "/profile", // User profile
 ];
 
-// List of paths that should redirect to dashboard if not authenticated
+// List of paths that should be accessible without authentication
 const PUBLIC_PATHS = [
-  "/studio", // Studio routes
+  "/login", // Login page
+  "/signup", // Signup page
+  "/studio", // Studio routes (read-only for non-authenticated users)
+  "/dashboard", // Dashboard routes (read-only for non-authenticated users)
 ];
 
 export async function middleware(request: NextRequest) {
@@ -32,15 +35,8 @@ export async function middleware(request: NextRequest) {
     response.headers.set("status", "302");
   }
 
-  // If user is not authenticated and trying to access studio, redirect to dashboard
-  if (isPublicPath && !hasSession) {
-    const redirectUrl = new URL("/dashboard", request.url);
-    response.headers.set("location", redirectUrl.toString());
-    response.headers.set("status", "302");
-  }
-
-  // If user is authenticated and trying to access login page, redirect to home
-  if (hasSession && url.pathname === "/login") {
+  // If user is authenticated and trying to access auth pages (login/signup), redirect to home
+  if ((url.pathname === "/login" || url.pathname === "/signup") && hasSession) {
     const redirectUrl = new URL("/", request.url);
     response.headers.set("location", redirectUrl.toString());
     response.headers.set("status", "302");
