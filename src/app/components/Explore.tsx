@@ -113,7 +113,7 @@ const RelatedDocuments = ({ contextObjects }: { contextObjects: any[] }) => (
 );
 
 function ExploreContent({ slicerId }: { slicerId: string }) {
-  const [mode, setMode] = useState<"search" | "chat">("chat");
+  const [mode, setMode] = useState<"search" | "chat">("search");
   const [query, setQuery] = useState("");
   const [showMetadata, setShowMetadata] = useState<string | null>(null);
   const [results, setResults] = useState<SlicedPdfContentWithMetadata[]>([]);

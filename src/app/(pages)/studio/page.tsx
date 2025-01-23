@@ -112,9 +112,9 @@ const StudioPageContent = () => {
     <div className="p-4 h-full overflow-hidden flex flex-col">
       <div className="flex justify-between items-center py-1">
         <h1 className="text-xl">Studio</h1>
-        <div className="flex gap-2">
+        {user && (
           <div className="flex gap-2">
-            {user ? (
+            <div className="flex gap-2">
               <UploadButton
                 onSuccess={handleUploadSuccess}
                 buttonText="Upload PDF"
@@ -122,16 +122,12 @@ const StudioPageContent = () => {
                 isTemplate={false}
                 variant={activeTab === "pdfs" ? "default" : "outline"}
               />
-            ) : (
-              <Button variant={activeTab === "pdfs" ? "default" : "outline"} onClick={handleUploadClick}>
-                Upload PDF
+              <Button variant={activeTab === "slicers" ? "default" : "outline"} onClick={handleCreateSlicer}>
+                Create Slicer
               </Button>
-            )}
-            <Button variant={activeTab === "slicers" ? "default" : "outline"} onClick={handleCreateSlicer}>
-              Create Slicer
-            </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -148,7 +144,7 @@ const StudioPageContent = () => {
               <div className="h-full flex items-center justify-center">
                 <EmptyPlaceholder
                   title="No PDF Files"
-                  description={user ? "Upload PDF files to start creating slicers and extracting insights." : "Log in to upload PDF files and start creating slicers."}
+                  description={user ? "Upload PDF files to start creating slicers and extracting insights." : "These are demo files to help you understand how Slicely works."}
                   icon="📄"
                 >
                   {user ? (
@@ -159,9 +155,7 @@ const StudioPageContent = () => {
                       isTemplate={false}
                       variant="default"
                     />
-                  ) : (
-                    <Button onClick={() => setIsLoginDialogOpen(true)}>Log in</Button>
-                  )}
+                  ) : null}
                 </EmptyPlaceholder>
               </div>
             ) : (
@@ -210,12 +204,12 @@ const StudioPageContent = () => {
               <div className="h-full flex items-center justify-center">
                 <EmptyPlaceholder
                   title="No Slicers Created"
-                  description={user ? "Create a slicer to start processing your PDF files and extracting insights." : "Log in to create slicers and start processing PDF files."}
+                  description={user ? "Create a slicer to start processing your PDF files and extracting insights." : "These are demo slicers to help you understand how Slicely works."}
                   icon="✂️"
                 >
-                  <Button onClick={handleCreateSlicer}>
-                    {user ? "Create Slicer" : "Log in"}
-                  </Button>
+                  {user && (
+                    <Button onClick={handleCreateSlicer}>Create Slicer</Button>
+                  )}
                 </EmptyPlaceholder>
               </div>
             ) : (

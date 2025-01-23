@@ -3,7 +3,6 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 
 import Explore from "@/app/components/explore";
 import { LinkedPdfs } from "@/app/components/linked-pdfs";
-import { LoginRequiredMessage } from "@/app/components/login-required-message";
 import PdfChat from "@/app/components/pdf-chat";
 import PDFViewer from "@/app/components/pdf-viewer";
 import SlicerSettings from "@/app/components/slicer-settings";
@@ -156,18 +155,8 @@ const SlicerPageContent = () => {
   }, [processingRules]);
 
   const onRectangleUpdate = useCallback(async (operation: "add" | "remove", payload: { id: string, rect?: Partial<FabricRect>, pageNumber?: number }) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Login Required",
-        description: "Please login to make annotations.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (operation === "add") {
       if (payload.rect === undefined || !payload.pageNumber) return;
-      // const serializedRect = serializeFabricRect(payload.rect);
       setProcessingRules((prev) => {
         const existingAnnotation = prev.annotations.find(a => a.page === payload.pageNumber);
         if (existingAnnotation) {
@@ -216,35 +205,17 @@ const SlicerPageContent = () => {
 
       setExtractedTexts(prev => prev.filter(text => text.id !== payload.id));
     }
-  }, [extractTextFromRectangle, isAuthenticated, toast]);
+  }, [extractTextFromRectangle]);
 
   const onClearPage = useCallback((pageNumber: number) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Login Required",
-        description: "Please login to clear pages.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setProcessingRules(prev => ({
       ...prev,
       annotations: prev.annotations.filter(annotation => annotation.page !== pageNumber)
     }));
     setExtractedTexts(prev => prev.filter(text => text.page_number !== pageNumber));
-  }, [isAuthenticated, toast]);
+  }, []);
 
   const onClearAllPages = useCallback(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Login Required",
-        description: "Please login to clear all pages.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setExtractedTexts([]);
     setProcessingRules({
       annotations: [],
@@ -253,7 +224,7 @@ const SlicerPageContent = () => {
         rules: [selectAllPages]
       }
     });
-  }, [isAuthenticated, toast]);
+  }, []);
 
   const onUploadSuccess = async (pdfs: TablesInsert<"pdfs">[]) => {
     if (!isAuthenticated) {
@@ -334,14 +305,6 @@ const SlicerPageContent = () => {
         <TabsContent value="slicerstudio" className="flex-grow overflow-hidden">
           <div className="flex h-full">
             <div className="flex-1">
-              {!isAuthenticated && (
-                <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-                  <LoginRequiredMessage
-                    title="Login to Edit Slicer"
-                    description="You can view the slicer but need to login to make changes."
-                  />
-                </div>
-              )}
               <PDFViewer
                 url={pdfUrl}
                 processingRules={processingRules}
@@ -361,14 +324,14 @@ const SlicerPageContent = () => {
           </div>
         </TabsContent>
         <TabsContent value="linkedpdfs" className="flex-grow overflow-hidden">
-          {!isAuthenticated && (
+          {/* {!isAuthenticated && (
             <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm flex items-center justify-center">
               <LoginRequiredMessage
                 title="Login to Manage PDFs"
                 description="You can view linked PDFs but need to login to make changes."
               />
             </div>
-          )}
+          )} */}
           <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
         </TabsContent>
         <TabsContent value="pdfchat" className="flex-grow overflow-hidden"> {/* New Tab Content */}

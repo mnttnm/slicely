@@ -13,7 +13,7 @@ import { useState } from "react";
 import { useAuth } from "@/app/hooks/use-auth";
 import { usePDFViewer } from "../contexts/pdf-viewer-context";
 import ExtractedTextView from "./extracted-text-view";
-import { LoginRequiredMessage } from "./login-required-message";
+import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Label } from "./ui/label";
@@ -66,11 +66,11 @@ const GeneralSettings: React.FC<{
     return (
       <div className="space-y-6">
         {!isAuthenticated && (
-          <LoginRequiredMessage
-            title="Login to Edit Settings"
-            description="You need to be logged in to modify slicer settings."
-            className="mb-4"
-          />
+          <Alert variant="default" className="mb-4 bg-muted/50">
+            <AlertDescription className="text-sm text-muted-foreground">
+              You are in view-only mode. Sign in to make changes.
+            </AlertDescription>
+          </Alert>
         )}
         <div className="space-y-2">
           <LabelWithTooltip
@@ -81,6 +81,7 @@ const GeneralSettings: React.FC<{
             id="name"
             value={slicerObject.name}
             onChange={(e) => onUpdateSlicer({ ...slicerObject, name: e.target.value })}
+            disabled={!isAuthenticated}
           />
         </div>
         <div className="space-y-2">
@@ -92,6 +93,7 @@ const GeneralSettings: React.FC<{
             id="description"
             value={slicerObject.description || ""}
             onChange={(e) => onUpdateSlicer({ ...slicerObject, description: e.target.value })}
+            disabled={!isAuthenticated}
           />
         </div>
         <div className="space-y-2">
@@ -106,11 +108,13 @@ const GeneralSettings: React.FC<{
               value={slicerObject.pdf_password || ""}
               onChange={handlePasswordChange}
               className="pr-10"
+              disabled={!isAuthenticated}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500"
+              disabled={!isAuthenticated}
             >
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
@@ -121,10 +125,12 @@ const GeneralSettings: React.FC<{
             </p>
           )}
         </div>
-        <Button onClick={() => {
-          setPasswordChanged(false);
-          updateSlicer(slicerObject.id, slicerObject);
-        }} className="w-full">Save</Button>
+        {isAuthenticated && (
+          <Button onClick={() => {
+            setPasswordChanged(false);
+            updateSlicer(slicerObject.id, slicerObject);
+          }} className="w-full">Save</Button>
+        )}
       </div>
     );
   };
@@ -197,11 +203,11 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
   return (
     <div className="flex flex-col h-full w-full">
       {!isAuthenticated && (
-        <LoginRequiredMessage
-          title="Login to Save Changes"
-          description="You can make changes but need to login to save them."
-          className="mb-4"
-        />
+        <Alert variant="default" className="mb-4 bg-muted/50">
+          <AlertDescription className="text-sm text-muted-foreground">
+            You are in view-only mode. Sign in to make changes.
+          </AlertDescription>
+        </Alert>
       )}
       <div className="flex-1 overflow-hidden">
         <Card className="h-full flex flex-col">
@@ -256,56 +262,56 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
                       onUpdateSlicer({ ...slicerObject, llm_prompts: updatedPrompts });
                     }}
                     className="flex-grow"
+                    disabled={!isAuthenticated}
+                  />
+                  {isAuthenticated && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeLLMPrompt(prompt.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {isAuthenticated && (
+                <div className="flex items-center space-x-2">
+                  <Textarea
+                    value={newPrompt}
+                    onChange={(e) => setNewPrompt(e.target.value)}
+                    placeholder="Enter a new LLM prompt"
+                    className="flex-grow"
                   />
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeLLMPrompt(prompt.id)}
+                    onClick={addLLMPrompt}
+                    disabled={!newPrompt.trim()}
                   >
-                    <X className="h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-              ))}
-              <div className="flex items-center space-x-2">
-                <Textarea
-                  value={newPrompt}
-                  onChange={(e) => setNewPrompt(e.target.value)}
-                  placeholder="Enter a new LLM prompt"
-                  className="flex-grow"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={addLLMPrompt}
-                  disabled={!newPrompt.trim()}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+              )}
             </div>
             <PDFPrompts slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} />
-            {/* <div className="space-y-1 mt-2">
-              <Label htmlFor="output_mode" className="text-sm text-gray-400">Output Mode</Label>
-              <Input
-                id="output_mode"
-                value={slicerObject.output_mode || ""}
-                onChange={(e) => onUpdateSlicer({ ...slicerObject, output_mode: e.target.value })}
-              />
-            </div> */}
           </CardContent>
         </Card>
       </div>
-      <div className="mt-2 bg-background border-t">
-        <Button onClick={saveSlicer} className="w-full">
-          Save
-        </Button>
-      </div>
+      {isAuthenticated && (
+        <div className="mt-2 bg-background border-t">
+          <Button onClick={saveSlicer} className="w-full">
+            Save
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
 
 const PDFPrompts: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }) => {
   const [newPDFPrompt, setNewPDFPrompt] = useState("");
+  const { isAuthenticated } = useAuth();
 
   const addPDFPrompt = () => {
     if (newPDFPrompt.trim()) {
@@ -339,32 +345,37 @@ const PDFPrompts: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }
               onUpdateSlicer({ ...slicerObject, pdf_prompts: updatedPDFPrompts });
             }}
             className="flex-grow"
+            disabled={!isAuthenticated}
+          />
+          {isAuthenticated && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => removePDFPrompt(prompt.id)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      ))}
+      {isAuthenticated && (
+        <div className="flex items-center space-x-2">
+          <Textarea
+            value={newPDFPrompt}
+            onChange={(e) => setNewPDFPrompt(e.target.value)}
+            placeholder="Enter a new PDF prompt"
+            className="flex-grow"
           />
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => removePDFPrompt(prompt.id)}
+            onClick={addPDFPrompt}
+            disabled={!newPDFPrompt.trim()}
           >
-            <X className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
           </Button>
         </div>
-      ))}
-      <div className="flex items-center space-x-2">
-        <Textarea
-          value={newPDFPrompt}
-          onChange={(e) => setNewPDFPrompt(e.target.value)}
-          placeholder="Enter a new PDF prompt"
-          className="flex-grow"
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={addPDFPrompt}
-          disabled={!newPDFPrompt.trim()}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
+      )}
     </div>
   );
 };

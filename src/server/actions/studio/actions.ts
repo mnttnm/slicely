@@ -306,6 +306,7 @@ function deserializeSlicer(data: any): Slicer {
 export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetails: Slicer; linkedPdfs: PDFMetadata[] } | null> {
   const supabase = createClient();
 
+  // Get slicer details without requiring authentication
   const { data: slicerDetails, error } = await supabase
     .from("slicers")
     .select("*, pdf_slicers (pdfs(*))")
@@ -314,11 +315,14 @@ export async function getSlicerDetails(slicerId: string): Promise<{ slicerDetail
 
   if (error || !slicerDetails) {
     console.error("Error fetching slicer details:", error);
-    throw new Error("Failed to fetch slicer details");
+    return null;
   }
 
   if (!slicerDetails.pdf_slicers[0]?.pdfs) {
-    throw new Error("Slicer or associated PDF not found");
+    return {
+      slicerDetails: deserializeSlicer(slicerDetails),
+      linkedPdfs: []
+    };
   }
 
   const { pdf_slicers, ...slicerDetailsWithoutPdfSlicers } = slicerDetails;

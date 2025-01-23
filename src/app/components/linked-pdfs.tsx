@@ -1,8 +1,9 @@
 "use client";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
 import UploadButton from "@/app/components/upload-button";
-import { useUser } from "@/app/hooks/use-user";
+import { useAuth } from "@/app/hooks/use-auth";
 import { PDFMetadata } from "@/app/types";
 import { handlePDFProcessing } from "@/services/pdf-processing-service";
 import { TablesInsert } from "@/types/supabase-types/database.types";
@@ -20,23 +21,15 @@ import {
 interface LinkedPdfsProps {
   linkedPdfs: PDFMetadata[];
   onUploadSuccess: (pdfs: TablesInsert<"pdfs">[]) => void;
-  onRefresh: () => void; // Add this prop
+  onRefresh: () => void;
 }
 
 export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdfsProps) {
   const { id: slicerId } = useParams();
-  const { user, loading } = useUser();
+  const { isAuthenticated } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPdfs, setSelectedPdfs] = useState<string[]>([]);
   const router = useRouter();
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!user) {
-    throw new Error("User not found");
-  }
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -55,11 +48,12 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
   };
 
   const processAllPdfs = async () => {
+    if (!isAuthenticated) return;
     setIsProcessing(true);
     try {
       await Promise.all(linkedPdfs.map(pdf => handlePDFProcessing(pdf as PDFMetadata, slicerId as string)));
       alert("All PDFs processed successfully!");
-      onRefresh(); // Trigger refresh after processing all PDFs
+      onRefresh();
     } catch (error) {
       console.error("Error processing PDFs:", error);
       alert("An error occurred while processing PDFs.");
@@ -69,15 +63,15 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
   };
 
   const viewPdf = (pdfId: string) => {
-    // navigate to the pdf viewer
     router.push(`/studio/pdfs/${pdfId}`);
   };
 
   const processSinglePdf = async (pdf: PDFMetadata) => {
+    if (!isAuthenticated) return;
     setIsProcessing(true);
     try {
       await handlePDFProcessing(pdf, slicerId as string);
-      onRefresh(); // Trigger refresh after processing a single PDF
+      onRefresh();
       router.refresh();
     } catch (error) {
       console.error(`Error processing PDF ${pdf.file_name}:`, error);
@@ -88,26 +82,54 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
   };
 
   return (
-    <div className="flex flex-col h-full mt-2">
-      <div className="flex justify-between items-center mb-4">
+    <div className="flex flex-col h-full p-6">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">Linked PDFs ({linkedPdfs.length})</h2>
-        <div className="flex space-x-2">
-          <Button
-            onClick={processAllPdfs}
-            className="btn btn-primary"
-            disabled={isProcessing}
-          >
-            {isProcessing ? "Processing..." : "Process All"}
-          </Button>
-          <UploadButton
-            onSuccess={onUploadSuccess}
-            buttonText="Upload More files"
-            variant="outline"
-            isTemplate={false}
-          />
+        <div className="flex items-center gap-4">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    onClick={processAllPdfs}
+                    disabled={!isAuthenticated || isProcessing}
+                    className="btn btn-primary"
+                  >
+                    {isProcessing ? "Processing..." : "Process All"}
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              {!isAuthenticated && (
+                <TooltipContent>
+                  <p>Sign in to process PDFs</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <UploadButton
+                    onSuccess={onUploadSuccess}
+                    buttonText="Upload More files"
+                    variant="outline"
+                    isTemplate={false}
+                    disabled={!isAuthenticated}
+                  />
+                </div>
+              </TooltipTrigger>
+              {!isAuthenticated && (
+                <TooltipContent>
+                  <p>Sign in to upload PDFs</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
@@ -115,6 +137,7 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
                 <Checkbox
                   checked={selectedPdfs.length === linkedPdfs.length}
                   onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                  disabled={!isAuthenticated}
                 />
               </TableHead>
               <TableHead className="w-[30%]">Name</TableHead>
@@ -130,6 +153,7 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
                   <Checkbox
                     checked={selectedPdfs.includes(pdf.id)}
                     onCheckedChange={(checked) => handleSelectPdf(pdf.id, checked as boolean)}
+                    disabled={!isAuthenticated}
                   />
                 </TableCell>
                 <TableCell className="font-medium">{pdf.file_name}</TableCell>
@@ -146,31 +170,35 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
                       <Eye className="w-4 h-4 mr-1" />
                       View
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => processSinglePdf(pdf)}
-                      disabled={isProcessing}
-                      className="flex items-center"
-                    >
-                      <Play className="w-4 h-4 mr-1" />
-                      Process
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="px-2">
-                          <MoreVertical className="w-4 h-4" />
+                    {isAuthenticated && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => processSinglePdf(pdf)}
+                          disabled={isProcessing}
+                          className="flex items-center"
+                        >
+                          <Play className="w-4 h-4 mr-1" />
+                          Process
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => console.log(`Delete PDF: ${pdf.id}`)}>
-                          Delete
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => console.log(`Change slicer for PDF: ${pdf.id}`)}>
-                          Change Slicer
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="px-2">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => console.log(`Delete PDF: ${pdf.id}`)}>
+                              Delete
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => console.log(`Change slicer for PDF: ${pdf.id}`)}>
+                              Change Slicer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

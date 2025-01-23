@@ -94,7 +94,6 @@ const PDFToolbar: React.FC<PDFToolbarProps> = ({
 
           <div className="h-px bg-gray-400/50 my-2" />
 
-
           {/* Skip this page */}
           <ToolbarButton
             icon={<BanIcon className="h-5 w-5" />}
