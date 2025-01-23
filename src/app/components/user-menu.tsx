@@ -7,10 +7,11 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "@/app/components/ui/dropdown-menu";
 import { useAuth } from "@/app/hooks/use-auth";
 import { HelpCircle, Key, LogOut } from "lucide-react";
+import { useState } from "react";
 
 interface UserMenuProps {
   onOpenAPIKey: () => void;
@@ -19,6 +20,7 @@ interface UserMenuProps {
 
 export function UserMenu({ onOpenAPIKey, onOpenHelp }: UserMenuProps) {
   const { user, isAuthenticated, logout } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
 
   if (!isAuthenticated) {
     return null;
@@ -31,8 +33,23 @@ export function UserMenu({ onOpenAPIKey, onOpenHelp }: UserMenuProps) {
   const userEmail = user?.email || "User";
   const userName = user?.user_metadata?.full_name || userEmail.split("@")[0];
 
+  const handleOpenAPIKey = () => {
+    setIsOpen(false);
+    onOpenAPIKey();
+  };
+
+  const handleOpenHelp = () => {
+    setIsOpen(false);
+    onOpenHelp();
+  };
+
+  const handleLogout = () => {
+    setIsOpen(false);
+    logout();
+  };
+
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -51,26 +68,22 @@ export function UserMenu({ onOpenAPIKey, onOpenHelp }: UserMenuProps) {
           email={userEmail}
         /> */}
         <DropdownMenuLabel>
-          <div>
-            <p>
-              {userName}
-            </p>
-            <p className="text-xs text-gray-200">
-              {userEmail}
-            </p>
-          </div>
+          {userName}
+        </DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-gray-400">
+          {userEmail}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onOpenAPIKey}>
+        <DropdownMenuItem onClick={handleOpenAPIKey}>
           <Key className="mr-2 h-4 w-4" />
           <span>Configure API Key</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenHelp}>
+        <DropdownMenuItem onClick={handleOpenHelp}>
           <HelpCircle className="mr-2 h-4 w-4" />
           <span>Help</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => logout()}>
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
