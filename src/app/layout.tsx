@@ -3,6 +3,7 @@ import { Header } from "@/app/components/header";
 import { ThemeProvider } from "@/app/components/theme-provider";
 import { Toaster } from "@/app/components/ui/toaster";
 import { PDFProvider } from "@/app/contexts/pdf-context";
+import { ApiKeyProvider } from "@/app/hooks/use-api-key";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -38,14 +39,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enableSystem
           disableTransitionOnChange
         >
-          <PDFProvider>
-            <Header />
-            <main className="flex-1 min-h-0 flex flex-col">
-              {children}
-            </main>
-            <CommandMenu />
-            <Toaster />
-          </PDFProvider>
+          <ApiKeyProvider>
+            <PDFProvider>
+              <Header />
+              <main className="flex-1 min-h-0 flex flex-col">
+                {children}
+              </main>
+              <CommandMenu />
+              <Toaster />
+            </PDFProvider>
+          </ApiKeyProvider>
         </ThemeProvider>
       </body>
     </html>

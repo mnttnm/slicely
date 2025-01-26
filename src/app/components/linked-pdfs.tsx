@@ -1,8 +1,10 @@
 "use client";
+import { APIKeyDialog } from "@/app/components/api-key-dialog";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
 import UploadButton from "@/app/components/upload-button";
+import { useApiKey } from "@/app/hooks/use-api-key";
 import { useAuth } from "@/app/hooks/use-auth";
 import { PDFMetadata } from "@/app/types";
 import { handlePDFProcessing } from "@/services/pdf-processing-service";
@@ -27,8 +29,10 @@ interface LinkedPdfsProps {
 export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdfsProps) {
   const { id: slicerId } = useParams();
   const { isAuthenticated } = useAuth();
+  const { apiKey, saveApiKey } = useApiKey();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPdfs, setSelectedPdfs] = useState<string[]>([]);
+  const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false);
   const router = useRouter();
 
   const handleSelectAll = (checked: boolean) => {
@@ -47,8 +51,16 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
     }
   };
 
+  const handleConfigureApiKey = () => {
+    setIsApiKeyDialogOpen(true);
+  };
+
+  const handleApiKeyDialogChange = (open: boolean) => {
+    setIsApiKeyDialogOpen(open);
+  };
+
   const processAllPdfs = async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !apiKey) return;
     setIsProcessing(true);
     try {
       await Promise.all(linkedPdfs.map(pdf => handlePDFProcessing(pdf as PDFMetadata, slicerId as string)));
@@ -62,12 +74,8 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
     }
   };
 
-  const viewPdf = (pdfId: string) => {
-    router.push(`/studio/pdfs/${pdfId}`);
-  };
-
   const processSinglePdf = async (pdf: PDFMetadata) => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !apiKey) return;
     setIsProcessing(true);
     try {
       await handlePDFProcessing(pdf, slicerId as string);
@@ -81,8 +89,13 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
     }
   };
 
+  const viewPdf = (pdfId: string) => {
+    router.push(`/studio/pdfs/${pdfId}`);
+  };
+
   return (
     <div className="flex flex-col h-full p-6">
+      <APIKeyDialog open={isApiKeyDialogOpen} onOpenChange={handleApiKeyDialogChange} />
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">Linked PDFs ({linkedPdfs.length})</h2>
         <div className="flex items-center gap-4">
@@ -92,18 +105,27 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
                 <div>
                   <Button
                     onClick={processAllPdfs}
-                    disabled={!isAuthenticated || isProcessing}
+                    disabled={!isAuthenticated || isProcessing || !apiKey}
                     className="btn btn-primary"
                   >
                     {isProcessing ? "Processing..." : "Process All"}
                   </Button>
                 </div>
               </TooltipTrigger>
-              {!isAuthenticated && (
+              {!isAuthenticated ? (
                 <TooltipContent>
                   <p>Sign in to process PDFs</p>
                 </TooltipContent>
-              )}
+              ) : !apiKey ? (
+                <TooltipContent>
+                  <div className="space-y-2">
+                    <p>OpenAI API key is required to process PDFs</p>
+                    <Button variant="link" className="p-0 h-auto font-normal" onClick={handleConfigureApiKey}>
+                      Configure API Key
+                    </Button>
+                  </div>
+                </TooltipContent>
+              ) : null}
             </Tooltip>
           </TooltipProvider>
 
@@ -172,16 +194,34 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
                     </Button>
                     {isAuthenticated && (
                       <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => processSinglePdf(pdf)}
-                          disabled={isProcessing}
-                          className="flex items-center"
-                        >
-                          <Play className="w-4 h-4 mr-1" />
-                          Process
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => processSinglePdf(pdf)}
+                                  disabled={isProcessing || !apiKey}
+                                  className="flex items-center"
+                                >
+                                  <Play className="w-4 h-4 mr-1" />
+                                  Process
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
+                            {!apiKey && (
+                              <TooltipContent>
+                                <div className="space-y-2">
+                                  <p>OpenAI API key is required to process PDFs</p>
+                                  <Button variant="link" className="p-0 h-auto font-normal" onClick={handleConfigureApiKey}>
+                                    Configure API Key
+                                  </Button>
+                                </div>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm" className="px-2">

@@ -3,8 +3,8 @@
 import { Button } from "@/app/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
-import { useToast } from "@/app/hooks/use-toast";
-import { useState } from "react";
+import { useApiKey } from "@/app/hooks/use-api-key";
+import { useEffect } from "react";
 
 interface APIKeyDialogProps {
   open: boolean;
@@ -12,17 +12,23 @@ interface APIKeyDialogProps {
 }
 
 export function APIKeyDialog({ open, onOpenChange }: APIKeyDialogProps) {
-  const [apiKey, setApiKey] = useState("");
-  const { toast } = useToast();
+  const { apiKey, setApiKey, saveApiKey, removeApiKey } = useApiKey();
+
+  useEffect(() => {
+    if (open) {
+      const storedKey = localStorage.getItem("openai_api_key") || "";
+      setApiKey(storedKey);
+    }
+  }, [open, setApiKey]);
 
   const handleSave = () => {
-    if (apiKey.trim()) {
-      localStorage.setItem("openai_api_key", apiKey.trim());
-      toast({
-        title: "API Key Saved",
-        description: "Your OpenAI API key has been saved successfully.",
-      });
+    if (!apiKey.trim()) {
+      removeApiKey();
       onOpenChange(false);
+    } else {
+      if (saveApiKey(apiKey)) {
+        onOpenChange(false);
+      }
     }
   };
 
@@ -42,11 +48,13 @@ export function APIKeyDialog({ open, onOpenChange }: APIKeyDialogProps) {
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
           />
-          <Button onClick={handleSave} className="w-full">
-            Save API Key
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSave} className="flex-1">
+              Save API Key
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   );
-} 
+}
