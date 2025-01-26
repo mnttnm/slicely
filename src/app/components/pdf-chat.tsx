@@ -45,7 +45,7 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
         prompt: prompt.prompt,
         output: llmResponse as LLMResponse,
         pdf_id: pdfId,
-        slicer_id: slicerId
+        slicer_id: slicerId,
       };
       const { output, ...savedOutput } = await savePdfLLMOutput(pdfId, slicerId, newOutput);
 

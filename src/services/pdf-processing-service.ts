@@ -3,11 +3,10 @@
 import { LLMPrompt, PDFMetadata } from "@/app/types";
 import { extractPdfContent } from "@/server/actions/pdf-actions";
 import { getAnnotations, getSignedPdfUrl, getSlicerDetails, savePdfLLMOutput, saveSlicedContent, updatePDF } from "@/server/actions/studio/actions";
-import { TablesInsert } from "@/types/supabase-types/database.types";
 import { createMessages, getContextForPdf, processWithLLM } from "@/utils/explore-utils";
 
 // extract content from pdf and returns output in the format to be inserted into the outputs table
-export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<TablesInsert<"outputs">[]> {
+export async function ProcessPdf(pdf: PDFMetadata, slicerId: string){
   const pdfUrl = await getSignedPdfUrl(pdf.file_path);
   const processingRules = await getAnnotations(slicerId);
 
@@ -28,7 +27,7 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string): Promise<Ta
         rectangle_info: content.rectangle_info
       }
     },
-    text_content: content.text,
+    text_content: content.text
   }));
 }
 
@@ -59,7 +58,7 @@ export async function handlePDFProcessing(pdfDetails: PDFMetadata, slicerId: str
 
       try {
         const llmResult = await processWithLLM(messages);
-        const llmOutput: TablesInsert<"pdf_llm_outputs"> = {
+        const llmOutput = {
           pdf_id: pdfDetails.id,
           slicer_id: slicerId,
           prompt_id: prompt.id,

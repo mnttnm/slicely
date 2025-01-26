@@ -39,6 +39,7 @@ export type Database = {
           created_at: string | null
           embedding: string | null
           id: string
+          is_seeded_data: boolean
           page_number: number
           pdf_id: string
           section_info: Json
@@ -46,11 +47,13 @@ export type Database = {
           text_content: string
           tsv: unknown | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           embedding?: string | null
           id?: string
+          is_seeded_data?: boolean
           page_number: number
           pdf_id: string
           section_info: Json
@@ -58,11 +61,13 @@ export type Database = {
           text_content: string
           tsv?: unknown | null
           updated_at?: string | null
+          user_id?: string
         }
         Update: {
           created_at?: string | null
           embedding?: string | null
           id?: string
+          is_seeded_data?: boolean
           page_number?: number
           pdf_id?: string
           section_info?: Json
@@ -70,6 +75,7 @@ export type Database = {
           text_content?: string
           tsv?: unknown | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -92,32 +98,38 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_seeded_data: boolean | null
           output: Json
           pdf_id: string
           prompt: string
           prompt_id: string
           slicer_id: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_seeded_data?: boolean | null
           output: Json
           pdf_id: string
           prompt: string
           prompt_id: string
           slicer_id: string
           updated_at?: string | null
+          user_id?: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_seeded_data?: boolean | null
           output?: Json
           pdf_id?: string
           prompt?: string
           prompt_id?: string
           slicer_id?: string
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -139,18 +151,24 @@ export type Database = {
       pdf_slicers: {
         Row: {
           id: string
+          is_seeded_data: boolean | null
           pdf_id: string
           slicer_id: string
+          user_id: string
         }
         Insert: {
           id?: string
+          is_seeded_data?: boolean | null
           pdf_id: string
           slicer_id: string
+          user_id?: string
         }
         Update: {
           id?: string
+          is_seeded_data?: boolean | null
           pdf_id?: string
           slicer_id?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -176,6 +194,7 @@ export type Database = {
           file_path: string
           file_processing_status: string
           id: string
+          is_seeded_data: boolean | null
           is_template: boolean | null
           last_processed_at: string | null
           updated_at: string | null
@@ -187,10 +206,11 @@ export type Database = {
           file_path: string
           file_processing_status?: string
           id?: string
+          is_seeded_data?: boolean | null
           is_template?: boolean | null
           last_processed_at?: string | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string
         }
         Update: {
           created_at?: string | null
@@ -198,48 +218,47 @@ export type Database = {
           file_path?: string
           file_processing_status?: string
           id?: string
+          is_seeded_data?: boolean | null
           is_template?: boolean | null
           last_processed_at?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "pdfs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       slicer_llm_outputs: {
         Row: {
           created_at: string | null
           id: string
+          is_seeded_data: boolean | null
           output: Json
           prompt: string
           prompt_id: string
-          slicer_id: string | null
+          slicer_id: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_seeded_data?: boolean | null
           output: Json
           prompt: string
           prompt_id: string
-          slicer_id?: string | null
+          slicer_id: string
           updated_at?: string | null
+          user_id?: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_seeded_data?: boolean | null
           output?: Json
           prompt?: string
           prompt_id?: string
-          slicer_id?: string | null
+          slicer_id?: string
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -256,6 +275,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_seeded_data: boolean | null
           llm_prompts: Json | null
           name: string
           output_mode: string | null
@@ -270,6 +290,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_seeded_data?: boolean | null
           llm_prompts?: Json | null
           name: string
           output_mode?: string | null
@@ -277,13 +298,14 @@ export type Database = {
           pdf_prompts?: Json | null
           processing_rules?: Json | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string
           webhook_url?: string | null
         }
         Update: {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_seeded_data?: boolean | null
           llm_prompts?: Json | null
           name?: string
           output_mode?: string | null
@@ -294,15 +316,7 @@ export type Database = {
           user_id?: string
           webhook_url?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "slicers_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -609,5 +623,20 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 

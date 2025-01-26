@@ -625,13 +625,20 @@ export async function getSlicerLLMOutput(slicerId: string): Promise<SlicerLLMOut
 
 export async function saveSlicerLLMOutput(slicerId: string, output: SlicerLLMOutput): Promise<void> {
   const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Authentication failed");
+  }
+
   const { error } = await supabase
     .from("slicer_llm_outputs")
     .upsert({
       slicer_id: slicerId,
       prompt_id: output.prompt_id,
       prompt: output.prompt,
-      output: output.output
+      output: output.output,
+      user_id: user?.id
     }, { onConflict: "slicer_id,prompt_id" });
 
   if (error) {
@@ -719,7 +726,7 @@ export async function uploadMultiplePdfs(formData: FormData): Promise<Tables<"pd
 }
 
 
-export async function savePdfLLMOutput(pdfId: string, slicerId: string, pdf_llm_output: TablesInsert<"pdf_llm_outputs">): Promise<Tables<"pdf_llm_outputs">> {
+export async function savePdfLLMOutput(pdfId: string, slicerId: string, pdf_llm_output: Omit<TablesInsert<"pdf_llm_outputs">, "user_id">): Promise<Tables<"pdf_llm_outputs">> {
   const supabase = createClient();
 
   // Get the authenticated user

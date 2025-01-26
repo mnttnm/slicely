@@ -1,6 +1,7 @@
 "use server";
-import { generateEmbedding } from "@/lib/embedding-utils"; // Make sure this import is correct
+
 import { createClient } from "@/server/services/supabase/server";
+import { generateEmbedding } from "./embedding-utils";
 
 // const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 // const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
@@ -11,6 +12,7 @@ export async function searchVectorStore(query: string, slicerId: string) {
   try {
     const embedding = await generateEmbedding(query);
 
+    
     const { data, error } = await supabase.rpc("match_outputs", {
       query_embedding: JSON.stringify(embedding),
       p_slicer_id: slicerId,

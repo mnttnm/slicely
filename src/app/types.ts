@@ -1,4 +1,5 @@
 import { LLMResponse } from "@/lib/openai";
+import { Tables } from "@/types/supabase-types/database.types";
 import * as fabric from "fabric";
 
 export interface PDFMetadata {
@@ -123,3 +124,5 @@ export interface PdfLLMOutput {
   prompt: string;
   output: LLMResponse;
 }
+
+export type OutputType = Omit<Tables<"outputs">, "user_id">;
