@@ -187,6 +187,7 @@ export async function createSlicer({ name, description, fileId, password, proces
     .insert({
       pdf_id: fileId,
       slicer_id: newSlicer.id,
+      user_id: user.id,
     });
 
   if (relationError) {
@@ -389,13 +390,12 @@ export async function saveAnnotations(slicerId: string, annotations: ProcessingR
 
 export async function getAnnotations(slicerId: string): Promise<ProcessingRules | null> {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // const { data: { user } } = await supabase.auth.getUser();
 
   const { data, error } = await supabase
     .from("slicers")
     .select("processing_rules")
     .eq("id", slicerId)
-    .or(`user_id.eq.${user ? `,user_id.eq.${user.id}` : ""}`)
     .single();
 
   if (error) {
@@ -458,6 +458,7 @@ export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
     .insert({
       pdf_id: pdfId,
       slicer_id: slicerId,
+      user_id: user.id
     });
 
   if (relationError) {
@@ -493,6 +494,7 @@ export async function saveSlicedContent(output: TablesInsert<"outputs">): Promis
   const embedding = await generateEmbedding(output.text_content);
   // Add the embedding to the output object
   output.embedding = JSON.stringify(embedding);
+  output.user_id = user.id;
   const { data, error } = await supabase
     .from("outputs")
     .insert(output)
@@ -734,6 +736,7 @@ export async function savePdfLLMOutput(pdfId: string, slicerId: string, pdf_llm_
     prompt_id: pdf_llm_output.prompt_id,
     prompt: pdf_llm_output.prompt,
     output: pdf_llm_output.output,
+    user_id: user.id
   }).select().single();
 
   if (insertError) {
