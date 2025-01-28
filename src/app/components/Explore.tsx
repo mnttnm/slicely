@@ -17,6 +17,7 @@ import {
 } from "@/app/components/ui/tooltip";
 import { useApiKey } from "@/app/hooks/use-api-key";
 import { useToast } from "@/app/hooks/use-toast";
+import { useUser } from "@/app/hooks/use-user";
 import { LLMPrompt, PDFMetadata, SlicedPdfContentWithMetadata, Slicer, SlicerLLMOutput } from "@/app/types";
 import { FormattedResponse, LLMResponse } from "@/lib/openai";
 import { getInitialSlicedContentForSlicer, getSlicerDetails, getSlicerLLMOutput, saveSlicerLLMOutput, searchSlicedContentForSlicer } from "@/server/actions/studio/actions";
@@ -132,6 +133,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [, setExpandedMessages] = useState<Set<number>>(new Set());
   const [isPreviousDataExpanded, setIsPreviousDataExpanded] = useState(false);
   const { apiKey } = useApiKey();
+  const { user } = useUser();
 
   const searchSlicedContent = useCallback(async (searchQuery: string, pageNum: number) => {
     setIsLoading(true);
@@ -560,14 +562,27 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   );
 
   const RefreshButton = () => (
-    <Button
-      onClick={() => getLLMOutputForSlicer(true)}
-      disabled={isLoading}
-      className="ml-2"
-      variant="outline"
-    >
-      Refresh LLM Output
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={() => getLLMOutputForSlicer(true)}
+            disabled={isLoading || !user}
+            className="ml-2"
+            variant="outline"
+          >
+            Refresh LLM Output
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {!user ? (
+            <p className="text-sm">Please login to refresh LLM outputs</p>
+          ) : (
+            <p className="text-sm">Refresh LLM outputs for this slicer</p>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 
   return (
