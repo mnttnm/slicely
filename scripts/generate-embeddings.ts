@@ -7,6 +7,11 @@ dotenv.config({ path: ".env.local" });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const openaiKey = process.env.OPENAI_API_KEY!;
+
+if (!openaiKey) {
+  throw new Error("OpenAI API key not found in environment variables");
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -35,7 +40,7 @@ async function generateEmbeddings() {
 
   for (const output of outputs) {
     try {
-      const embedding = await generateEmbedding(output.text_content);
+      const embedding = await generateEmbedding(output.text_content, openaiKey);
 
       const { error: updateError } = await supabase
         .from("outputs")

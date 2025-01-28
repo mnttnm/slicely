@@ -63,7 +63,7 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
     if (!isAuthenticated || !apiKey) return;
     setIsProcessing(true);
     try {
-      await Promise.all(linkedPdfs.map(pdf => handlePDFProcessing(pdf as PDFMetadata, slicerId as string)));
+      await Promise.all(linkedPdfs.map(pdf => handlePDFProcessing(pdf as PDFMetadata, slicerId as string, apiKey)));
       alert("All PDFs processed successfully!");
       onRefresh();
     } catch (error) {
@@ -78,7 +78,7 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
     if (!isAuthenticated || !apiKey) return;
     setIsProcessing(true);
     try {
-      await handlePDFProcessing(pdf, slicerId as string);
+      await handlePDFProcessing(pdf, slicerId as string, apiKey);
       onRefresh();
       router.refresh();
     } catch (error) {

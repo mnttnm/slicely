@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/app/components/ui/tooltip";
+import { useApiKey } from "@/app/hooks/use-api-key";
 import { useToast } from "@/app/hooks/use-toast";
 import { LLMPrompt, PDFMetadata, SlicedPdfContentWithMetadata, Slicer, SlicerLLMOutput } from "@/app/types";
 import { FormattedResponse, LLMResponse } from "@/lib/openai";
@@ -130,6 +131,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const [initialDataFetched, setInitialDataFetched] = useState(false);
   const [, setExpandedMessages] = useState<Set<number>>(new Set());
   const [isPreviousDataExpanded, setIsPreviousDataExpanded] = useState(false);
+  const { apiKey } = useApiKey();
 
   const searchSlicedContent = useCallback(async (searchQuery: string, pageNum: number) => {
     setIsLoading(true);
@@ -210,6 +212,14 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const getLLMOutputForSlicer = useCallback(async (forceRefresh = false) => {
     if (!slicer) return;
     if (!slicer.llm_prompts) return;
+    if (!apiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please configure your OpenAI API key in settings.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (linkedPdfs.length === 0 || linkedPdfs.every(pdf => pdf.file_processing_status !== "processed")) {
       return;
@@ -229,9 +239,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
 
       // If no saved output or forced refresh, generate new output
       const llmContentForSlicer = await Promise.all(slicer.llm_prompts?.map(async (promptObj: LLMPrompt) => {
-        const context = await getContextForSlicer(slicerId);
+        // get combined context from all the extracted content from pdfs linked to slicer
+        const context = await getContextForSlicer(slicerId, apiKey);
         const messages = await createMessages(context, promptObj.prompt);
-        const result = await processWithLLM(messages);
+        const result = await processWithLLM(messages, apiKey);
         return { id: promptObj.id, prompt_id: promptObj.id, prompt: promptObj.prompt, output: result };
       }));
 
@@ -251,10 +262,18 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     } finally {
       setIsLoading(false);
     }
-  }, [slicerId, slicer, linkedPdfs, toast]);
+  }, [slicer, linkedPdfs, slicerId, apiKey, toast]);
 
   const handleChat = async () => {
     if (!query.trim() || !slicer) return;
+    if (!apiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please configure your OpenAI API key in settings.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const userMessage = { role: "user", content: query };
     setChatHistory(prev => [...prev, userMessage]);
@@ -262,12 +281,12 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     setIsLoading(true);
 
     try {
-      const { context, contextObjects } = await getContextForQuery(query, slicerId);
+      const { context, contextObjects } = await getContextForQuery(query, slicerId, apiKey);
       if (context === "") {
         throw new Error("No relevant information found");
       }
       const messages = await createMessages(context, "", query);
-      const answer = await processWithLLM(messages);
+      const answer = await processWithLLM(messages, apiKey);
 
       const relatedContextObjects = answer.context_object_ids ? contextObjects.filter((obj) => answer.context_object_ids.includes(obj.id)) : [];
 
@@ -345,11 +364,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [fetchSlicerDetails]);
 
   useEffect(() => {
-    if (slicer && mode === "chat" && !smartSlicedContent && linkedPdfs.some(pdf => pdf.file_processing_status === "processed")) {
+    if (slicer && linkedPdfs.some(pdf => pdf.file_processing_status === "processed")) {
       getLLMOutputForSlicer();
     }
-  }, [slicer, getLLMOutputForSlicer, mode, smartSlicedContent, linkedPdfs]);
-
+  }, [slicer, linkedPdfs, getLLMOutputForSlicer]);
 
   // Modify the useEffect to expand only the latest message
   useEffect(() => {

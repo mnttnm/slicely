@@ -1,5 +1,6 @@
-import { LLMResponse } from "@/lib/openai";
+import { FormattedResponse, LLMResponse } from "@/lib/openai";
 import { Tables } from "@/types/supabase-types/database.types";
+import { ContextObject } from "@/utils/explore-utils";
 import * as fabric from "fabric";
 
 export interface PDFMetadata {
@@ -124,5 +125,19 @@ export interface PdfLLMOutput {
   prompt: string;
   output: LLMResponse;
 }
+
+export interface ChatMessage {
+  role: string;
+  content: string | JSX.Element;
+  rawContent?: {
+    response_type: string;
+    content: FormattedResponse;
+    raw_response: string;
+    confidence: number;
+    follow_up_questions: string[];
+  };
+  contextObjects?: ContextObject[];
+}
+
 
 export type OutputType = Omit<Tables<"outputs">, "user_id">;

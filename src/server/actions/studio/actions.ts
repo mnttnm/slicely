@@ -412,14 +412,12 @@ export async function getAnnotations(slicerId: string): Promise<ProcessingRules 
 
 export async function getSlicedPdfContent(pdfId: string): Promise<SlicedPdfContent[]> {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
   // First verify if the user has access to this PDF
   const { data: pdf } = await supabase
     .from("pdfs")
     .select("id")
     .eq("id", pdfId)
-    .or(`user_id.eq.${user ? `,user_id.eq.${user.id}` : ""}`)
     .single();
 
   if (!pdf) {
@@ -483,30 +481,43 @@ export async function linkPdfToSlicer(slicerId: string, pdfId: string) {
   return { success: true };
 }
 
-export async function saveSlicedContent(output: TablesInsert<"outputs">): Promise<Tables<"outputs">> {
+export async function saveSlicedContent(outputs: TablesInsert<"outputs">[], apiKey: string) {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
   if (authError || !user) {
     throw new Error("Authentication failed");
   }
 
-  // Generate embedding for the output text
-  const embedding = await generateEmbedding(output.text_content);
-  // Add the embedding to the output object
-  output.embedding = JSON.stringify(embedding);
-  output.user_id = user.id;
-  const { data, error } = await supabase
-    .from("outputs")
-    .insert(output)
-    .select()
-    .single();
+  try {
+    for (const output of outputs) {
+      // Generate embedding for the output text
+      const embedding = await generateEmbedding(output.text_content, apiKey);
+      
+      const { error } = await supabase
+        .from("outputs")
+        .upsert(
+          {
+            ...output,
+            embedding,
+            user_id: user.id,
+            updated_at: new Date().toISOString()
+          },
+          {
+            onConflict: "pdf_id,slicer_id,page_number",
+            ignoreDuplicates: false
+          }
+        );
 
-  if (error) {
-    console.error("Error saving processed output:", error);
-    throw new Error("Failed to save processed output");
+      if (error) {
+        console.error("Error saving sliced content:", error);
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.error("Error in saveSlicedContent:", error);
+    throw error;
   }
-
-  return data as Tables<"outputs">;
 }
 
 export async function searchSlicedContentForSlicer(slicerId: string, query: string, page = 1, pageSize = 5): Promise<{ results: SlicedPdfContentWithMetadata[], total: number }> {
@@ -549,6 +560,9 @@ export async function searchSlicedContentForSlicer(slicerId: string, query: stri
   };
 }
 
+/**************************/
+  /**  get content for the slicer from the outputs table.
+/*************/
 export async function getInitialSlicedContentForSlicer(slicerId: string, page = 1, pageSize = 10) {
   const supabase = createClient();
 
@@ -633,13 +647,20 @@ export async function saveSlicerLLMOutput(slicerId: string, output: SlicerLLMOut
 
   const { error } = await supabase
     .from("slicer_llm_outputs")
-    .upsert({
-      slicer_id: slicerId,
-      prompt_id: output.prompt_id,
-      prompt: output.prompt,
-      output: output.output,
-      user_id: user?.id
-    }, { onConflict: "slicer_id,prompt_id" });
+    .upsert(
+      {
+        slicer_id: slicerId,
+        prompt_id: output.prompt_id,
+        prompt: output.prompt,
+        output: output.output,
+        user_id: user.id,
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: "slicer_id,prompt_id",
+        ignoreDuplicates: false
+      }
+    );
 
   if (error) {
     console.error("Error saving slicer LLM output:", error);
@@ -725,7 +746,6 @@ export async function uploadMultiplePdfs(formData: FormData): Promise<Tables<"pd
   return uploadedPdfs;
 }
 
-
 export async function savePdfLLMOutput(pdfId: string, slicerId: string, pdf_llm_output: Omit<TablesInsert<"pdf_llm_outputs">, "user_id">): Promise<Tables<"pdf_llm_outputs">> {
   const supabase = createClient();
 
@@ -737,14 +757,25 @@ export async function savePdfLLMOutput(pdfId: string, slicerId: string, pdf_llm_
   }
 
   // Store LLM output in the database
-  const { error: insertError, data } = await supabase.from("pdf_llm_outputs").insert({
-    pdf_id: pdfId,
-    slicer_id: slicerId,
-    prompt_id: pdf_llm_output.prompt_id,
-    prompt: pdf_llm_output.prompt,
-    output: pdf_llm_output.output,
-    user_id: user.id
-  }).select().single();
+  const { error: insertError, data } = await supabase
+    .from("pdf_llm_outputs")
+    .upsert(
+      {
+        pdf_id: pdfId,
+        slicer_id: slicerId,
+        prompt_id: pdf_llm_output.prompt_id,
+        prompt: pdf_llm_output.prompt,
+        output: pdf_llm_output.output,
+        user_id: user.id,
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: "pdf_id,slicer_id,prompt_id",
+        ignoreDuplicates: false
+      }
+    )
+    .select()
+    .single();
 
   if (insertError) {
     throw new Error(`Error storing LLM output: ${insertError.message}`);

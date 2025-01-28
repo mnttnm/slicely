@@ -6,7 +6,7 @@ import { getAnnotations, getSignedPdfUrl, getSlicerDetails, savePdfLLMOutput, sa
 import { createMessages, getContextForPdf, processWithLLM } from "@/utils/explore-utils";
 
 // extract content from pdf and returns output in the format to be inserted into the outputs table
-export async function ProcessPdf(pdf: PDFMetadata, slicerId: string){
+export async function ProcessPdf(pdf: PDFMetadata, slicerId: string, apiKey: string) {
   const pdfUrl = await getSignedPdfUrl(pdf.file_path);
   const processingRules = await getAnnotations(slicerId);
 
@@ -31,7 +31,7 @@ export async function ProcessPdf(pdf: PDFMetadata, slicerId: string){
   }));
 }
 
-export async function handlePDFProcessing(pdfDetails: PDFMetadata, slicerId: string) {
+export async function handlePDFProcessing(pdfDetails: PDFMetadata, slicerId: string, apiKey: string) {
   if (!slicerId) {
     throw new Error(`No slicer associated with PDF ${pdfDetails.file_name}. Please link a slicer first.`);
   }
@@ -43,21 +43,25 @@ export async function handlePDFProcessing(pdfDetails: PDFMetadata, slicerId: str
       throw new Error(`No slicer associated with PDF ${pdfDetails.file_name}. Please link a slicer first.`);
     }
 
-    // Process PDF and generate sliced content
-    const result = await ProcessPdf({ ...pdfDetails, password: slicerDetails.pdf_password ?? undefined }, slicerId);
-    for (const output of result) {
-      await saveSlicedContent(output);
-    }
+    const updatedData = {
+      file_processing_status: "processing",
+      last_processed_at: new Date().toISOString(),
+    };
+
+    await updatePDF(pdfDetails.id, updatedData);
+
+    const extractedContent = await ProcessPdf(pdfDetails, slicerId, apiKey);
+    await saveSlicedContent(extractedContent, apiKey);
 
     // Process LLM prompts and store outputs
     const pdfPrompts: LLMPrompt[] = slicerDetails.pdf_prompts || [];
 
     for (const prompt of pdfPrompts) {
-      const context = await getContextForPdf(pdfDetails.id);
+      const context = await getContextForPdf(pdfDetails.id, apiKey);
       const messages = await createMessages(context, prompt.prompt);
 
       try {
-        const llmResult = await processWithLLM(messages);
+        const llmResult = await processWithLLM(messages, apiKey);
         const llmOutput = {
           pdf_id: pdfDetails.id,
           slicer_id: slicerId,
@@ -72,11 +76,7 @@ export async function handlePDFProcessing(pdfDetails: PDFMetadata, slicerId: str
       }
     }
 
-    // Update PDF processing status
-    const updatedData: Partial<PDFMetadata> = {
-      file_processing_status: "processed",
-    };
-
+    updatedData.file_processing_status = "processed";
     await updatePDF(pdfDetails.id, updatedData);
   } catch (error) {
     throw new Error(`Error processing PDF ${pdfDetails.file_name}: ${error instanceof Error ? error.message : String(error)}`);

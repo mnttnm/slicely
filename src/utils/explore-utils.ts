@@ -5,12 +5,13 @@ import { searchVectorStore } from "@/lib/supabase";
 import { getInitialSlicedContentForSlicer, getSlicedPdfContent } from "@/server/actions/studio/actions";
 
 
-export async function getContextForSlicer(slicerId: string, limit = 100) {
+
+export async function getContextForSlicer(slicerId: string, apiKey: string, limit = 100) {
   const { results } = await getInitialSlicedContentForSlicer(slicerId, 1, limit);
   return results.map(result => result.text_content).join("\n\n");
 }
 
-export async function getContextForPdf(pdfId: string) {
+export async function getContextForPdf(pdfId: string, apiKey: string) {
   const slicedPdfContent = await getSlicedPdfContent(pdfId);
   return slicedPdfContent.map((result: SlicedPdfContent) => result.text_content).join("\n\n");
 }
@@ -20,9 +21,9 @@ export interface ContextObject {
   text_content: string;
 }
 
-export async function getContextForQuery(query: string, slicerId: string): Promise<{ context: string; contextObjects: ContextObject[] }> {
+export async function getContextForQuery(query: string, slicerId: string, apiKey: string): Promise<{ context: string; contextObjects: ContextObject[] }> {
   try {
-    const relevantDocuments = await searchVectorStore(query, slicerId);
+    const relevantDocuments = await searchVectorStore(query, slicerId, apiKey);
     if (!relevantDocuments || relevantDocuments.length === 0) {
       console.warn("No relevant documents found for the query");
       return { context: "", contextObjects: [] };
@@ -49,13 +50,13 @@ export async function createMessages(context: string, instruction: string, query
   return messages;
 }
 
-export async function processWithLLM(messages: { role: string; content: string }[]) {
+export async function processWithLLM(messages: { role: string; content: string }[], apiKey: string) {
   if (!messages || !Array.isArray(messages)) {
     throw new Error("Invalid messages format");
   }
 
   try {
-    const answer = await chatCompletion(messages);
+    const answer = await chatCompletion(messages, apiKey);
     return answer;
   } catch (error) {
     console.error("Error in processWithLLM:", error);

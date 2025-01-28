@@ -4,6 +4,8 @@ import { RenderLLMOutput } from "@/app/components/render-llm-output";
 import { Button } from "@/app/components/ui/button";
 import ChatMessage from "@/app/components/ui/chat-message";
 import { Input } from "@/app/components/ui/input";
+import { useApiKey } from "@/app/hooks/use-api-key";
+import { useToast } from "@/app/hooks/use-toast";
 import { LLMPrompt, PdfLLMOutput, PDFMetadata } from "@/app/types";
 import { LLMResponse } from "@/lib/openai";
 import { getLLMOutputForPdf, savePdfLLMOutput } from "@/server/actions/studio/actions";
@@ -22,6 +24,8 @@ interface PdfChatProps {
 
 const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
   const router = useRouter();
+  const { apiKey } = useApiKey();
+  const { toast } = useToast();
   const [selectedPdfIndex, setSelectedPdfIndex] = useState<number>(0);
   const [llmOutputs, setLlmOutputs] = useState<PdfLLMOutput[] | null>(null);
   const [query, setQuery] = useState("");
@@ -35,11 +39,20 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
   }, [chatHistory]);
 
   const fetchFreshLLmOutputs = useCallback(async (pdfId: string) => {
+    if (!apiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please configure your OpenAI API key in settings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newOutputs: PdfLLMOutput[] = [];
     for await (const prompt of pdfPrompts) {
-      const context = await getContextForPdf(pdfId);
+      const context = await getContextForPdf(pdfId, apiKey);
       const messages = await createMessages(context, prompt.prompt);
-      const llmResponse = await processWithLLM(messages);
+      const llmResponse = await processWithLLM(messages, apiKey);
       const newOutput: Omit<PdfLLMOutput, "id"> = {
         prompt_id: prompt.id,
         prompt: prompt.prompt,
@@ -53,7 +66,7 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
       newOutputs.push({ ...savedOutput, output: output as LLMResponse });
     }
     setLlmOutputs(newOutputs);
-  }, [pdfPrompts, slicerId]);
+  }, [pdfPrompts, slicerId, apiKey]);
 
   useEffect(() => {
     const fetchLlmOutput = async (pdfId: string) => {

@@ -56,17 +56,20 @@ function getOpenAIKey(): string {
   return process.env.OPENAI_API_KEY || "";
 }
 
-const getOpenAIInstance = () => {
+const getOpenAIInstance = (apiKey: string) => {
+  if (!apiKey) {
+    throw new Error("OpenAI API key is required");
+  }
   return new OpenAI({
-    apiKey: getOpenAIKey(),
+    apiKey: apiKey,
   });
 };
 
-export const chatCompletion = async (messages: any[]) => {
-  const openai = getOpenAIInstance();
+export const chatCompletion = async (messages: any[], apiKey: string) => {
+  const openai = getOpenAIInstance(apiKey);
   const systemMessage = {
     role: "system",
-    content: `You are an AI assistant responding to queries about PDF content. 
+    content: `You are an AI assistant responding to queries about text content. 
 Use the output_formatter function to structure your responses. 
 Always provide both a formatted_response (choosing the most appropriate type from single_value, chart, table, or text) 
 and a raw_response. The raw_response should be a comprehensive textual answer to the user's query. 
