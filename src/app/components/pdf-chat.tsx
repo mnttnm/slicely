@@ -222,15 +222,24 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
                 {isLoading ? "Loading..." : (
                   !isOutputCollapsed &&
                   <ScrollArea className="space-y-4 h-[200px]">
-                    {llmOutputs ? llmOutputs.map(output => (
-                      <Card key={output.id} className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                        <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Prompt:</h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4" title={output.prompt}>{output.prompt.substring(0, 120)}...</p>
-                        <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Output:</h4>
-                        <RenderLLMOutput output={output.output} />
-                      </Card>
-                    )) : "No output available."}
-                  </ScrollArea  >
+                    {llmOutputs ? (
+                      llmOutputs.length > 0 ? (
+                        llmOutputs.map(output => (
+                          <Card key={output.id} className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                            <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Prompt:</h4>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4" title={output.prompt}>{output.prompt.substring(0, 120)}...</p>
+                            <h4 className="font-medium text-sm text-gray-600 dark:text-gray-400 mb-2">Output:</h4>
+                            <RenderLLMOutput output={output.output} />
+                          </Card>
+                        ))
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                          <p className="text-sm text-muted-foreground">No LLM outputs available.</p>
+                          <p className="text-sm text-muted-foreground mt-1">Configure PDF prompts in the slicer settings to process individual PDFs separately.</p>
+                        </div>
+                      )
+                    ) : "No output available."}
+                  </ScrollArea>
                 )}
               </div>
               <div className="overflow-y-auto flex-1 py-2">
