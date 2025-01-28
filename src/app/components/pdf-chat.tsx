@@ -50,7 +50,7 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
 
     const newOutputs: PdfLLMOutput[] = [];
     for await (const prompt of pdfPrompts) {
-      const context = await getContextForPdf(pdfId, apiKey);
+      const context = await getContextForPdf(pdfId);
       const messages = await createMessages(context, prompt.prompt);
       const llmResponse = await processWithLLM(messages, apiKey);
       const newOutput: Omit<PdfLLMOutput, "id"> = {

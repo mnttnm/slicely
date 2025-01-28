@@ -27,12 +27,12 @@ export async function searchVectorStore(query: string, slicerId: string, apiKey:
 
     if (error) {
       console.error("Error in match_outputs RPC:", error);
-      throw error;
+      return [];
     }
 
     return data;
   } catch (error) {
     console.error("Error in searchVectorStore:", error);
-    throw error;
+    return [];
   }
 }

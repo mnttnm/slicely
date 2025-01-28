@@ -7,6 +7,7 @@ import { handlePDFProcessing } from "@/services/pdf-processing-service";
 import { Tables } from "@/types/supabase-types/database.types";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
+import { useApiKey } from "../hooks/use-api-key";
 import { SlicedPdfContent } from "../types";
 import CreateSlicerDrawer from "./create-slicer-drawer";
 import ExtractedTextView from "./extracted-text-view";
@@ -21,6 +22,7 @@ const PdfSlicedContentViewer: React.FC<PdfSlicedContentViewerProps> = ({ pdfDeta
   const [slicedContent, setSlicedContent] = useState<SlicedPdfContent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSlicerDrawerOpen, setIsSlicerDrawerOpen] = useState(false);
+  const { apiKey } = useApiKey();
 
   const fetchSlicedContent = useCallback(async () => {
     setIsLoading(true);
@@ -54,8 +56,9 @@ const PdfSlicedContentViewer: React.FC<PdfSlicedContentViewerProps> = ({ pdfDeta
 
   const handleProcessPdf = async () => {
     setIsLoading(true);
+
     try {
-      await handlePDFProcessing(pdfDetails, slicerIds[0]);
+      await handlePDFProcessing(pdfDetails, slicerIds[0], apiKey);
 
       setTimeout(async () => {
         await fetchSlicedContent();

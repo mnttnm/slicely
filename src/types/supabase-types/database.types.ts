@@ -37,7 +37,7 @@ export type Database = {
       outputs: {
         Row: {
           created_at: string | null
-          embedding: string | null
+          embedding: number[] | null
           id: string
           is_seeded_data: boolean
           page_number: number
@@ -51,7 +51,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           is_seeded_data?: boolean
           page_number: number
@@ -65,7 +65,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           is_seeded_data?: boolean
           page_number?: number

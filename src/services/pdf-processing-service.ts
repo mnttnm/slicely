@@ -6,7 +6,7 @@ import { getAnnotations, getSignedPdfUrl, getSlicerDetails, savePdfLLMOutput, sa
 import { createMessages, getContextForPdf, processWithLLM } from "@/utils/explore-utils";
 
 // extract content from pdf and returns output in the format to be inserted into the outputs table
-export async function ProcessPdf(pdf: PDFMetadata, slicerId: string, apiKey: string) {
+export async function ProcessPdf(pdf: PDFMetadata, slicerId: string) {
   const pdfUrl = await getSignedPdfUrl(pdf.file_path);
   const processingRules = await getAnnotations(slicerId);
 
@@ -50,14 +50,14 @@ export async function handlePDFProcessing(pdfDetails: PDFMetadata, slicerId: str
 
     await updatePDF(pdfDetails.id, updatedData);
 
-    const extractedContent = await ProcessPdf(pdfDetails, slicerId, apiKey);
+    const extractedContent = await ProcessPdf(pdfDetails, slicerId);
     await saveSlicedContent(extractedContent, apiKey);
 
     // Process LLM prompts and store outputs
     const pdfPrompts: LLMPrompt[] = slicerDetails.pdf_prompts || [];
 
     for (const prompt of pdfPrompts) {
-      const context = await getContextForPdf(pdfDetails.id, apiKey);
+      const context = await getContextForPdf(pdfDetails.id);
       const messages = await createMessages(context, prompt.prompt);
 
       try {

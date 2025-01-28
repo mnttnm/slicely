@@ -4,14 +4,17 @@ import { chatCompletion } from "@/lib/openai";
 import { searchVectorStore } from "@/lib/supabase";
 import { getInitialSlicedContentForSlicer, getSlicedPdfContent } from "@/server/actions/studio/actions";
 
+interface SearchResult {
+  id: string;
+  text_content: string;
+}
 
-
-export async function getContextForSlicer(slicerId: string, apiKey: string, limit = 100) {
+export async function getContextForSlicer(slicerId: string, limit = 100) {
   const { results } = await getInitialSlicedContentForSlicer(slicerId, 1, limit);
   return results.map(result => result.text_content).join("\n\n");
 }
 
-export async function getContextForPdf(pdfId: string, apiKey: string) {
+export async function getContextForPdf(pdfId: string) {
   const slicedPdfContent = await getSlicedPdfContent(pdfId);
   return slicedPdfContent.map((result: SlicedPdfContent) => result.text_content).join("\n\n");
 }
@@ -23,15 +26,14 @@ export interface ContextObject {
 
 export async function getContextForQuery(query: string, slicerId: string, apiKey: string): Promise<{ context: string; contextObjects: ContextObject[] }> {
   try {
-    const relevantDocuments = await searchVectorStore(query, slicerId, apiKey);
+    const relevantDocuments = await searchVectorStore(query, slicerId, apiKey) as SearchResult[];
     if (!relevantDocuments || relevantDocuments.length === 0) {
       console.warn("No relevant documents found for the query");
       return { context: "", contextObjects: [] };
     }
-    const contextObjects = relevantDocuments.map((doc: any) => ({
+    const contextObjects = relevantDocuments.map((doc) => ({
       id: doc.id,
       text_content: doc.text_content,
-      // Add other relevant metadata here
     }));
     const context = contextObjects.map(obj => `<context_id>${obj.id}</context_id> ${obj.text_content}`).join("\n\n");
     return { context, contextObjects };
