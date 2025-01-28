@@ -24,6 +24,7 @@ import { getInitialSlicedContentForSlicer, getSlicerDetails, getSlicerLLMOutput,
 import { ContextObject, createMessages, getContextForQuery, getContextForSlicer, processWithLLM } from "@/utils/explore-utils";
 import { Scrollbar } from "@radix-ui/react-scroll-area";
 import { ChevronDown, ChevronUp, FileText, Info, MessageSquare, Search } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ChatMessage {
@@ -100,18 +101,22 @@ const renderFormattedOutput = (formattedResponse: any) => {
 };
 
 const RelatedDocuments = ({ contextObjects }: { contextObjects: any[] }) => (
-  <div className="w-1/4 p-4 border-l border-gray-200 dark:border-gray-700 overflow-y-auto">
-    <h3 className="text-lg font-semibold mb-4">Related Documents</h3>
-    <ScrollArea className="h-[calc(100vh-10rem)] flex"  >
+  <aside className="w-1/4 p-4 border-l border-gray-200 dark:border-gray-700">
+    <h3 className="text-base text-muted-foreground mb-4">Related Documents</h3>
+    <ScrollArea className="h-[calc(100vh-12rem)]">
       {contextObjects.map((obj, index) => (
-        <div key={index} className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-          <p className="text-sm font-medium">Document ID: {obj.id}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{obj.text_content}...</p>
-        </div>
+        <Link
+          key={index}
+          href={`/studio/pdfs/${obj.id}`}
+          className="block mb-3 p-3 bg-muted/40 hover:bg-muted/60 rounded-lg transition-colors"
+        >
+          <p className="text-xs text-muted-foreground mb-2">Document {index + 1}</p>
+          <p className="text-sm line-clamp-3">{obj.text_content}</p>
+        </Link>
       ))}
-      <Scrollbar orientation="horizontal" />
+      <Scrollbar orientation="vertical" />
     </ScrollArea>
-  </div>
+  </aside>
 );
 
 function ExploreContent({ slicerId }: { slicerId: string }) {
@@ -242,7 +247,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       // If no saved output or forced refresh, generate new output
       const llmContentForSlicer = await Promise.all(slicer.llm_prompts?.map(async (promptObj: LLMPrompt) => {
         // get combined context from all the extracted content from pdfs linked to slicer
-        const context = await getContextForSlicer(slicerId, apiKey);
+        const context = await getContextForSlicer(slicerId);
         const messages = await createMessages(context, promptObj.prompt);
         const result = await processWithLLM(messages, apiKey);
         return { id: promptObj.id, prompt_id: promptObj.id, prompt: promptObj.prompt, output: result };
