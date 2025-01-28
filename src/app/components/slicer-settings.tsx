@@ -333,7 +333,7 @@ const PDFPrompts: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }
     <div className="space-y-2 mt-2">
       <LabelWithTooltip
         label="PDF Prompts"
-        tooltip="LLM instructions to be run on the content of each PDF page"
+        tooltip="LLM instructions to be run on the content of each PDF page, you can see the output under PDF chat tab"
       />
       {slicerObject.pdf_prompts?.map((prompt) => (
         <div key={prompt.id} className="flex items-center space-x-2">
@@ -398,11 +398,11 @@ const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObj
   }));
 
   return (
-    <Tabs defaultValue="extracted" className="flex flex-col h-full pt-2 px-2 items-start w-full">
+    <Tabs defaultValue="config" className="flex flex-col h-full pt-2 px-2 items-start w-full">
       <TabsList className="flex-shrink-0 bg-transparent border-b border-gray-200 dark:border-gray-700 w-full">
-        <TabsTrigger value="general">General</TabsTrigger>
-        <TabsTrigger value="extracted">Page Content</TabsTrigger>
         <TabsTrigger value="config">Processing Rules</TabsTrigger>
+        <TabsTrigger value="extracted">Extracted Text</TabsTrigger>
+        <TabsTrigger value="general">General</TabsTrigger>
       </TabsList>
       <TabsContent value="extracted" className="flex-1 overflow-hidden w-full">
         <ExtractedTextView
