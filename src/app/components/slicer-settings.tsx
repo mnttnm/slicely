@@ -139,7 +139,7 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   const [newPrompt, setNewPrompt] = useState("");
-  const { numPages, currentProcessingRules } = usePDFViewer();
+  const { currentProcessingRules } = usePDFViewer();
 
   const saveSlicer = async () => {
     if (!isAuthenticated) {
@@ -181,10 +181,6 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
     const updatedPrompts = slicerObject.llm_prompts.filter(prompt => prompt.id !== id);
     onUpdateSlicer({ ...slicerObject, llm_prompts: updatedPrompts });
   };
-
-  if (!numPages) {
-    throw new Error("No pages found");
-  }
 
   const pageSelectionStrategy = currentProcessingRules.pageSelection.strategy;
 

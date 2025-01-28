@@ -8,6 +8,7 @@ import { EmptyPlaceholder } from "@/app/components/ui/empty-placeholder";
 import { StudioSkeleton } from "@/app/components/ui/skeleton-studio";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
 import UploadButton from "@/app/components/upload-button";
 import { useUser } from "@/app/hooks/use-user";
 import { getSlicers, getUserPDFs } from "@/server/actions/studio/actions";
@@ -112,22 +113,52 @@ const StudioPageContent = () => {
     <div className="p-4 h-full overflow-hidden flex flex-col">
       <div className="flex justify-between items-center py-1">
         <h1 className="text-xl">Studio</h1>
-        {user && (
+        <div className="flex gap-2">
           <div className="flex gap-2">
-            <div className="flex gap-2">
-              <UploadButton
-                onSuccess={handleUploadSuccess}
-                buttonText="Upload PDF"
-                accept=".pdf"
-                isTemplate={false}
-                variant={activeTab === "pdfs" ? "default" : "outline"}
-              />
-              <Button variant={activeTab === "slicers" ? "default" : "outline"} onClick={handleCreateSlicer}>
-                Create Slicer
-              </Button>
-            </div>
+            {/* let's not show upload pdf on the studio, we will only have it on the slicer page */}
+            {/* <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <UploadButton
+                      onSuccess={handleUploadSuccess}
+                      buttonText="Upload PDF"
+                      accept=".pdf"
+                      isTemplate={false}
+                      variant={activeTab === "pdfs" ? "default" : "outline"}
+                      disabled={!user}
+                    />
+                  </div>
+                </TooltipTrigger>
+                {!user && (
+                  <TooltipContent>
+                    <p className="text-sm">Please login to upload PDFs</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider> */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      variant={activeTab === "slicers" ? "default" : "outline"}
+                      onClick={handleCreateSlicer}
+                      disabled={!user}
+                    >
+                      Create Slicer
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {!user && (
+                  <TooltipContent>
+                    <p className="text-sm">Please login to create slicers</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
-        )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -215,7 +246,7 @@ const StudioPageContent = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {slicers.map((slicer) => (
-                  <Slicer key={slicer.id} id={slicer.id} fileName={slicer.name} pdf_password={slicer.pdf_password} description={slicer.description ?? ""} />
+                  <Slicer key={slicer.id} id={slicer.id} total_pdfs={pdfs.filter((pdf) => pdf.slicer_ids?.includes(slicer.id)).length} fileName={slicer.name} pdf_password={slicer.pdf_password} description={slicer.description ?? ""} />
                 ))}
               </div>
             )}
