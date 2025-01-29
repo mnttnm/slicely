@@ -3,6 +3,7 @@
 import CreateSlicerDrawer from "@/app/components/create-slicer-drawer";
 import { LoginDialog } from "@/app/components/login-dialog";
 import { Slicer } from "@/app/components/slicer";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { EmptyPlaceholder } from "@/app/components/ui/empty-placeholder";
@@ -231,24 +232,49 @@ const StudioPageContent = () => {
                   <TableBody>
                     {pdfs.map((pdf) => (
                       <TableRow key={pdf.id}>
-                        <TableCell className="text-gray-500">{pdf.file_name}</TableCell>
-                        <TableCell className="text-gray-500">{pdf.created_at ? new Date(pdf.created_at).toLocaleString() : "N/A"}</TableCell>
-                        <TableCell className="text-gray-500">
+                        <TableCell className="font-medium text-foreground">{pdf.file_name}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {pdf.created_at ? new Date(pdf.created_at).toLocaleString() : "N/A"}
+                        </TableCell>
+                        <TableCell>
                           {pdf.slicer_ids && pdf.slicer_ids.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
-                              {pdf.slicer_ids.map((slicer_id) => (
-                                <Link key={slicer_id} href={`/studio/slicers/${slicer_id}`} className="text-gray-300 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
-                                  {slicer_id}
-                                </Link>
-                              ))}
+                              {pdf.slicer_ids.map((slicer_id) => {
+                                const slicer = slicers.find(s => s.id === slicer_id);
+                                return (
+                                  <Link
+                                    key={slicer_id}
+                                    href={`/studio/slicers/${slicer_id}`}
+                                    className="text-primary hover:text-primary/80 transition-colors duration-200 capitalize"
+                                  >
+                                    {slicer?.name || "Unnamed Slicer"}
+                                  </Link>
+                                );
+                              })}
                             </div>
-                          ) : "N/A"}
+                          ) : (
+                            <span className="text-muted-foreground">N/A</span>
+                          )}
                         </TableCell>
-                        <TableCell className="text-gray-500">{pdf.is_template ? "Yes" : "No"}</TableCell>
-                        <TableCell className="text-gray-500">
-                          <Link href={`/studio/pdfs/${pdf.id}`}>
-                            View
-                          </Link>
+                        <TableCell>
+                          <Badge
+                            variant={pdf.is_template ? "default" : "secondary"}
+                            className="font-normal"
+                          >
+                            {pdf.is_template ? "Yes" : "No"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                            className="hover:text-primary transition-colors duration-200"
+                          >
+                            <Link href={`/studio/pdfs/${pdf.id}`}>
+                              View
+                            </Link>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
