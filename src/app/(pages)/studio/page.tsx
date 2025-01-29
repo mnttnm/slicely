@@ -4,6 +4,7 @@ import CreateSlicerDrawer from "@/app/components/create-slicer-drawer";
 import { LoginDialog } from "@/app/components/login-dialog";
 import { Slicer } from "@/app/components/slicer";
 import { Button } from "@/app/components/ui/button";
+import { Card, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { EmptyPlaceholder } from "@/app/components/ui/empty-placeholder";
 import { StudioSkeleton } from "@/app/components/ui/skeleton-studio";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
@@ -13,6 +14,7 @@ import UploadButton from "@/app/components/upload-button";
 import { useUser } from "@/app/hooks/use-user";
 import { getSlicers, getUserPDFs } from "@/server/actions/studio/actions";
 import { Tables } from "@/types/supabase-types/database.types";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -30,6 +32,31 @@ const StudioPageContent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
+
+
+  const PlaceholderSlicer = ({ onClick }: { onClick: () => void }) => {
+    return (
+      <div onClick={onClick} className="cursor-pointer">
+        <Card className="relative bg-gradient-to-b from-background/50 to-background border-border/40 hover:border-border/80 hover:shadow-lg transition-all duration-300 ease-in-out overflow-hidden group h-[200px]">
+          <CardHeader className="relative p-4">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="p-2.5 bg-muted rounded-xl group-hover:bg-muted/80 transition-colors">
+                <Plus className="h-5 w-5 text-muted-foreground/70" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-base font-medium text-foreground/90">
+                  Create New Slicer
+                </CardTitle>
+                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                  {user ? "Create a new slicer to process PDFs and get AI-powered insights." : "Sign in to create and manage your own slicers."}
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  };
 
   const fetchData = async () => {
     try {
@@ -244,11 +271,27 @@ const StudioPageContent = () => {
                 </EmptyPlaceholder>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {slicers.map((slicer) => (
-                  <Slicer key={slicer.id} id={slicer.id} total_pdfs={pdfs.filter((pdf) => pdf.slicer_ids?.includes(slicer.id)).length} fileName={slicer.name} pdf_password={slicer.pdf_password} description={slicer.description ?? ""} />
-                ))}
-              </div>
+              // Replace the existing placeholder card with the new component:
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...slicers].sort((a, b) => {
+                          if (a.is_seeded_data && !b.is_seeded_data) return -1;
+                          if (!a.is_seeded_data && b.is_seeded_data) return 1;
+                          return 0;
+                        }).map((slicer) => (
+                          <Slicer
+                            key={slicer.id}
+                            id={slicer.id}
+                            total_pdfs={pdfs.filter((pdf) => pdf.slicer_ids?.includes(slicer.id)).length}
+                            fileName={slicer.name}
+                            pdf_password={slicer.pdf_password}
+                            description={slicer.description ?? ""}
+                            isSeeded={slicer.is_seeded_data ?? false}
+                          />
+                      ))}
+                      {slicers.length < 2 && (
+                        <PlaceholderSlicer onClick={handleCreateSlicer} />
+                      )}
+                    </div>
             )}
           </TabsContent>
         </Tabs>
