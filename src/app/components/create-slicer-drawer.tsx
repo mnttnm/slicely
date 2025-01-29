@@ -36,6 +36,7 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
   const [uploadedFile, setUploadedFile] = useState<{ id: string; name: string } | null>(null);
   const [userPDFs, setUserPDFs] = useState<Tables<"pdfs">[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -52,6 +53,17 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
       fetchPDFs();
     }
   }, [open]);
+
+  // Reset states when drawer closes
+  useEffect(() => {
+    if (!open) {
+      setIsSelectOpen(false);
+      setName(defaultName);
+      setDescription(defaultDescription);
+      setSelectedFile(defaultFileId);
+      setUploadedFile(null);
+    }
+  }, [open, defaultName, defaultDescription, defaultFileId]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -76,7 +88,11 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
       }
     } catch (error) {
       console.error("Failed to upload PDFs:", error);
-      // Handle error (e.g., show error message to user)
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload PDF file. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
     }
@@ -95,13 +111,12 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
       if (!fileToUse) {
         throw new Error("No valid file selected");
       }
-      const slicerName = name ?? uploadedFile?.name ?? userPDFs.find(pdf => pdf.id.toString() === selectedFile)?.file_name ?? `Slicer  ${new Date().toISOString()}`;
+      const slicerName = name ?? uploadedFile?.name ?? userPDFs.find(pdf => pdf.id.toString() === selectedFile)?.file_name ?? `Slicer ${new Date().toISOString()}`;
       const slicerDescription = description || `Description for ${slicerName}`;
       const newSlicer = await createSlicer({
         name: slicerName,
         description: slicerDescription,
         fileId: selectedFile,
-
         processingRules: {
           annotations: [],
           pageSelection: {
@@ -117,19 +132,35 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
       router.push(`/studio/slicers/${newSlicer.id}`);
     } catch (error) {
       console.error("Failed to create slicer:", error);
-      // Handle error (e.g., show error message to user)
+      toast({
+        title: "Creation Failed",
+        description: "Failed to create slicer. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   const isFileSelected = selectedFile && selectedFile !== "no-selection";
 
+  const handleDrawerOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      // First close the select
+      setIsSelectOpen(false);
+      // Wait for select to close before closing drawer
+      setTimeout(() => {
+        onOpenChange(false);
+      }, 0);
+    } else {
+      onOpenChange(true);
+    }
+  };
 
   const handleCancel = () => {
-    onOpenChange(false);
+    handleDrawerOpenChange(false);
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={handleDrawerOpenChange}>
       <DrawerContent className="bg-background text-foreground">
         <DrawerHeader className="border-b border-border">
           <DrawerTitle className="text-xl font-semibold">Create New Slicer</DrawerTitle>
@@ -160,13 +191,15 @@ const CreateSlicerDrawer: React.FC<CreateSlicerDrawerProps> = ({
             <Label className="text-sm font-medium">Select or Upload PDF File</Label>
             <div className="flex space-x-2">
               <Select
+                open={isSelectOpen}
+                onOpenChange={setIsSelectOpen}
+                value={selectedFile || undefined}
                 onValueChange={(value) => {
                   setSelectedFile(value);
                   if (value === "no-selection") {
                     setUploadedFile(null);
                   }
                 }}
-                value={selectedFile || undefined}
               >
                 <SelectTrigger className="flex-grow bg-input text-input-foreground">
                   <SelectValue placeholder="Select a file" />
