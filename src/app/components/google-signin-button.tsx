@@ -18,7 +18,7 @@ export default function GoogleSignInButton() {
 
   return (
     <Button className="w-full" variant="outline" onClick={handleGoogleSignIn}>
-      Google
+      Sign in with Google
     </Button>
   );
 }

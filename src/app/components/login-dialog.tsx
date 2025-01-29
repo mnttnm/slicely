@@ -1,15 +1,11 @@
 "use client";
 
 import GoogleSignInButton from "@/app/components/google-signin-button";
-import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader
 } from "@/app/components/ui/dialog";
-import { Input } from "@/app/components/ui/input";
-import { login, signup } from "@/server/actions/login/actions";
 import { DialogDescription, DialogTitle } from "@radix-ui/react-dialog";
 import { useRouter } from "next/navigation";
 
@@ -26,42 +22,36 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     router.push("/dashboard");
   };
 
-  const handleFormAction = async (formData: FormData, action: typeof login | typeof signup) => {
-    await action(formData);
-    handleLoginSuccess();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Login</DialogTitle>
-          <DialogDescription>Enter your credentials to access your account.</DialogDescription>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader className="text-center">
+          <div className="mx-auto mb-4">
+            <span className="text-3xl font-bold font-orbitron dark:text-neutral-200 text-gray-600">
+              Slicely
+            </span>
+          </div>
+          <DialogTitle className="text-xl font-medium tracking-tight">Welcome Back</DialogTitle>
+          <DialogDescription className="mt-4 space-y-3 text-muted-foreground">
+            <p>Sign in to unlock the full potential of Slicely:</p>
+            <ul className="space-y-2 text-sm text-left list-disc pl-4">
+              <li>Create custom PDF slicers</li>
+              <li>Extract data securely</li>
+              <li>Chat with your documents</li>
+              <li>Control data processing</li>
+              <li>Access insights dashboard</li>
+            </ul>
+          </DialogDescription>
         </DialogHeader>
-        <form>
-          <div className="space-y-4">
-            <Input id="email" name="email" type="email" placeholder="Email" required />
-            <Input id="password" name="password" type="password" placeholder="Password" required />
-            <Button className="w-full" formAction={(data) => handleFormAction(data, login)}>
-              Log in
-            </Button>
-            <Button className="w-full" formAction={(data) => handleFormAction(data, signup)} variant="outline">
-              Sign up
-            </Button>
-          </div>
-        </form>
-        <div className="relative w-full">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-          </div>
-        </div>
-        <DialogFooter className="flex flex-col space-y-2">
+        <div className="mt-6">
           <GoogleSignInButton />
-        </DialogFooter>
+        </div>
+        <div className="mt-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            By signing in, you agree to our Terms of Service and Privacy Policy
+          </p>
+        </div>
       </DialogContent>
-    </Dialog >
+    </Dialog>
   );
-} 
+}
