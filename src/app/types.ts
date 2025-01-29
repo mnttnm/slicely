@@ -58,7 +58,8 @@ export interface Slicer {
   created_at: string | null;
   updated_at: string | null;
   pdf_prompts: LLMPrompt[]; // New property for individual PDF prompts
-};
+  is_seeded_data?: boolean;
+}
 
 export type SlicedPdfContent = {
   id: string;

@@ -4,14 +4,16 @@ import { RenderLLMOutput } from "@/app/components/render-llm-output";
 import { Button } from "@/app/components/ui/button";
 import ChatMessage from "@/app/components/ui/chat-message";
 import { Input } from "@/app/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
 import { useApiKey } from "@/app/hooks/use-api-key";
 import { useToast } from "@/app/hooks/use-toast";
+import { useUser } from "@/app/hooks/use-user";
 import { LLMPrompt, PdfLLMOutput, PDFMetadata } from "@/app/types";
 import { LLMResponse } from "@/lib/openai";
 import { getLLMOutputForPdf, savePdfLLMOutput } from "@/server/actions/studio/actions";
 import { createMessages, getContextForPdf, processWithLLM } from "@/utils/explore-utils";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Card } from "./ui/card";
@@ -20,12 +22,14 @@ interface PdfChatProps {
   linkedPdfs: PDFMetadata[];
   pdfPrompts: LLMPrompt[];
   slicerId: string;
+  isReadOnly?: boolean;
 }
 
-const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
+const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId, isReadOnly }: PdfChatProps) => {
   const router = useRouter();
   const { apiKey } = useApiKey();
   const { toast } = useToast();
+  const { user } = useUser();
   const [selectedPdfIndex, setSelectedPdfIndex] = useState<number>(0);
   const [llmOutputs, setLlmOutputs] = useState<PdfLLMOutput[] | null>(null);
   const [query, setQuery] = useState("");
@@ -39,6 +43,8 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
   }, [chatHistory]);
 
   const fetchFreshLLmOutputs = useCallback(async (pdfId: string) => {
+    if (!pdfPrompts || pdfPrompts.length === 0) return;
+
     if (!apiKey) {
       toast({
         title: "API Key Required",
@@ -141,6 +147,27 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
     }
   };
 
+  const EmptyState = ({ isReadOnly = false, user }: { isReadOnly?: boolean; user: any }) => (
+    <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+      <div className="p-3 bg-muted rounded-full mb-4">
+        <MessageSquare className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-medium mb-2">No Prompts Configured</h3>
+      <p className="text-sm text-muted-foreground max-w-sm mb-4">
+        {isReadOnly
+          ? "This is a demo slicer. Create your own slicer to add prompts and analyze PDFs."
+          : user
+            ? "Add PDF prompts in the slicer settings to analyze PDFs and get AI-powered insights."
+            : "Sign in to configure prompts and start analyzing your PDFs."}
+      </p>
+      {user && !isReadOnly && (
+        <Button variant="outline" onClick={() => router.push(`/studio/slicers/${slicerId}/settings`)}>
+          Configure Prompts
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex h-full">
       <div className="border-r border-gray-200 dark:border-gray-700 p-4">
@@ -191,10 +218,11 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Ask a question..."
+                  placeholder={isReadOnly ? "Demo mode - Chat disabled" : user ? "Ask a question..." : "Please login to chat"}
                   className="flex-1"
+                  disabled={!user || isReadOnly}
                 />
-                <Button type="submit">Send</Button>
+                <Button type="submit" disabled={!user || isReadOnly}>Send</Button>
               </form>
               <div className="my-2">
                 <div className="flex items-center mb-2 justify-between">
@@ -202,21 +230,37 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
                     Output
                   </h3>
                   <div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={refreshOutput}
-                      className="mr-2"
-                    >
-                      Refresh
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsOutputCollapsed(!isOutputCollapsed)}
-                    >
-                      {isOutputCollapsed ? "Expand" : "Collapse"}
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={refreshOutput}
+                              className="mr-2"
+                              disabled={!user || isReadOnly}
+                            >
+                              Refresh
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        {isReadOnly && (
+                          <TooltipContent>
+                            <p>This is a demo slicer. Create your own slicer to use this feature.</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                    {llmOutputs && llmOutputs.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsOutputCollapsed(!isOutputCollapsed)}
+                      >
+                        {isOutputCollapsed ? "Expand" : "Collapse"}
+                      </Button>
+                    )}
                   </div>
                 </div>
                 {isLoading ? "Loading..." : (
@@ -233,12 +277,11 @@ const PdfChat = ({ linkedPdfs, pdfPrompts, slicerId }: PdfChatProps) => {
                           </Card>
                         ))
                       ) : (
-                        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-                          <p className="text-sm text-muted-foreground">No LLM outputs available.</p>
-                          <p className="text-sm text-muted-foreground mt-1">Configure PDF prompts in the slicer settings to process individual PDFs separately.</p>
-                        </div>
+                        <EmptyState isReadOnly={isReadOnly} user={user} />
                       )
-                    ) : "No output available."}
+                    ) : (
+                      <EmptyState isReadOnly={isReadOnly} user={user} />
+                    )}
                   </ScrollArea>
                 )}
               </div>

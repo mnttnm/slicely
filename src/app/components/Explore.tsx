@@ -119,7 +119,12 @@ const RelatedDocuments = ({ contextObjects }: { contextObjects: any[] }) => (
   </aside>
 );
 
-function ExploreContent({ slicerId }: { slicerId: string }) {
+interface ExploreProps {
+  slicerId: string;
+  isReadOnly?: boolean;
+}
+
+function ExploreContent({ slicerId, isReadOnly }: ExploreProps) {
   const [mode, setMode] = useState<"search" | "chat">("search");
   const [query, setQuery] = useState("");
   const [showMetadata, setShowMetadata] = useState<string | null>(null);
@@ -144,6 +149,13 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     setIsLoading(true);
     try {
       const { results: searchResults, total } = await searchSlicedContentForSlicer(slicerId, searchQuery, pageNum);
+      if (searchResults.length === 0 && pageNum === 1) {
+        toast({
+          title: "No results found",
+          description: "Try a different search term or check if the content has been processed.",
+          variant: "default",
+        });
+      }
       setResults((prevResults) => {
         if (pageNum === 1) {
           return searchResults;
@@ -155,7 +167,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
       setTotalResults(total);
     } catch (error) {
       console.error("Error fetching search results:", error);
-      setHasMore(false); // Set hasMore to false if there's an error
+      setHasMore(false);
       toast({
         title: "Error",
         description: "Failed to fetch search results. Please try again.",
@@ -197,8 +209,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   const handleSearch = useCallback(() => {
     if (query.trim()) {
       searchSlicedContent(query, 1);
+    } else {
+      getInitialSlicedContentForSearch(1);
     }
-  }, [query, searchSlicedContent]);
+  }, [query, searchSlicedContent, getInitialSlicedContentForSearch]);
 
   const handleLoadMore = useCallback(() => {
     if (hasMore && !isLoading) {
@@ -216,10 +230,17 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     }
   }, [getInitialSlicedContentForSearch, initialDataFetched, linkedPdfs]);
 
+  useEffect(() => {
+    if (!query.trim()) {
+      getInitialSlicedContentForSearch(1);
+    }
+  }, [query, getInitialSlicedContentForSearch]);
+
   const getLLMOutputForSlicer = useCallback(async (forceRefresh = false) => {
     if (!slicer) return;
     if (!slicer.llm_prompts) return;
-    if (!apiKey) {
+
+    if (forceRefresh && !apiKey) {
       toast({
         title: "API Key Required",
         description: "Please configure your OpenAI API key in settings.",
@@ -276,7 +297,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
     if (!apiKey) {
       toast({
         title: "API Key Required",
-        description: "Please configure your OpenAI API key in settings.",
+        description: "Please configure your OpenAI API key to chat.",
         variant: "destructive",
       });
       return;
@@ -371,10 +392,10 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   }, [fetchSlicerDetails]);
 
   useEffect(() => {
-    if (slicer && linkedPdfs.some(pdf => pdf.file_processing_status === "processed")) {
+    if (slicer && mode === "chat" && linkedPdfs.some(pdf => pdf.file_processing_status === "processed")) {
       getLLMOutputForSlicer();
     }
-  }, [slicer, linkedPdfs, getLLMOutputForSlicer]);
+  }, [slicer, linkedPdfs, getLLMOutputForSlicer, mode]);
 
   // Modify the useEffect to expand only the latest message
   useEffect(() => {
@@ -572,7 +593,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
         <TooltipTrigger asChild>
           <Button
             onClick={() => getLLMOutputForSlicer(true)}
-            disabled={isLoading || !user}
+            disabled={isLoading || !user || isReadOnly}
             className="ml-2"
             variant="outline"
           >
@@ -582,6 +603,8 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
         <TooltipContent>
           {!user ? (
             <p className="text-sm">Please login to refresh LLM outputs</p>
+          ) : isReadOnly ? (
+            <p className="text-sm">This is a demo slicer. Create your own slicer to use this feature.</p>
           ) : (
             <p className="text-sm">Refresh LLM outputs for this slicer</p>
           )}
@@ -617,7 +640,7 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
             </div>
             <Input
               type="text"
-              placeholder={mode === "search" ? "Search PDFs..." : "Ask a question..."}
+              placeholder={mode === "search" ? "Search PDFs..." : isReadOnly ? "Demo mode - Chat disabled" : !user ? "Please login to chat" : "Ask a question..."}
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -628,11 +651,28 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
                   mode === "search" ? handleSearch() : handleChat();
                 }
               }}
+              disabled={mode === "chat" && (isReadOnly || !user)}
             />
           </div>
-          <Button onClick={mode === "search" ? handleSearch : handleChat} disabled={!query.trim() || isLoading}>
-            {mode === "search" ? "Search" : "Send"}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    onClick={mode === "search" ? handleSearch : handleChat}
+                    disabled={isLoading || (mode === "chat" && (isReadOnly || !user))}
+                  >
+                    {mode === "search" ? "Search" : "Send"}
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              {mode === "chat" && (isReadOnly || !user) && (
+                <TooltipContent>
+                  <p>{isReadOnly ? "This is a demo slicer. Create your own slicer to chat." : "Please login to chat with your documents."}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
         {mode === "chat" && <RefreshButton />}
       </header>
@@ -658,12 +698,12 @@ function ExploreContent({ slicerId }: { slicerId: string }) {
   );
 }
 
-export default function Explore({ slicerId }: { slicerId: string }) {
+export default function Explore({ slicerId, isReadOnly }: ExploreProps) {
   if (!slicerId) {
     return <div>Error: No slicer ID provided</div>;
   }
 
   return (
-    <ExploreContent slicerId={slicerId} />
+    <ExploreContent slicerId={slicerId} isReadOnly={isReadOnly} />
   );
 }

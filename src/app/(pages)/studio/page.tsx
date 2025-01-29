@@ -192,9 +192,9 @@ const StudioPageContent = () => {
         <StudioSkeleton />
       ) : (
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col overflow-hidden">
-          <TabsList className="self-start">
-            <TabsTrigger value="slicers">Slicers</TabsTrigger>
-            <TabsTrigger value="pdfs">Files</TabsTrigger>
+            <TabsList className="self-start bg-background/50 backdrop-blur-sm border border-border/40 rounded-lg p-1 hover:border-border/60 transition-colors duration-300">
+              <TabsTrigger value="slicers" className="px-4 py-2 text-sm font-medium rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/40 transition-all duration-200">Slicers</TabsTrigger>
+              <TabsTrigger value="pdfs" className="px-4 py-2 text-sm font-medium rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/40 transition-all duration-200">Files</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pdfs" className="mt-2 overflow-hidden flex flex-col w-full">

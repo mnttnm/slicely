@@ -6,6 +6,7 @@ import { LinkedPdfs } from "@/app/components/linked-pdfs";
 import PdfChat from "@/app/components/pdf-chat";
 import PDFViewer from "@/app/components/pdf-viewer";
 import SlicerSettings from "@/app/components/slicer-settings";
+import { Badge } from "@/app/components/ui/badge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/app/components/ui/breadcrumb";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
@@ -44,6 +45,18 @@ const SlicerPageContent = () => {
   const { extractTextFromRectangle } = useTextExtraction(pdfDocument);
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
+
+  // Check if the slicer is seeded data
+  const isSeededData = slicer?.is_seeded_data ?? false;
+
+  // Function to show seeded data warning
+  const showSeededDataWarning = () => {
+    toast({
+      title: "Read-only Access",
+      description: "This is a demo slicer. You cannot modify seeded data.",
+      variant: "destructive",
+    });
+  };
 
   useEffect(() => {
     const tab = searchParams.get("tab") || "slicerstudio";
@@ -138,6 +151,10 @@ const SlicerPageContent = () => {
   }, [fetchSlicerDetails]);
 
   const updateSlicerDetails = useCallback((updatedSlicer: Partial<Slicer>) => {
+    if (isSeededData) {
+      showSeededDataWarning();
+      return;
+    }
     setSlicer(prev => {
       if (!prev) return null;
       return {
@@ -152,9 +169,13 @@ const SlicerPageContent = () => {
         }
       };
     });
-  }, [processingRules]);
+  }, [processingRules, isSeededData]);
 
   const onRectangleUpdate = useCallback(async (operation: "add" | "remove", payload: { id: string, rect?: Partial<FabricRect>, pageNumber?: number }) => {
+    if (isSeededData) {
+      showSeededDataWarning();
+      return;
+    }
     if (operation === "add") {
       if (payload.rect === undefined || !payload.pageNumber) return;
       setProcessingRules((prev) => {
@@ -205,17 +226,25 @@ const SlicerPageContent = () => {
 
       setExtractedTexts(prev => prev.filter(text => text.id !== payload.id));
     }
-  }, [extractTextFromRectangle]);
+  }, [extractTextFromRectangle, isSeededData]);
 
   const onClearPage = useCallback((pageNumber: number) => {
+    if (isSeededData) {
+      showSeededDataWarning();
+      return;
+    }
     setProcessingRules(prev => ({
       ...prev,
       annotations: prev.annotations.filter(annotation => annotation.page !== pageNumber)
     }));
     setExtractedTexts(prev => prev.filter(text => text.page_number !== pageNumber));
-  }, []);
+  }, [isSeededData]);
 
   const onClearAllPages = useCallback(() => {
+    if (isSeededData) {
+      showSeededDataWarning();
+      return;
+    }
     setExtractedTexts([]);
     setProcessingRules({
       annotations: [],
@@ -224,9 +253,14 @@ const SlicerPageContent = () => {
         rules: [selectAllPages]
       }
     });
-  }, []);
+  }, [isSeededData]);
 
   const onUploadSuccess = async (pdfs: TablesInsert<"pdfs">[]) => {
+    if (isSeededData) {
+      showSeededDataWarning();
+      return;
+    }
+
     if (!isAuthenticated) {
       toast({
         title: "Login Required",
@@ -289,14 +323,19 @@ const SlicerPageContent = () => {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{slicer?.name || "Slicer Details"}</BreadcrumbPage>
+              <BreadcrumbPage>
+                {slicer?.name || "Slicer Details"}
+                {isSeededData && (
+                  <Badge variant="secondary" className="ml-2">Demo</Badge>
+                )}
+              </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
         <div className="w-1/3"></div> {/* Placeholder for right side */}
       </header>
       <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-col flex-grow overflow-hidden">
-        <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700">
+        <TabsList className="flex-shrink-0 justify-start w-full border-b border-gray-200 dark:border-gray-700 bg-gradient-to-b from-background/95 to-background/50 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
           <TabsTrigger value="slicerstudio" className="px-4 py-2">Slicer Studio</TabsTrigger>
           <TabsTrigger value="linkedpdfs" className="px-4 py-2">Linked PDFs</TabsTrigger>
           <TabsTrigger value="pdfchat" className="px-4 py-2">PDF Chat</TabsTrigger> {/* New Tab */}
@@ -312,6 +351,7 @@ const SlicerPageContent = () => {
                 onClearPage={onClearPage}
                 onClearAllPages={onClearAllPages}
                 pdf_password={slicer.pdf_password ?? undefined}
+                isReadOnly={isSeededData}
               />
             </div>
             <div className="flex-1 border-l border-gray-200 dark:border-gray-700">
@@ -319,6 +359,7 @@ const SlicerPageContent = () => {
                 slicerObject={slicer}
                 extractedTexts={extractedTexts}
                 onUpdateSlicer={updateSlicerDetails}
+                isReadOnly={isSeededData}
               />
             </div>
           </div>
@@ -332,13 +373,26 @@ const SlicerPageContent = () => {
               />
             </div>
           )} */}
-          <LinkedPdfs linkedPdfs={linkedPdfs} onUploadSuccess={onUploadSuccess} onRefresh={refreshLinkedPdfs} />
+          <LinkedPdfs
+            linkedPdfs={linkedPdfs}
+            onUploadSuccess={onUploadSuccess}
+            onRefresh={refreshLinkedPdfs}
+            isReadOnly={isSeededData}
+          />
         </TabsContent>
         <TabsContent value="pdfchat" className="flex-grow overflow-hidden"> {/* New Tab Content */}
-          <PdfChat linkedPdfs={linkedPdfs} pdfPrompts={slicer.pdf_prompts} slicerId={slicer.id} />
+          <PdfChat
+            linkedPdfs={linkedPdfs}
+            pdfPrompts={slicer.pdf_prompts}
+            slicerId={slicer.id}
+            isReadOnly={isSeededData}
+          />
         </TabsContent>
         <TabsContent value="explore" className="flex-grow overflow-hidden">
-          <Explore slicerId={slicer.id} />
+          <Explore
+            slicerId={slicer.id}
+            isReadOnly={isSeededData}
+          />
         </TabsContent>
       </Tabs>
     </div>

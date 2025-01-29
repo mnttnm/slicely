@@ -24,9 +24,10 @@ interface LinkedPdfsProps {
   linkedPdfs: PDFMetadata[];
   onUploadSuccess: (pdfs: TablesInsert<"pdfs">[]) => void;
   onRefresh: () => void;
+  isReadOnly?: boolean;
 }
 
-export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdfsProps) {
+export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh, isReadOnly }: LinkedPdfsProps) {
   const { id: slicerId } = useParams();
   const { isAuthenticated } = useAuth();
   const { apiKey, saveApiKey } = useApiKey();
@@ -93,6 +94,26 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
     router.push(`/studio/pdfs/${pdfId}`);
   };
 
+  const getTooltipContent = () => {
+    if (isReadOnly) {
+      return "This is a demo slicer. Create your own slicer to process PDFs.";
+    }
+    if (!isAuthenticated) {
+      return "Sign in to process PDFs";
+    }
+    if (!apiKey) {
+      return (
+        <div className="space-y-2">
+          <p>OpenAI API key is required to process PDFs</p>
+          <Button variant="link" className="p-0 h-auto font-normal" onClick={handleConfigureApiKey}>
+            Configure API Key
+          </Button>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="flex flex-col h-full p-6">
       <APIKeyDialog open={isApiKeyDialogOpen} onOpenChange={handleApiKeyDialogChange} />
@@ -105,27 +126,16 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
                 <div>
                   <Button
                     onClick={processAllPdfs}
-                    disabled={!isAuthenticated || isProcessing || !apiKey}
+                    disabled={!isAuthenticated || isProcessing || !apiKey || isReadOnly}
                     className="btn btn-primary"
                   >
                     {isProcessing ? "Processing..." : "Process All"}
                   </Button>
                 </div>
               </TooltipTrigger>
-              {!isAuthenticated ? (
-                <TooltipContent>
-                  <p>Sign in to process PDFs</p>
-                </TooltipContent>
-              ) : !apiKey ? (
-                <TooltipContent>
-                  <div className="space-y-2">
-                    <p>OpenAI API key is required to process PDFs</p>
-                    <Button variant="link" className="p-0 h-auto font-normal" onClick={handleConfigureApiKey}>
-                      Configure API Key
-                    </Button>
-                  </div>
-                </TooltipContent>
-              ) : null}
+              <TooltipContent>
+                {getTooltipContent()}
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
@@ -138,15 +148,19 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
                     buttonText="Upload More files"
                     variant="outline"
                     isTemplate={false}
-                    disabled={!isAuthenticated}
+                    disabled={!isAuthenticated || isReadOnly}
                   />
                 </div>
               </TooltipTrigger>
-              {!isAuthenticated && (
+              {!isAuthenticated ? (
                 <TooltipContent>
                   <p>Sign in to upload PDFs</p>
                 </TooltipContent>
-              )}
+              ) : isReadOnly ? (
+                <TooltipContent>
+                  <p>This is a demo slicer. Create your own slicer to upload PDFs.</p>
+                </TooltipContent>
+              ) : null}
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -192,53 +206,42 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh }: LinkedPdf
                       <Eye className="w-4 h-4 mr-1" />
                       View
                     </Button>
-                    {isAuthenticated && (
-                      <>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => processSinglePdf(pdf)}
-                                  disabled={isProcessing || !apiKey}
-                                  className="flex items-center"
-                                >
-                                  <Play className="w-4 h-4 mr-1" />
-                                  Process
-                                </Button>
-                              </div>
-                            </TooltipTrigger>
-                            {!apiKey && (
-                              <TooltipContent>
-                                <div className="space-y-2">
-                                  <p>OpenAI API key is required to process PDFs</p>
-                                  <Button variant="link" className="p-0 h-auto font-normal" onClick={handleConfigureApiKey}>
-                                    Configure API Key
-                                  </Button>
-                                </div>
-                              </TooltipContent>
-                            )}
-                          </Tooltip>
-                        </TooltipProvider>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="px-2">
-                              <MoreVertical className="w-4 h-4" />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => processSinglePdf(pdf)}
+                              disabled={!isAuthenticated || isProcessing || !apiKey || isReadOnly}
+                              className="flex items-center"
+                            >
+                              <Play className="w-4 h-4 mr-1" />
+                              Process
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => console.log(`Delete PDF: ${pdf.id}`)}>
-                              Delete
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => console.log(`Change slicer for PDF: ${pdf.id}`)}>
-                              Change Slicer
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </>
-                    )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {getTooltipContent()}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" disabled={isReadOnly}>
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem disabled={isReadOnly}>
+                          Change Slicer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled={isReadOnly}>
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </TableCell>
               </TableRow>

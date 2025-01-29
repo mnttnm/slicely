@@ -207,88 +207,97 @@ const SlicerRules: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer 
       )}
       <div className="flex-1 overflow-hidden">
         <Card className="h-full flex flex-col">
-          <CardContent className="flex-1 overflow-y-auto">
-            <div className="space-y-1 mt-2">
-              <LabelWithTooltip
-                label="Page Selection Strategy"
-                tooltip="Choose whether to include or exclude specific pages from processing"
-              />
-              <p>{pageSelectionStrategy}</p>
-            </div>
-            <div className="space-y-1 mt-2">
-              <LabelWithTooltip
-                label={pageSelectionLabel()}
-                tooltip="Selected pages that will be processed based on your strategy"
-              />
-              <div className="max-h-20 overflow-y-auto">
-                {currentProcessingRules.pageSelection.rules.map((rule, index) => (
-                  <div key={index}>
-                    {rule.type === "all" && "All Pages"}
-                    {rule.type === "specific" && `Pages ${rule.pages.join(", ")}`}
-                  </div>
-                ))}
+          <CardContent className="flex-1 overflow-y-auto p-6 space-y-8">
+            <div className="space-y-4">
+              <div className="pb-4 border-b border-border/40">
+                <LabelWithTooltip
+                  label="Page Selection Strategy"
+                  tooltip="Choose whether to include or exclude specific pages from processing"
+                />
+                <p className="mt-2 text-sm text-muted-foreground">{pageSelectionStrategy}</p>
               </div>
-            </div>
-            <div className="space-y-1 mt-2">
-              <LabelWithTooltip
-                label="Annotations"
-                tooltip="Areas of interest marked on the PDF pages for data extraction"
-              />
-              <div className="max-h-40 overflow-y-auto">
-                {currentProcessingRules.annotations.map((annotation, index) => (
-                  <div key={index} className="flex items-center space-x-2 mb-2">
-                    <span>{`page ${annotation.page}: `}</span>
-                    <span>{annotation.rectangles.map(rect => `${rect.top},${rect.left},${rect.width},${rect.height}`).join(" ")}</span>
-                  </div>
-                ))}
+
+              <div className="pb-4 border-b border-border/40">
+                <LabelWithTooltip
+                  label={pageSelectionLabel()}
+                  tooltip="Selected pages that will be processed based on your strategy"
+                />
+                <div className="mt-2 max-h-20 overflow-y-auto bg-muted/30 rounded-md p-3">
+                  {currentProcessingRules.pageSelection.rules.map((rule, index) => (
+                    <div key={index} className="text-sm text-muted-foreground">
+                      {rule.type === "all" && "All Pages"}
+                      {rule.type === "specific" && `Pages ${rule.pages.join(", ")}`}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="space-y-1 mt-2">
-              <LabelWithTooltip
-                label="LLM Prompts"
-                tooltip="Instructions for the AI to process the extracted text from annotations"
-              />
-              {slicerObject.llm_prompts?.map((prompt, index) => (
-                <div key={prompt.id} className="flex items-center space-x-2">
-                  <Textarea
-                    value={prompt.prompt}
-                    onChange={(e) => {
-                      const updatedPrompts = [...slicerObject.llm_prompts];
-                      updatedPrompts[index].prompt = e.target.value;
-                      onUpdateSlicer({ ...slicerObject, llm_prompts: updatedPrompts });
-                    }}
-                    className="flex-grow"
-                    disabled={!isAuthenticated}
-                  />
+
+              <div className="pb-4 border-b border-border/40">
+                <LabelWithTooltip
+                  label="Annotations"
+                  tooltip="Areas of interest marked on the PDF pages for data extraction"
+                />
+                <div className="mt-2 max-h-40 overflow-y-auto bg-muted/30 rounded-md p-3">
+                  {currentProcessingRules.annotations.map((annotation, index) => (
+                    <div key={index} className="flex items-center space-x-2 mb-2 text-sm text-muted-foreground">
+                      <span className="font-medium">{`Page ${annotation.page}:`}</span>
+                      <span className="text-xs">{annotation.rectangles.map(rect => `${rect.top},${rect.left},${rect.width},${rect.height}`).join(" ")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pb-4">
+                <LabelWithTooltip
+                  label="LLM Prompts"
+                  tooltip="Instructions for the AI to process the extracted text from annotations"
+                />
+                <div className="mt-4 space-y-4">
+                  {slicerObject.llm_prompts?.map((prompt, index) => (
+                    <div key={prompt.id} className="flex items-start space-x-3">
+                      <Textarea
+                        value={prompt.prompt}
+                        onChange={(e) => {
+                          const updatedPrompts = [...slicerObject.llm_prompts];
+                          updatedPrompts[index].prompt = e.target.value;
+                          onUpdateSlicer({ ...slicerObject, llm_prompts: updatedPrompts });
+                        }}
+                        className="flex-grow min-h-[100px] bg-muted/30"
+                        disabled={!isAuthenticated}
+                      />
+                      {isAuthenticated && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeLLMPrompt(prompt.id)}
+                          className="mt-2"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
                   {isAuthenticated && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeLLMPrompt(prompt.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-start space-x-3 mt-4">
+                      <Textarea
+                        value={newPrompt}
+                        onChange={(e) => setNewPrompt(e.target.value)}
+                        placeholder="Enter a new LLM prompt"
+                        className="flex-grow min-h-[100px] bg-muted/30"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={addLLMPrompt}
+                        disabled={!newPrompt.trim()}
+                        className="mt-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
-              ))}
-              {isAuthenticated && (
-                <div className="flex items-center space-x-2">
-                  <Textarea
-                    value={newPrompt}
-                    onChange={(e) => setNewPrompt(e.target.value)}
-                    placeholder="Enter a new LLM prompt"
-                    className="flex-grow"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={addLLMPrompt}
-                    disabled={!newPrompt.trim()}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+              </div>
             </div>
             <PDFPrompts slicerObject={slicerObject} onUpdateSlicer={onUpdateSlicer} />
           </CardContent>
@@ -376,13 +385,14 @@ const PDFPrompts: React.FC<SlicerRulesProps> = ({ slicerObject, onUpdateSlicer }
   );
 };
 
-interface SlicerConfigProps {
+interface SlicerSettingsProps {
+  slicerObject: Slicer | null;
   extractedTexts: ExtractedText[];
-  slicerObject: Slicer;
-  onUpdateSlicer: (slicer: Slicer) => void;
+  onUpdateSlicer: (updatedSlicer: Partial<Slicer>) => void;
+  isReadOnly?: boolean;
 }
 
-const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObject, onUpdateSlicer }) => {
+const SlicerSettings: React.FC<SlicerSettingsProps> = ({ extractedTexts, slicerObject, onUpdateSlicer, isReadOnly }) => {
   if (!slicerObject) {
     return <div>No data available</div>;
   }
@@ -395,10 +405,10 @@ const SlicerSettings: React.FC<SlicerConfigProps> = ({ extractedTexts, slicerObj
 
   return (
     <Tabs defaultValue="config" className="flex flex-col h-full pt-2 px-2 items-start w-full">
-      <TabsList className="flex-shrink-0 bg-transparent border-b border-gray-200 dark:border-gray-700 w-full">
-        <TabsTrigger value="config">Processing Rules</TabsTrigger>
-        <TabsTrigger value="extracted">Extracted Text</TabsTrigger>
-        <TabsTrigger value="general">General</TabsTrigger>
+      <TabsList className="flex-shrink-0 w-full bg-gradient-to-b from-background/95 to-background/50 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border border-border/40 rounded-lg p-1 hover:border-border/60 transition-colors duration-300 justify-start">
+        <TabsTrigger value="config" className="px-4 py-2 text-sm font-medium rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/40 transition-all duration-200">Processing Rules</TabsTrigger>
+        <TabsTrigger value="extracted" className="px-4 py-2 text-sm font-medium rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/40 transition-all duration-200">Extracted Text</TabsTrigger>
+        <TabsTrigger value="general" className="px-4 py-2 text-sm font-medium rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary hover:bg-muted/40 transition-all duration-200">General</TabsTrigger>
       </TabsList>
       <TabsContent value="extracted" className="flex-1 overflow-hidden w-full">
         <ExtractedTextView
