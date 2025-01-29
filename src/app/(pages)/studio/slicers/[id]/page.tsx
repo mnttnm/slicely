@@ -351,7 +351,6 @@ const SlicerPageContent = () => {
                 onClearPage={onClearPage}
                 onClearAllPages={onClearAllPages}
                 pdf_password={slicer.pdf_password ?? undefined}
-                isReadOnly={isSeededData}
               />
             </div>
             <div className="flex-1 border-l border-gray-200 dark:border-gray-700">
