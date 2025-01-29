@@ -6,7 +6,6 @@ import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { EmptyPlaceholder } from "@/app/components/ui/empty-placeholder";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
-import { Separator } from "@/app/components/ui/separator";
 import { DashboardSkeleton } from "@/app/components/ui/skeleton-card";
 import { SlicerLLMOutput } from "@/app/types";
 import { getAllSlicersLLMOutput } from "@/server/actions/dashboard/actions";
@@ -84,26 +83,27 @@ function DashboardContent() {
       <ScrollArea className="flex-grow">
         <div className="grid grid-cols-1 gap-4 p-4">
           {sortedSlicers.map(([slicerId, { name, description, outputs }]) => (
-            <Card key={slicerId} className="w-full" id={slicerId}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg font-medium">{name}</CardTitle>
+            <Card key={slicerId} className="w-full shadow-sm hover:shadow-md transition-shadow" id={slicerId}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b">
+                <CardTitle className="text-lg font-medium capitalize">{name}</CardTitle>
                 <Link href={`/studio/slicers/${slicerId}?tab=explore`} passHref>
                   <Button variant="outline" size="sm">
                     Explore
                   </Button>
                 </Link>
               </CardHeader>
-              <Separator className="mb-4" />
-              <CardContent>
+              <CardContent className="pt-4">
                 {description && (
-                  <p className="text-sm text-muted-foreground mb-4">{description}</p>
+                  <p className="text-sm text-muted-foreground mb-6">{description}</p>
                 )}
-                {outputs.map((output: SlicerLLMOutput) => (
-                  <div key={output.id} className="mb-4 w-full">
-                    <h3 className="text-sm mb-2 text-slate-400">{output.prompt}</h3>
-                    <RenderLLMOutput output={output.output} />
-                  </div>
-                ))}
+                <div className="space-y-6">
+                  {outputs.map((output: SlicerLLMOutput) => (
+                    <div key={output.id} className="w-full bg-muted/30 rounded-lg p-4">
+                      <h3 className="text-sm mb-3 text-muted-foreground font-medium">{output.prompt}</h3>
+                      <RenderLLMOutput output={output.output} />
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           ))}

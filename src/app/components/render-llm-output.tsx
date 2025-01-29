@@ -35,7 +35,7 @@ export const RenderLLMOutput = ({ output }: { output: LLMResponse }) => {
   };
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
       <div className="w-full">
         {renderFormattedOutput(output.formatted_response)}
       </div>
@@ -45,15 +45,15 @@ export const RenderLLMOutput = ({ output }: { output: LLMResponse }) => {
             <Button
               variant="outline"
               size="sm"
-              className="absolute top-0 right-0"
+              className="absolute top-4 right-4"
             >
               <FileText className="h-4 w-4" />
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded w-full">
-              <h4 className="text-sm font-semibold mb-2">Raw Response:</h4>
-              <p className="text-xs">{output.raw_response}</p>
+            <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 w-full">
+              <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Raw Response:</h4>
+              <p className="text-xs text-muted-foreground">{output.raw_response}</p>
             </div>
           </CollapsibleContent>
         </Collapsible>
