@@ -2,24 +2,25 @@
 
 import CreateSlicerDrawer from "@/app/components/create-slicer-drawer";
 import { LoginRequiredMessage } from "@/app/components/login-required-message";
-import PDFLab from "@/app/components/pdf-lab";
 import PDFNavigation from "@/app/components/pdf-navigation";
 import PDFViewer from "@/app/components/pdf-viewer";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Badge } from "@/app/components/ui/badge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/app/components/ui/breadcrumb";
 import { Button } from "@/app/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { Separator } from "@/app/components/ui/separator";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { usePDFViewer } from "@/app/contexts/pdf-viewer-context";
 import { useAuth } from "@/app/hooks/use-auth";
 import { toast } from "@/app/hooks/use-toast";
 import { getAllSlicers, getPdfDetails, getSlicerDetails, linkPdfToSlicer } from "@/server/actions/studio/actions";
 import { Tables } from "@/types/supabase-types/database.types";
-import { AlertCircle, Database, Download, MoreVertical, Settings } from "lucide-react";
+import { AlertCircle, Calendar, FileText, Settings } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const PDFDetails = () => {
   const { id } = useParams();
@@ -34,6 +35,7 @@ const PDFDetails = () => {
   const [selectedSlicerId, setSelectedSlicerId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateSlicerDrawerOpen, setIsCreateSlicerDrawerOpen] = useState(false);
+  const [slicerDetails, setSlicerDetails] = useState<Tables<"slicers"> | null>(null);
   const router = useRouter();
 
   const { numPages, pageNumber, jumpToPage } = usePDFViewer();
@@ -66,6 +68,7 @@ const PDFDetails = () => {
           if (slicer_ids.length > 0) {
             const slicerData = await getSlicerDetails(slicer_ids[0]);
             if (slicerData) {
+              setSlicerDetails(slicerData.slicerDetails as unknown as Tables<"slicers">);
               setPdfPassword(slicerData.slicerDetails?.pdf_password ?? undefined);
             }
           } else {
@@ -85,18 +88,6 @@ const PDFDetails = () => {
 
     fetchPdfDetails();
   }, [id]);
-
-  const handleSaveToDB = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Login Required",
-        description: "Please login to save to database.",
-        variant: "destructive",
-      });
-      return;
-    }
-    console.log("Save to DB");
-  };
 
   const handleCreateNewSlicer = () => {
     if (!isAuthenticated) {
@@ -155,42 +146,6 @@ const PDFDetails = () => {
     }
   };
 
-  const handleRectangleUpdate = useCallback(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Login Required",
-        description: "Please login to make annotations.",
-        variant: "destructive",
-      });
-      return;
-    }
-    console.log("Rectangle updated");
-  }, [isAuthenticated]);
-
-  const handleClearPage = useCallback(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Login Required",
-        description: "Please login to clear pages.",
-        variant: "destructive",
-      });
-      return;
-    }
-    console.log("Clear page");
-  }, [isAuthenticated]);
-
-  const handleClearAllPages = useCallback(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Login Required",
-        description: "Please login to clear all pages.",
-        variant: "destructive",
-      });
-      return;
-    }
-    console.log("Clear all pages");
-  }, [isAuthenticated]);
-
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col">
@@ -204,7 +159,7 @@ const PDFDetails = () => {
           <div className="flex-1 border-r border-border">
             <Skeleton className="h-full w-full" />
           </div>
-          <div className="flex-1 p-6">
+          <div className="w-[400px] p-6">
             <div className="space-y-4">
               <Skeleton className="h-8 w-[200px]" />
               <Skeleton className="h-4 w-[300px]" />
@@ -269,31 +224,14 @@ const PDFDetails = () => {
           </Breadcrumb>
 
           <div className="flex items-center gap-2">
-            <Button
+            {/* <Button
               variant="outline"
               size="sm"
               onClick={handleConfigureSlicer}
             >
               <Settings className="mr-2 h-4 w-4" />
               Configure Slicer
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => { console.log("Export"); }}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={handleSaveToDB}>
-                  <Database className="mr-2 h-4 w-4" />
-                  Save to DB
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            </Button> */}
           </div>
         </div>
       </header>
@@ -306,10 +244,10 @@ const PDFDetails = () => {
                 <PDFViewer
                   pdf_password={pdfPassword}
                   showToolbar={false}
+                  onRectangleUpdate={() => console.log("Rectangle updated")}
+                  onClearPage={() => console.log("Page cleared")}
+                  onClearAllPages={() => console.log("All pages cleared")}
                   url={pdfUrl}
-                  onRectangleUpdate={handleRectangleUpdate}
-                  onClearPage={handleClearPage}
-                  onClearAllPages={handleClearAllPages}
                   processingRules={processingRules}
                 />
               </div>
@@ -323,18 +261,69 @@ const PDFDetails = () => {
             </div>
           </div>
 
-          {/* Right Column - PDF Lab/Configuration */}
-          <div className="flex-1 flex flex-col min-w-[500px] max-w-[50%]">
-            {hasSlicers ? (
-              <div className="flex-1 overflow-auto">
-                <PDFLab pdfDetails={pdfDetails} slicerIds={slicerIds ?? []} />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full flex-col gap-4 p-6">
-                <div className="text-center space-y-4 max-w-md">
-                  <h2 className="text-lg font-medium text-foreground">Configure Your PDF Slicer</h2>
+          {/* Right Column - PDF Metadata */}
+          <aside className="w-[400px] border-l border-border overflow-y-auto">
+            <div className="p-6 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">PDF Information</CardTitle>
+                  <CardDescription>Details about the uploaded PDF</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-start gap-2">
+                    <FileText className="h-4 w-4 mt-1 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">File Name</p>
+                      <p className="text-sm text-muted-foreground">{pdfDetails.file_name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Calendar className="h-4 w-4 mt-1 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">Upload Date</p>
+                      <p className="text-sm text-muted-foreground">
+                        {pdfDetails.created_at ? new Date(pdfDetails.created_at).toLocaleDateString() : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">Status</p>
+                        <Badge variant={pdfDetails.file_processing_status === "processed" ? "default" : "secondary"}>
+                          {pdfDetails.file_processing_status || "Not Processed"}
+                        </Badge>
+                      </div>
+                      {pdfDetails.is_template && (
+                        <Badge variant="outline" className="mt-1">Template</Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Separator />
+
+              {hasSlicers ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Associated Slicer</CardTitle>
+                    <CardDescription>Currently linked slicer details</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {slicerDetails && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">{slicerDetails.name}</p>
+                        <p className="text-sm text-muted-foreground">{slicerDetails.description}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="text-center space-y-4">
+                  <h2 className="text-lg font-medium text-foreground">No Slicer Configured</h2>
                   <p className="text-sm text-muted-foreground">
-                    Set up a slicer to process and analyze your PDF content efficiently.
+                    Configure a slicer to process and analyze your PDF content.
                   </p>
                   {!isAuthenticated && (
                     <LoginRequiredMessage
@@ -352,9 +341,9 @@ const PDFDetails = () => {
                     Configure Slicer
                   </Button>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </aside>
         </div>
       </main>
 
