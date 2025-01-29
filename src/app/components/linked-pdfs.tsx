@@ -12,6 +12,7 @@ import { TablesInsert } from "@/types/supabase-types/database.types";
 import { Eye, MoreVertical, Play } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -179,6 +180,7 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh, isReadOnly 
               <TableHead className="w-[30%]">Name</TableHead>
               <TableHead className="w-[20%]">Uploaded at</TableHead>
               <TableHead className="w-[20%]">Status</TableHead>
+              <TableHead className="w-[20%]">Type</TableHead>
               <TableHead className="w-[210px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -193,8 +195,24 @@ export function LinkedPdfs({ linkedPdfs, onUploadSuccess, onRefresh, isReadOnly 
                   />
                 </TableCell>
                 <TableCell className="font-medium">{pdf.file_name}</TableCell>
-                <TableCell>{pdf.updated_at ?? "N/A"}</TableCell>
-                <TableCell>{pdf.file_processing_status ?? "N/A"}</TableCell>
+                <TableCell>
+                  {pdf.updated_at ?
+                    new Date(pdf.updated_at).toLocaleDateString() :
+                    (pdf.created_at ? new Date(pdf.created_at).toLocaleDateString() : "N/A")
+                  }
+                </TableCell>
+                <TableCell>
+                  <Badge variant={pdf.file_processing_status === "processed" ? "default" : "secondary"}>
+                    {pdf.file_processing_status || "Not Processed"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {pdf.is_template ? (
+                    <Badge variant="outline">Template</Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">Regular</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     <Button
