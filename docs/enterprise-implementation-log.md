@@ -1,8 +1,8 @@
 # Enterprise Implementation Log
 
-## What I implemented in this pass
+## What I implemented so far
 
-This pass focuses on creating the **data + API foundation** for enterprise readiness without breaking existing user flows.
+This work now covers **data + API + worker foundation** for enterprise readiness, while preserving existing user flows.
 
 ### 1) Organization and RBAC foundation
 - Added organization primitives:
@@ -23,9 +23,16 @@ This pass focuses on creating the **data + API foundation** for enterprise readi
 
 ### 3) Recurring automation foundation
 - Added `workflows` table for trigger/action configuration and lifecycle flags.
+- Added workflow APIs:
+  - `GET /api/v1/workflows`
+  - `POST /api/v1/workflows`
+  - `GET /api/v1/workflows/:id`
+  - `PATCH /api/v1/workflows/:id`
+- Added validation, org access checks, and audit logging for workflow operations.
 
 ### 4) Auditing foundation
 - Added `audit_logs` table with actor context (`user` or `service account`), action metadata, and request linkage.
+- Added API-side audit events for both job and workflow read/write operations.
 
 ### 5) API foundation for processing jobs
 - Added new REST endpoints:
@@ -36,37 +43,46 @@ This pass focuses on creating the **data + API foundation** for enterprise readi
 - Added request validation via `zod` for query/body payloads.
 - Added organization membership checks before all job reads/writes.
 - Added idempotent job creation support through `Idempotency-Key` header.
-- Added audit log entries for list/get/create/update job API operations.
 
-### 6) Row-level security policy baseline
-- Enabled RLS on all new enterprise tables.
-- Added policies for org-scoped reads/writes with stricter ownership/admin checks for membership and service-account management.
+### 6) Worker execution foundation
+- Added `scripts/process-jobs.ts` worker script that:
+  - polls queued/retrying jobs in priority order
+  - increments attempt counts
+  - transitions jobs to `running`
+  - executes a pluggable job runner (stub implementation)
+  - marks jobs `completed` or `retrying`/`failed` based on retry budget.
+- Added `npm run process-jobs` script for local/CI worker execution.
+
+### 7) Repo quality unblockers
+- Renamed legacy PascalCase component files to kebab-case to align with lint/type conventions and unblock module resolution issues.
 
 ## Decisions made autonomously
-- Preserve existing product behavior while introducing parallel enterprise tables and APIs.
-- Make jobs and workflows org-scoped from day one.
-- Enforce default-deny through RLS and explicit membership checks.
-- Use idempotency in schema + API now so workers can become safely retryable later.
-- Expose APIs as authenticated user endpoints first; service-account auth can layer in next.
+- Preserve existing behavior while introducing additive enterprise tables, APIs, and worker scaffolding.
+- Keep APIs user-session authenticated first; layer service-account auth in next phase.
+- Enforce org checks at API boundary even with RLS in place.
+- Introduce job idempotency + retries now so ingestion/extraction flows can migrate safely.
+- Ship workflow config as flexible `jsonb` first, then version contracts later.
 
 ## Inputs needed from you when back
 
 1. **Role model details**
    - Should `viewer` be allowed to enqueue jobs/workflows, or strictly read-only?
 2. **Workflow DSL shape**
-   - Keep generic `jsonb` trigger/action configs, or lock to versioned schema contracts now?
+   - Keep flexible `jsonb` configs, or enforce versioned schema contracts immediately?
 3. **Service account model**
-   - Rotateable opaque tokens only, or support OAuth client credentials in v1?
+   - Opaque token auth only, or OAuth client credentials in v1?
 4. **Audit retention policy**
-   - Preferred retention window and archival strategy.
-5. **Queue execution target**
-   - Preferred worker runtime (Supabase Edge Functions, external worker service, or managed queue).
+   - Retention window + archival strategy.
+5. **Queue runtime decision**
+   - Supabase Edge Functions vs dedicated worker service vs managed queue.
 6. **Worker authorization model**
-   - Should job status transitions be user-driven only, or should worker/service-account paths bypass user session auth?
+   - Should worker status transitions use service-role execution only?
+7. **Priority integrations**
+   - First connectors to build (S3, SharePoint, Google Drive, Box, SFTP, webhooks).
 
-## Suggested next implementation slice
-1. Build worker loop for `processing_jobs` execution and retries.
-2. Connect existing PDF processing flow to enqueue jobs instead of synchronous processing.
-3. Add organization selector and membership bootstrap in app onboarding.
-4. Add service-account token auth for machine-to-machine API usage.
-5. Add webhook delivery jobs and retry/replay endpoints.
+## Next implementation slice (already queued mentally)
+1. Replace worker stub with actual `pdf_ingestion` and `pdf_extraction` handlers.
+2. Enqueue jobs from existing synchronous PDF flows.
+3. Add service-account token authentication path for machine-to-machine APIs.
+4. Add webhook delivery jobs + signature, retry, and replay support.
+5. Add workflow scheduler trigger execution.
