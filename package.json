@@ -14,6 +14,10 @@
     "generate-embeddings": "tsx scripts/generate_embeddings.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.45",
+    "@ai-sdk/google": "^2.0.38",
+    "@ai-sdk/openai": "^2.0.68",
+    "@aws-sdk/client-textract": "^3.934.0",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.4",
@@ -33,6 +37,7 @@
     "@supabase/supabase-js": "^2.45.3",
     "@types/pdfjs-dist": "^2.10.378",
     "@types/uuid": "^10.0.0",
+    "ai": "^5.0.95",
     "bcryptjs": "^2.4.3",
     "checkbox": "^0.0.1",
     "class-variance-authority": "^0.7.0",
