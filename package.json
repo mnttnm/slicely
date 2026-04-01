@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "generate:types": "npx supabase gen types --lang=typescript --local > src/types/supabase-types/database.types.ts",
-    "generate-embeddings": "tsx scripts/generate_embeddings.ts"
+    "generate-embeddings": "tsx scripts/generate_embeddings.ts",
+    "process-jobs": "tsx scripts/process-jobs.ts"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.1",
